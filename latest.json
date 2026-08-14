@@ -1,7 +1,7 @@
 {
-  "version": "2.0.1",
-  "publishedAt": "2026-08-14T16:15:00+03:00",
-  "notes": "Win11 uygulama penceresinde calismayan onay/uyari pencereleri duzeltildi; guncelleme ve ZIP kurulum dugmeleri sayfa ici guvenli onayla calisir.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.1.zip",
-  "sha256": "470fa65c6718242ef19eb4c7936e969e21e14f568a4a0e78d35893cd8c51ead1"
+  "version": "2.0.5",
+  "publishedAt": "2026-08-14T16:47:00+03:00",
+  "notes": "Guncelleme kontrolu cache sorunu kalici olarak giderildi. Guncelle ve Yukle dugmesi her zaman gorunur; otomatik kontroller Canli Sistem Gunlugu'ne yazilmaz.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.5.zip",
+  "sha256": "3bbf6d0e3f4b7c0688a8e1b993c45b55179e02e76a02e4dffcfb67fbeece0274"
 }
