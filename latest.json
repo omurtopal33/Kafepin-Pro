@@ -1,7 +1,7 @@
 {
-  "version": "1.0.8",
+  "version": "2.0.0",
   "publishedAt": "2026-08-14T00:00:00+03:00",
-  "notes": "Merkezi otomatik guncelleme testi: emniyet yedegi, indirme, dogrulama, sunucu ve Pro penceresinin yeniden acilisi tek islemde tamamlanir.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v1.0.8.zip",
-  "sha256": "048d55df60aa0fa7754d3ffe81397413852805bc72015a074e9d5dfcb13b7a2c"
+  "notes": "V2: Canli Sistem Gunlugu; yedek, geri yukleme, guncelleme kontrolu ve kurulum adimlarini kaydeder.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.0.zip",
+  "sha256": "e8cb4faba291054ddf846810d16e4d06bf261597cb4ca44ec7701b535db30765"
 }
