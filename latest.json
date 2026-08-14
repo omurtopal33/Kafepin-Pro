@@ -1,7 +1,7 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.4",
   "publishedAt": "2026-08-14T00:00:00+03:00",
-  "notes": "Acik masadaki urunler aktarim farkina dahil edilmez; kapanistan sonra EveryCafe tahsilatiyla eslesir.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v1.0.2.zip",
-  "sha256": "584cf92b0a4bef95c53ac578ddd1a5ef894f0662f19cd3386fede56e5736c12d"
+  "notes": "Acik masa bilgisayar ucreti, urun ekraninda canli ayri gorunur. Kapanmadan kesin gelir ve aktarim karsilastirmasina dahil edilmez.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v1.0.4.zip",
+  "sha256": "8b155c3e73f2dba928245130c1f446413e97410b259cc7cf379c533f88bcdc76"
 }
