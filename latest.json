@@ -1,7 +1,7 @@
 {
-  "version": "2.0.5",
-  "publishedAt": "2026-08-14T16:58:00+03:00",
-  "notes": "Guncelleme kontrolu ve kurulum durumu senkronizasyonu duzeltildi. Eski basarili kurulum kaydi yeni surum varsa Guncelle ve Yukle dugmesini artik kilitlemez. Otomatik kontroller Canli Sistem Gunlugu'ne yazilmaz.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.5(1).zip",
-  "sha256": "ebad025917bde5015158913d63414df555a66e8f0b63e35e5d354ae7d3f44492"
+  "version": "2.0.6",
+  "publishedAt": "2026-08-14T17:10:00+03:00",
+  "notes": "Guncelleme sistemi kalici olarak duzeltildi: resmi manifest sabitlendi, paket indirme no-cache basliklariyla yapiliyor, SHA-256 dogrulamasi ayrintili loglaniyor ve tek paket adi kullaniliyor.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.6.zip",
+  "sha256": "9f530464e98dbf8a24dc4bcc968a5c24ab3b440bfea34657d49d9c3c9f58b0dc"
 }
