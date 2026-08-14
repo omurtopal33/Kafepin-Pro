@@ -1,7 +1,7 @@
 {
-  "version": "3.0.2",
-  "publishedAt": "2026-08-14T18:50:00+03:00",
-  "notes": "Explorer klasor acma duzeltildi: yanlis kacis kaldirildi, KafePin/Yedek/DB/FULL klasorleri gercek Explorer penceresi acilana kadar izlenir ve pencere one getirilir; pencere dogrulanmadan basari mesaji verilmez. Eski v3.0.1 Sistem Yoneticisi yukseltme yardimcisi kaldirildi. Dogrudan Node guncelleme motoru korunur.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.0.2.zip",
-  "sha256": "e7931e3febf5bcfb24bad57756eef4d62fb67225636c4bfd3e2369455696a147"
+  "version": "3.0.4",
+  "publishedAt": "2026-08-14T19:08:01+03:00",
+  "notes": "KafePin Pro v3.0.4 otomatik yayinlandi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.0.4.zip",
+  "sha256": "809a460e1ef4b01314e5f5decd4e875889a5a3a381aa1d52d2745bd0fe87144a"
 }
