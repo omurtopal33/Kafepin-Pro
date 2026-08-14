@@ -1,7 +1,7 @@
 {
-  "version": "2.0.0",
-  "publishedAt": "2026-08-14T00:00:00+03:00",
-  "notes": "V2: Canli Sistem Gunlugu; yedek, geri yukleme, guncelleme kontrolu ve kurulum adimlarini kaydeder.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.0.zip",
-  "sha256": "c8acad10e504dfbbda1331c740926ae11d85dbf0a23f67736976882e1bf2da7a"
+  "version": "2.0.1",
+  "publishedAt": "2026-08-14T16:15:00+03:00",
+  "notes": "Win11 uygulama penceresinde calismayan onay/uyari pencereleri duzeltildi; guncelleme ve ZIP kurulum dugmeleri sayfa ici guvenli onayla calisir.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.1.zip",
+  "sha256": "470fa65c6718242ef19eb4c7936e969e21e14f568a4a0e78d35893cd8c51ead1"
 }
