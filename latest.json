@@ -1,7 +1,7 @@
 {
-  "version": "1.0.4",
+  "version": "1.0.6",
   "publishedAt": "2026-08-14T00:00:00+03:00",
-  "notes": "Acik masa bilgisayar ucreti, urun ekraninda canli ayri gorunur. Kapanmadan kesin gelir ve aktarim karsilastirmasina dahil edilmez.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v1.0.4.zip",
-  "sha256": "8b155c3e73f2dba928245130c1f446413e97410b259cc7cf379c533f88bcdc76"
+  "notes": "Acik masa bilgisayar ucreti urun ekraninda canli ayri gorunur. Kurulum sonunda Pro penceresi otomatik temiz acilir.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v1.0.6.zip",
+  "sha256": "4352813e14d2e9627681e3fd9501eef09eaf202336d3a138511543014ec8def5"
 }
