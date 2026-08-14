@@ -1,7 +1,7 @@
 {
-  "version": "3.0.0",
-  "publishedAt": "2026-08-14T17:30:00+03:00",
-  "notes": "V3: EveryCafe korumasi. Guncelleme sirasinda EveryCafe, Edge ve Chrome surecleri zorla kapatilmaz; yalnizca KafePin Pro penceresine guvenli kapatma mesaji gonderilir. Sunucu PID dogrulamasi eklendi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.0.0.zip",
-  "sha256": "4e3117cf29b230ebe39c26026e92de91461f73dc028d79fafee88291579853ed"
+  "version": "3.0.1",
+  "publishedAt": "2026-08-14T18:30:00+03:00",
+  "notes": "Panel modu tamamlandi: sunucu durum/başlat/durdur/yeniden başlat Windows Sistem Yöneticisi üzerinden panelden yapılır; DB ve FULL ZIP yedekleri, listeden FULL ZIP geri yükleme ve canlı günlük korunur. KafePin/DB/FULL/yedek klasörleri Explorer ile açılır ve öne getirilir. Eski BAT/VBS restart bağımlılıkları kaldırıldı.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.0.1.zip",
+  "sha256": "bba15bf101e66fd60b5c3a7c62efb632a5cf1a94703eff8591b239df820cc1d5"
 }
