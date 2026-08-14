@@ -1,7 +1,7 @@
 {
-  "version": "2.0.6",
-  "publishedAt": "2026-08-14T17:10:00+03:00",
-  "notes": "Guncelleme sistemi kalici olarak duzeltildi: resmi manifest sabitlendi, paket indirme no-cache basliklariyla yapiliyor, SHA-256 dogrulamasi ayrintili loglaniyor ve tek paket adi kullaniliyor.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.6.zip",
-  "sha256": "9f530464e98dbf8a24dc4bcc968a5c24ab3b440bfea34657d49d9c3c9f58b0dc"
+  "version": "3.0.0",
+  "publishedAt": "2026-08-14T17:30:00+03:00",
+  "notes": "V3: EveryCafe korumasi. Guncelleme sirasinda EveryCafe, Edge ve Chrome surecleri zorla kapatilmaz; yalnizca KafePin Pro penceresine guvenli kapatma mesaji gonderilir. Sunucu PID dogrulamasi eklendi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.0.0.zip",
+  "sha256": "4e3117cf29b230ebe39c26026e92de91461f73dc028d79fafee88291579853ed"
 }
