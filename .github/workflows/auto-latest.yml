@@ -1,0 +1,96 @@
+name: KafePin latest.json otomatik guncelle
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'KafePin-Pro-Update-v*.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kafepin-auto-latest
+  cancel-in-progress: false
+
+jobs:
+  update-latest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repoyu al
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: En yeni ZIP'ten latest.json olustur
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          import hashlib
+          import json
+          import re
+
+          repo = 'omurtopal33/Kafepin-Pro'
+          pattern = re.compile(r'^KafePin-Pro-Update-v(\d+(?:\.\d+){1,3})\.zip$', re.I)
+
+          candidates = []
+          for p in Path('.').glob('KafePin-Pro-Update-v*.zip'):
+              m = pattern.match(p.name)
+              if not m:
+                  continue
+
+              version = m.group(1)
+              parts = tuple(int(x) for x in version.split('.'))
+              padded = parts + (0,) * (4 - len(parts))
+              candidates.append((padded, version, p))
+
+          if not candidates:
+              raise SystemExit('KafePin guncelleme ZIP dosyasi bulunamadi.')
+
+          _, version, zip_path = max(candidates, key=lambda x: x[0])
+
+          sha256 = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+          published = datetime.now(
+              ZoneInfo('Europe/Istanbul')
+          ).isoformat(timespec='seconds')
+
+          data = {
+              'version': version,
+              'publishedAt': published,
+              'notes': f'KafePin Pro v{version} otomatik yayinlandi.',
+              'downloadUrl': (
+                  f'https://raw.githubusercontent.com/{repo}/main/{zip_path.name}'
+              ),
+              'sha256': sha256,
+          }
+
+          Path('latest.json').write_text(
+              json.dumps(data, ensure_ascii=False, indent=2) + '\n',
+              encoding='utf-8'
+          )
+
+          print(f'En yeni surum : v{version}')
+          print(f'ZIP           : {zip_path.name}')
+          print(f'SHA-256       : {sha256}')
+          PY
+
+      - name: latest.json degistiyse GitHub'a yaz
+        shell: bash
+        run: |
+          if git diff --quiet -- latest.json; then
+            echo 'latest.json zaten guncel.'
+            exit 0
+          fi
+
+          git config user.name 'KafePin Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+
+          git add latest.json
+          git commit -m 'KafePin: latest.json otomatik guncelle'
+          git push
