@@ -1,7 +1,7 @@
 {
   "version": "2.0.5",
-  "publishedAt": "2026-08-14T16:47:00+03:00",
-  "notes": "Guncelleme kontrolu cache sorunu kalici olarak giderildi. Guncelle ve Yukle dugmesi her zaman gorunur; otomatik kontroller Canli Sistem Gunlugu'ne yazilmaz.",
+  "publishedAt": "2026-08-14T16:58:00+03:00",
+  "notes": "Guncelleme kontrolu ve kurulum durumu senkronizasyonu duzeltildi. Eski basarili kurulum kaydi yeni surum varsa Guncelle ve Yukle dugmesini artik kilitlemez. Otomatik kontroller Canli Sistem Gunlugu'ne yazilmaz.",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v2.0.5.zip",
-  "sha256": "3bbf6d0e3f4b7c0688a8e1b993c45b55179e02e76a02e4dffcfb67fbeece0274"
+  "sha256": "ebad025917bde5015158913d63414df555a66e8f0b63e35e5d354ae7d3f44492"
 }
