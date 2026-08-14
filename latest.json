@@ -1,7 +1,7 @@
 {
-  "version": "3.0.1",
-  "publishedAt": "2026-08-14T18:30:00+03:00",
-  "notes": "Panel modu tamamlandi: sunucu durum/başlat/durdur/yeniden başlat Windows Sistem Yöneticisi üzerinden panelden yapılır; DB ve FULL ZIP yedekleri, listeden FULL ZIP geri yükleme ve canlı günlük korunur. KafePin/DB/FULL/yedek klasörleri Explorer ile açılır ve öne getirilir. Eski BAT/VBS restart bağımlılıkları kaldırıldı.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.0.1.zip",
-  "sha256": "bba15bf101e66fd60b5c3a7c62efb632a5cf1a94703eff8591b239df820cc1d5"
+  "version": "3.0.2",
+  "publishedAt": "2026-08-14T18:50:00+03:00",
+  "notes": "Explorer klasor acma duzeltildi: yanlis kacis kaldirildi, KafePin/Yedek/DB/FULL klasorleri gercek Explorer penceresi acilana kadar izlenir ve pencere one getirilir; pencere dogrulanmadan basari mesaji verilmez. Eski v3.0.1 Sistem Yoneticisi yukseltme yardimcisi kaldirildi. Dogrudan Node guncelleme motoru korunur.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.0.2.zip",
+  "sha256": "e7931e3febf5bcfb24bad57756eef4d62fb67225636c4bfd3e2369455696a147"
 }
