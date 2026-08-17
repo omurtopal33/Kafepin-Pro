@@ -1,7 +1,7 @@
 {
-  "version": "3.1.17",
-  "publishedAt": "2026-08-17T17:32:32+03:00",
-  "notes": "v3.1.17 KÜMÜLATİF: Admin ekranında Son yenileme bilgisinin yanına 5 maddelik acil Bildirimler merkezi eklendi. Yalnız Kasa/Gelir Uyuşmazlığı, Bekleyen Ödeme, Kart Banka Yatırımı Doğrulama, EveryCafe entegrasyon sorunu ve kritik sistem sağlığı gösterilir; çark ödülü dahil değildir. Bildirim varsa düğme kırmızı yanıp söner; GİT/DÜZELT ilgili bölüme götürür. Kart banka doğrulaması 1 gün gecikmede sarı, 2+ günde kırmızı DÜZELT rozeti verir ve bölüm küçük olsa da başlıkta görünür. Mevcut ödeme/kasa/muhasebe/automatic-health verileri kullanılır; gelir hesapları ve server.js iş mantığı değiştirilmedi. v3.1.16 ve önceki gerekli düzeltmeler korunur.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.17.zip",
-  "sha256": "5c6308f69b14968ef92f485ea007b4f00acf740487c89a26c01e7ec19be81dc9"
+  "version": "3.1.16",
+  "publishedAt": "2026-08-17T17:35:20+03:00",
+  "notes": "v3.1.16 KÜMÜLATİF: Güncelle ve Yükle düğmesi için kalıcı sunucu tarafı kurulum kilidi eklendi. Güncelleme başlarken hedef sürüm Windows ProgramData altında saklanır; KafePin Pro/WebView kaç kez yeniden açılırsa açılsın /admin/pro/update-status kurulum bitene kadar available=false/installing=true döndürür ve düğme pasif kalır. Kilit yalnız hedef sürüm diskte doğrulandıktan, eski Node süreci değiştikten ve yeni server en az 10 saniye kararlı çalıştıktan sonra temizlenir. Kurulum sonrası düğme pasiftir; yalnız gerçekten daha yeni sürüm bulunduğunda aktif olur. v3.1.15 ve önceki gerekli düzeltmeler korunur; muhasebe, EveryCafe, Telegram, masa/çark ve gelir hesaplarına dokunulmadı.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.16.zip",
+  "sha256": "bdfba3ea1eb7a29d708f897966752eea70fd21141052949e0fd436bb142ed68c"
 }
