@@ -1,0 +1,12 @@
+--- v319/kafepin-pro-version.json	2026-08-17 13:31:10.000000000 +0000
++++ v320/kafepin-pro-version.json	2026-08-17 13:55:12.000000000 +0000
+@@ -1,7 +1,7 @@
+ {
+-  "version": "3.1.19",
++  "version": "3.1.20",
+   "name": "KafePin Pro",
+   "channel": "stable",
+   "updatedAt": "2026-08-17",
+-  "notes": "Kümülatif güncelleme: Bildirimler tek ve kalıcı olarak Hızlı Git satırında Bakım Modu'nun yanına taşındı; Kafe & Çark, EveryCafe ve Kasa & Muhasebe panellerinde görünür kalır. Son yenileme yanındaki ikinci zil kaldırıldı. 5 acil bildirim mantığı korunur. v3.1.18'in masaüstünü SYSTEM profiliyle otomatik yeniden derleme/başlatma yolu geri alındı; v3.1.2 doğrulanmış masaüstü kaynak dosyası geri kondu. 3.1.18 daha önce masaüstü EXE üretmiş mevcut makinelerde native üst zilin kaldırılması için bir kez kullanıcı oturumundan masaüstü geri-derleme gerekir; temiz 3.1.2 kurulumunda gerekmez."
++  "notes": "Kümülatif güncelleme: Yönetim Merkezi güncelleme kontrolü onarıldı. GitHub manifest kontrolünde Node HTTPS başarısız olursa Windows curl/PowerShell ve GitHub API/CDN yedek yolları devreye girer. Güncelleme ZIP indirmesinde de Windows ağ yedeği vardır ve mevcut SHA-256 doğrulaması korunur. Kurulu sürüm etiketi artık yerel /api/health üzerinden hemen okunur; internet geçici olarak yoksa Sürüm okunuyor yazısında takılmaz. Bildirimler Hızlı Git satırında Bakım Modu yanında tek ve kalıcı yerde korunur; EveryCafe, muhasebe, masa/çark, Telegram ve gelir hesaplarına dokunulmadı."
+ }
