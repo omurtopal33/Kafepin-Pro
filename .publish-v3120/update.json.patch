@@ -1,0 +1,16 @@
+--- v319/update.json	2026-08-17 13:31:10.000000000 +0000
++++ v320/update.json	2026-08-17 13:55:12.000000000 +0000
+@@ -1,5 +1,5 @@
+ {
+-  "version": "3.1.19",
++  "version": "3.1.20",
+   "files": [
+     "server.js",
+     "public/admin.html",
+@@ -8,5 +8,5 @@
+     "kafepin-pro-version.json",
+     "update.json"
+   ],
+-  "notes": "v3.1.19 KÜMÜLATİF: Bildirimler Hızlı Git satırında Bakım Modu'nun hemen sağına taşındı ve üç Admin panelinde de kalıcı görünür. Canlı Panel/Son yenileme yanındaki eski ikinci zil kaldırıldı. 5 bildirim motoru ve GİT/DÜZELT davranışı korunur. v3.1.18'de eklenen native masaüstü bildirim yolu ve server açılışında otomatik desktop yeniden derleme geri alındı; server.js v3.1.17 güvenli akışına döndü. v3.1.2 doğrulanmış desktop-app/KafePinProDesktop.cs kaynağı geri kondu; güncelleme sırasında masaüstü SYSTEM hesabıyla otomatik derlenmez. Gelir, EveryCafe, Telegram, masa/çark ve muhasebe hesap motorlarına yeni değişiklik yapılmadı. 3.1.18 daha önce native masaüstü EXE oluşturmuş makinelerde üst zili kaldırmak için ayrı tek-seferlik kullanıcı oturumu masaüstü onarımı gerekir; temiz v3.1.2 -> v3.1.19 kurulumunda gerekmez."
++  "notes": "v3.1.20 KÜMÜLATİF: Uzak güncelleme kontrolü için çoklu ağ yolu eklendi (GitHub RAW, jsDelivr, GitHub API; Windows curl/PowerShell yedeği). Güncelleme paketinin indirilmesinde Node HTTPS başarısızsa Windows ağ yedeği devreye girer; SHA-256 doğrulaması değiştirilmedi. Yönetim Merkezi kurulu sürümü /api/health üzerinden yerel olarak hemen gösterir; uzak kontrol başarısız olsa bile sürüm notu etiketi 'Sürüm okunuyor...' durumunda kalmaz. Bildirim sistemi Hızlı Git/Bakım Modu yanında aynen korunur. Admin, EveryCafe, muhasebe, masa/çark, Telegram ve gelir hesap motorlarında işlevsel değişiklik yoktur. Temiz v3.1.2 ANA STABLE üzerine doğrudan kurulabilir."
+ }
