@@ -1,0 +1,105 @@
+name: KafePin Pro v3.1.20 tek seferlik yayin
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.publish-v3120/READY'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kafepin-publish-v3120
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu al
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: v3.1.20 paketini dogrulanmis farklardan olustur
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE='KafePin-Pro-Update-v3.1.19.zip'
+          OUT='KafePin-Pro-Update-v3.1.20.zip'
+          WORK='/tmp/kafepin-v3120'
+
+          test -f "$BASE"
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+          unzip -q "$BASE" -d "$WORK"
+
+          patch -d "$WORK" -p1 < .publish-v3120/server.js.patch
+          patch -d "$WORK" -p1 < .publish-v3120/yonetim.html.patch
+          patch -d "$WORK" -p1 < .publish-v3120/version.json.patch
+          patch -d "$WORK" -p1 < .publish-v3120/update.json.patch
+
+          cat > /tmp/kafepin-v3120.sha256 <<'EOF'
+          8656b690ab3efd391fde877e01d2a063c316c8d67ad8cc92abb5842335d57e86  server.js
+          7ba5443d28e3b046f26c9473301ebd8f3d6575122c79204eabdc69254a07fbc6  public/admin.html
+          0f6553a87ca6d69c010fc0cc8429cc99f8ff42579f16b1b393db7a3ca131a490  public/kafepin-pro-yonetim.html
+          9bc45d8bfd42f15783c814fbf54202fa03e2fbb1eb5b24d2da9b04c2ea83b05f  desktop-app/KafePinProDesktop.cs
+          adf05da518af02bd25b002d9921f9e3ef36ab35692a9b7c5a907df12f47afb46  kafepin-pro-version.json
+          4bab0a8994bd9dc64723224cea7cf6b68d04c7c8b74549790d216cbf60a62e78  update.json
+          EOF
+          sed -i 's/^          //' /tmp/kafepin-v3120.sha256
+          (cd "$WORK" && sha256sum -c /tmp/kafepin-v3120.sha256)
+
+          rm -f "$OUT"
+          (
+            cd "$WORK"
+            zip -9 -q -r "$GITHUB_WORKSPACE/$OUT" \
+              server.js \
+              public/admin.html \
+              public/kafepin-pro-yonetim.html \
+              desktop-app/KafePinProDesktop.cs \
+              kafepin-pro-version.json \
+              update.json
+          )
+          unzip -t "$OUT"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          import hashlib, json, zipfile
+
+          p = Path('KafePin-Pro-Update-v3.1.20.zip')
+          sha = hashlib.sha256(p.read_bytes()).hexdigest()
+          with zipfile.ZipFile(p) as zf:
+              update = json.loads(zf.read('update.json').decode('utf-8-sig'))
+          if str(update.get('version')) != '3.1.20':
+              raise SystemExit('update.json version dogrulanamadi')
+          notes = str(update.get('notes') or '').strip()
+          data = {
+              'version': '3.1.20',
+              'publishedAt': datetime.now(ZoneInfo('Europe/Istanbul')).isoformat(timespec='seconds'),
+              'notes': notes,
+              'downloadUrl': 'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.20.zip',
+              'sha256': sha,
+          }
+          Path('latest.json').write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          print('v3.1.20 SHA-256:', sha)
+          PY
+
+      - name: Eski ara paketleri temizle ve yayinla
+        shell: bash
+        run: |
+          set -euo pipefail
+          for v in {3..19}; do
+            rm -f "KafePin-Pro-Update-v3.1.${v}.zip"
+          done
+          rm -rf .publish-v3120
+
+          git config user.name 'KafePin Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git commit -m 'KafePin Pro v3.1.20 yayinla ve eski paketleri temizle'
+          git push
