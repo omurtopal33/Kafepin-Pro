@@ -1,7 +1,7 @@
 {
-  "version": "3.1.19",
-  "publishedAt": "2026-08-17T16:33:23+03:00",
-  "notes": "KafePin Pro v3.1.19 otomatik yayinlandi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.19.zip",
-  "sha256": "1e593f4763b7fda52aedf6f917d934ebc46cf18d26c68b2d3ad0d755d65b4c26"
+  "version": "3.1.20",
+  "publishedAt": "2026-08-17T17:16:18+03:00",
+  "notes": "v3.1.20 KÜMÜLATİF: Uzak güncelleme kontrolü için çoklu ağ yolu eklendi (GitHub RAW, jsDelivr, GitHub API; Windows curl/PowerShell yedeği). Güncelleme paketinin indirilmesinde Node HTTPS başarısızsa Windows ağ yedeği devreye girer; SHA-256 doğrulaması değiştirilmedi. Yönetim Merkezi kurulu sürümü /api/health üzerinden yerel olarak hemen gösterir; uzak kontrol başarısız olsa bile sürüm notu etiketi 'Sürüm okunuyor...' durumunda kalmaz. Bildirim sistemi Hızlı Git/Bakım Modu yanında aynen korunur. Admin, EveryCafe, muhasebe, masa/çark, Telegram ve gelir hesap motorlarında işlevsel değişiklik yoktur. Temiz v3.1.2 ANA STABLE üzerine doğrudan kurulabilir.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.20.zip",
+  "sha256": "9ab300723c589fff4379d24cafd53c234caedf1df56dce9df941e3e03984d8d7"
 }
