@@ -1,7 +1,7 @@
 {
-  "version": "3.1.17",
-  "publishedAt": "2026-08-17T17:47:39+03:00",
-  "notes": "v3.1.17: Yalnız üç değişiklik. (1) Hızlı Git satırında Bakım Modu yanında tek Bildirimler düğmesi. (2) Yalnız 5 acil bildirim: Kasa/Gelir Uyuşmazlığı, Bekleyen Ödeme, Kart Banka Yatırımı Doğrulama, EveryCafe Entegrasyon Sorunu ve Kritik Sistem Sağlığı; bildirim varsa düğme kırmızı yanıp söner. (3) Yönetim Merkezi kurulu sürümü yerel /api/health üzerinden hemen okur; uzak kontrol başarısız olsa bile 'Sürüm okunuyor...' yazısında kalmaz. v3.1.16 server.js, DB/yedek/geri yükleme, restart, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesapları değiştirilmedi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.17.zip",
-  "sha256": "62a7f9b290d3944d757775da2a537534b7c0335853e098cdcfb910f8f9bfc932"
+  "version": "3.1.18",
+  "publishedAt": "2026-08-17T18:15:12+03:00",
+  "notes": "v3.1.18: Yalnız üç düzeltme. (1) Güncelleme kontrolü 429/503/568 dayanıklılığı: benzersiz cache-buster istekleri kaldırıldı, arka plan sonucu 5 dakika önbelleklenir, eşzamanlı kontroller tek istekte birleşir ve geçici ağ hatasında son doğrulanmış durum korunur. (2) Canlı Sistem Günlüğü gerçek server restart oturumunu startedAt ile ayırır; yeni Node açıldığında eski oturum satırları arayüzde taşınmaz. (3) Başlat/Durdur/Yeniden Başlat Server Manager çağrıları zaman aşımı ve taze token doğrulamasıyla sağlamlaştırıldı; mutasyon POST komutları belirsiz ağ hatasında ikinci kez gönderilmez. v3.1.16 DB/yedek/geri yükleme, EveryCafe, Telegram, muhasebe, masa/çark, gelir hesapları ve kurulum kilidi mantığı değiştirilmedi. v3.1.17 bildirim katmanı aynen korunur.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.18.zip",
+  "sha256": "a108adf3c280d8462fb38af95f01de65d101050bac393ba438a8fda39cd3fb51"
 }
