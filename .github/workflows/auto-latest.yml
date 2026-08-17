@@ -35,6 +35,7 @@ jobs:
           import hashlib
           import json
           import re
+          import zipfile
 
           repo = 'omurtopal33/Kafepin-Pro'
           pattern = re.compile(r'^KafePin-Pro-Update-v(\d+(?:\.\d+){1,3})\.zip$', re.I)
@@ -44,7 +45,6 @@ jobs:
               m = pattern.match(p.name)
               if not m:
                   continue
-
               version = m.group(1)
               parts = tuple(int(x) for x in version.split('.'))
               padded = parts + (0,) * (4 - len(parts))
@@ -54,19 +54,24 @@ jobs:
               raise SystemExit('KafePin guncelleme ZIP dosyasi bulunamadi.')
 
           _, version, zip_path = max(candidates, key=lambda x: x[0])
-
           sha256 = hashlib.sha256(zip_path.read_bytes()).hexdigest()
-          published = datetime.now(
-              ZoneInfo('Europe/Istanbul')
-          ).isoformat(timespec='seconds')
+          published = datetime.now(ZoneInfo('Europe/Istanbul')).isoformat(timespec='seconds')
+
+          notes = f'KafePin Pro v{version} yayinlandi.'
+          try:
+              with zipfile.ZipFile(zip_path) as zf:
+                  update = json.loads(zf.read('update.json').decode('utf-8-sig'))
+                  detailed = str(update.get('notes') or '').strip()
+                  if detailed:
+                      notes = detailed
+          except Exception as exc:
+              print(f'update.json notlari okunamadi, yedek not kullaniliyor: {exc}')
 
           data = {
               'version': version,
               'publishedAt': published,
-              'notes': f'KafePin Pro v{version} otomatik yayinlandi.',
-              'downloadUrl': (
-                  f'https://raw.githubusercontent.com/{repo}/main/{zip_path.name}'
-              ),
+              'notes': notes,
+              'downloadUrl': f'https://raw.githubusercontent.com/{repo}/main/{zip_path.name}',
               'sha256': sha256,
           }
 
@@ -78,6 +83,7 @@ jobs:
           print(f'En yeni surum : v{version}')
           print(f'ZIP           : {zip_path.name}')
           print(f'SHA-256       : {sha256}')
+          print(f'Not           : {notes[:160]}')
           PY
 
       - name: latest.json degistiyse GitHub'a yaz
@@ -90,7 +96,6 @@ jobs:
 
           git config user.name 'KafePin Update Bot'
           git config user.email 'actions@users.noreply.github.com'
-
           git add latest.json
           git commit -m 'KafePin: latest.json otomatik guncelle'
           git push
