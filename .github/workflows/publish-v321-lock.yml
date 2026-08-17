@@ -1,0 +1,92 @@
+name: KafePin Pro v3.1.21 STABLE kilitle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/publish-v321-lock.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repoyu al
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: v3.1.21 kümülatif paketi doğrula ve oluştur
+        shell: bash
+        env:
+          PATCH_B64: "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"
+        run: |
+          set -euo pipefail
+          rm -rf build v321.patch.gz v321.patch
+          mkdir build
+          unzip -q KafePin-Pro-Update-v3.1.18.zip -d build
+          printf '%s' "$PATCH_B64" | base64 -d > v321.patch.gz
+          gzip -dc v321.patch.gz > v321.patch
+          patch -p1 -d build < v321.patch
+
+          echo '3c22f750ced189c1cf7f13052ab8489845321ba1782a41b8972d6088995d522a  build/server.js' | sha256sum -c -
+          echo 'f9bce89a4a4d924f19b1307cddd5010a0dcae8c31fad5db89d1dd08174d0ee18  build/KafePin_System_Manager.ps1' | sha256sum -c -
+          echo 'd5901f8ec0ba6bcc73ce4401c6d243610d135c64c0893025497254775f1cdccb  build/KafePin_Manager_Ensure.ps1' | sha256sum -c -
+          echo '7ba5443d28e3b046f26c9473301ebd8f3d6575122c79204eabdc69254a07fbc6  build/public/admin.html' | sha256sum -c -
+          echo '5c755fd6f3e174ce230eb2c81db6c5fdf615c45e5c3ac11911adf8d27f336e25  build/public/kafepin-pro-yonetim.html' | sha256sum -c -
+          echo 'b52acf85ada4ccd1407f139fe29c83001997eae99dfaec75f51a7885be19b30d  build/kafepin-pro-version.json' | sha256sum -c -
+          echo 'ab573c0af50a415ff78850880d41e5e39e176ae5b03c8d8c827256c486524516  build/update.json' | sha256sum -c -
+
+          rm -f KafePin-Pro-Update-v3.1.21.zip
+          (
+            cd build
+            zip -9 -q ../KafePin-Pro-Update-v3.1.21.zip \
+              server.js \
+              KafePin_System_Manager.ps1 \
+              KafePin_Manager_Ensure.ps1 \
+              public/admin.html \
+              public/kafepin-pro-yonetim.html \
+              kafepin-pro-version.json \
+              update.json
+          )
+          unzip -t KafePin-Pro-Update-v3.1.21.zip
+          test "$(unzip -Z1 KafePin-Pro-Update-v3.1.21.zip | wc -l)" = "7"
+
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+
+          zip_path = pathlib.Path('KafePin-Pro-Update-v3.1.21.zip')
+          sha = hashlib.sha256(zip_path.read_bytes()).hexdigest()
+          update = json.loads(pathlib.Path('build/update.json').read_text(encoding='utf-8-sig'))
+          notes = (
+              "v3.1.21 STABLE KİLİT: Gerçek Windows kurulumunda restart zinciri kullanıcı tarafından "
+              "başarıyla doğrulandı. " + str(update.get('notes') or '')
+          )
+          latest = {
+              "version": "3.1.21",
+              "publishedAt": datetime.now(ZoneInfo('Europe/Istanbul')).isoformat(timespec='seconds'),
+              "notes": notes,
+              "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.21.zip",
+              "sha256": sha
+          }
+          pathlib.Path('latest.json').write_text(
+              json.dumps(latest, ensure_ascii=False, indent=2) + "\n",
+              encoding='utf-8'
+          )
+          print('GitHub ZIP SHA256:', sha)
+          PY
+
+      - name: v3.1.21 STABLE olarak kilitle
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'KafePin Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add KafePin-Pro-Update-v3.1.21.zip latest.json
+          git rm -f KafePin-Pro-Update-v3.1.17.zip KafePin-Pro-Update-v3.1.18.zip
+          git rm .github/workflows/publish-v321-lock.yml
+          git commit -m 'KafePin: v3.1.21 STABLE kilit'
+          git push
