@@ -1,7 +1,7 @@
 {
-  "version": "3.1.18",
-  "publishedAt": "2026-08-17T18:15:12+03:00",
-  "notes": "v3.1.18: Yalnız üç düzeltme. (1) Güncelleme kontrolü 429/503/568 dayanıklılığı: benzersiz cache-buster istekleri kaldırıldı, arka plan sonucu 5 dakika önbelleklenir, eşzamanlı kontroller tek istekte birleşir ve geçici ağ hatasında son doğrulanmış durum korunur. (2) Canlı Sistem Günlüğü gerçek server restart oturumunu startedAt ile ayırır; yeni Node açıldığında eski oturum satırları arayüzde taşınmaz. (3) Başlat/Durdur/Yeniden Başlat Server Manager çağrıları zaman aşımı ve taze token doğrulamasıyla sağlamlaştırıldı; mutasyon POST komutları belirsiz ağ hatasında ikinci kez gönderilmez. v3.1.16 DB/yedek/geri yükleme, EveryCafe, Telegram, muhasebe, masa/çark, gelir hesapları ve kurulum kilidi mantığı değiştirilmedi. v3.1.17 bildirim katmanı aynen korunur.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.18.zip",
-  "sha256": "a108adf3c280d8462fb38af95f01de65d101050bac393ba438a8fda39cd3fb51"
+  "version": "3.1.21",
+  "publishedAt": "2026-08-17T18:30:39+03:00",
+  "notes": "v3.1.21 STABLE KİLİT: Gerçek Windows kurulumunda restart zinciri kullanıcı tarafından başarıyla doğrulandı. v3.1.21: Restart/Server Manager stabilite onarımı. Eski v3.1.20 numarası önceki sorunlu paketle karışmaması için tekrar kullanılmadı. Server Manager v3.1.3'e yükseltildi. Başlat/Durdur/Yeniden Başlat ve güncelleme sonrası restart artık yalnız command-line eşleşmesine değil, KafePin server.pid kaydına ve port 3000'i gerçekten dinleyen node.exe PID'sine de dayanır. /restart-async artık yalnız 'kabul edildi' kuyruğu bırakmaz; 202 cevabı kapandıktan sonra aynı Manager eski Node'u doğrudan durdurur ve yeni Node'u başlatır. Böylece yeni Node açıldığında Canlı Sistem Günlüğü bellekten temiz yeni oturumla başlar ve mevcut kalıcı güncelleme kilidi hedef sürüm + yeni server başlangıcı + 10 saniye kararlılık sonrası normal biçimde temizlenir. v3.1.18/3.1.19 güncelleme 429/503/568 dayanıklılığı ve arayüz iyileştirmeleri korunur. DB/yedek/geri yükleme, EveryCafe, Telegram, muhasebe, masa/çark, gelir hesapları ve Admin bildirimleri değiştirilmedi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.21.zip",
+  "sha256": "0ae615cf4456e14028e6e83843c98bfe6211158aa7e6e83cec22a21023ece99b"
 }
