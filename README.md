@@ -1,16 +1,18 @@
 # KafePin Pro Update Center
 
-Bu depo sadece KafePin Pro guncelleme paketleri icindir.
+Bu depo KafePin Pro guncelleme paketleri icindir.
 
-## STABLE FULL BASE
+## KILITLI / STABLE DURUM
 
-- **v3.1.28 = STABLE FULL BASE.** Bundan sonraki tum hiz, kararlilik ve optimizasyon yamalari v3.1.28 ustune uygulanir.
-- v3.1.2 yalnizca yeni-kafe FULL INSTALL paketi yeniden uretilene kadar acil tam-kurulum kaynagi olarak tutulur.
-- Hiz ve kararlilik calismalari tamamlandiginda yeni-kafe FULL INSTALL, o gunun son STABLE surumunden yeniden uretilir; v3.1.2 tabanina geri donulmez.
+- **v3.1.29 = STABLE FULL BASE.** Yeni kafe kurulumu ve tum kumulatif guncellemelerin guvenli tabanidir.
+- **v3.1.38 = KILITLI GUNCEL STABLE.** EveryCafe tam gelir senkronu, gunluk kaynak ciro kontrolu, urun/OrderID kontrolu, bilet/diger gelir senkronu ve Iptal / Ucretsiz / Silinenler audit sistemi dahil son onayli surumdur.
+- v3.1.38 kumulatiftir; v3.1.29 uzerine dogrudan kurulabilir. Ara surumleri kurmak gerekmez.
+- Depoda dagitim paketi olarak yalniz v3.1.29 tabani ve v3.1.38 guncel paket tutulur.
 
 ## Guncelleme guvenligi
 
 - Kafe veritabani, token, IP, Telegram bilgisi ve yedek kesinlikle yuklenmez.
-- `latest.json` aktif surumu bildirir.
-- Yeni yamalar STABLE FULL BASE ustune kucuk ve kontrollu degisiklikler olarak uretilir.
-- KafePin Pro acilista bu depoyu kontrol eder. Yeni surum varsa Yonetim Merkezi'nde bildirim gorunur; kurulum akisi emniyet kontrollerinden sonra paket listesinde yazan dosyalari degistirir ve sunucuyu yeniden baslatir.
+- `latest.json` aktif surumu bildirir ve su anda v3.1.38'i gosterir.
+- EveryCafe veritabani salt okunur kullanilir; EveryCafe'ye yazma yapilmaz.
+- Gider entegrasyonu yapilmaz.
+- Bundan sonraki bir degisiklik gerekiyorsa v3.1.38 degistirilmez; yeni bir kumulatif surum numarasi ile devam edilir.
