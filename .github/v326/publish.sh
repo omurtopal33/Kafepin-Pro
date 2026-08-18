@@ -7,6 +7,7 @@ rm -rf build && mkdir build
 unzip -q /tmp/v325.zip -d build
 unzip -p /tmp/v322.zip KafePin_System_Manager.ps1 > build/KafePin_System_Manager.ps1
 unzip -p /tmp/v322.zip KafePin_Manager_Ensure.ps1 > build/KafePin_Manager_Ensure.ps1
+(cd build && patch -p1 < ../.github/v326/explorer.patch)
 (cd build && patch -p1 < ../.github/v326/server.patch)
 (cd build && patch -p1 < ../.github/v326/management.patch)
 cp .github/v326/kafepin-pro-version.json build/kafepin-pro-version.json
