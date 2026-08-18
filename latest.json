@@ -1,7 +1,7 @@
 {
-  "version": "3.1.23",
-  "publishedAt": "2026-08-18T07:23:02+03:00",
-  "notes": "v3.1.23 HIZLI YEDEK/GERI YUKLEME + GUN SONU DUZELTME: v3.1.22 hizli ve stabil taban korunur. FULL ZIP dogrulamasinda yeni yedekler icin arsivin tamami tekrar acilmaz; yalniz database.db hedefli cikarilir ve SQLite quick_check + KafePin tablo yapisi dogrulanir, eski/alisilmadik ZIP'lerde tam tarama fallback'i korunur. Dogrulanmis snapshot stage kopyasinda yinelenen quick_check adimlari kaldirilir; son ZIP veritabani yine guclu dogrulamadan gecer. Geri yukleme oncesinde restore yalniz veriyi degistirdigi icin yeniden FULL ZIP uretmek yerine kalici dogrulanmis database_pre_restore_*.db emniyet yedegi alinir; Restore Worker safetyDb, SHA-256 ve otomatik rollback mekanizmasi degistirilmez. Sistem Sagligi gun sonu kaydi gecikmesini tespit ettiginde yalniz eksik 20:00 sinirini yeniden hesaplayan 'Dunun Gun Sonunu Simdi Al' duzeltmesi sunar; bugunun acik masalarina dokunmaz, daily_reports kaydini, EveryCafe gun sonu kontrolunu ve Telegram aciksa rapor gonderimini calistirir. Kritik Sistem Sagligi bildirimindeki GIT, sorun gun sonuysa dogrudan bu duzeltmeye gider. Server Manager, masa/cark, gelir hesaplari, EveryCafe kaynak yazma kurallari ve normal otomatik 20:00 gun sonu akisi degistirilmedi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.23.zip",
-  "sha256": "a1364c631ccb512e3939983048c457ec720ad0ae3b4eea722fc776b2f0bfa943"
+  "version": "3.1.24",
+  "publishedAt": "2026-08-18T07:31:29+03:00",
+  "notes": "v3.1.24 EXPLORER ONE GETIRME: v3.1.23 hizli yedek/geri yukleme ve gun sonu duzeltme tabani korunur. Yonetim Merkezi'ndeki DB Klasoru, FULL ZIP Klasoru, KafePin Klasoru ve Yedek Klasoru tek /admin/pro/open-folder motorundan Windows Explorer hedef penceresini bulur. Hedef zaten aciksa yeni pencere uretmeden mevcut pencere restore edilip foreground'a getirilir; hedef kapaliysa Explorer acilir, pencere olusunca ShowWindow/BringWindowToTop/SetForegroundWindow ve gerekirse SwitchToThisWindow ile odak dogrulanir. Windows COM/foreground yardimi kullanilamazsa klasor acma fallback'i korunur ve arayuz odagin dogrulanamadigini acikca bildirir. v3.1.23 yedek/restore, gun sonu duzeltmesi, Server Manager, EveryCafe, Telegram, muhasebe, masa/cark ve gelir hesaplari degistirilmedi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.24.zip",
+  "sha256": "0292cca4ba4bcb866a4a98a308be0eb1bef2a717f1f9fe868ccda99224e9dd79"
 }
