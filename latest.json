@@ -1,7 +1,7 @@
 {
-  "version": "3.1.32",
-  "publishedAt": "2026-08-18T10:52:27+03:00",
-  "notes": "v3.1.32 KÜMÜLATİF KASA FARKI GİDER KONTROL UYARISI: v3.1.29 yeni kafe STABLE tabanı, v3.1.30 Anlık Finans ve v3.1.31 Kasa Kontrol / Fark Bul dahil önceki tüm güncellemeler korunur. Kasa Kontrol yardımcısı farka tam/yakın tek kayıt veya iki kayıt kombinasyonu bulamazsa artık belirgin şekilde 'önce GİDER GİRİŞLERİNİ kontrol et' uyarısı verir. Uyarı; kasadan nakit ödenmiş fakat sisteme girilmemiş gider, yanlış tutarlı gider veya yanlış hesap seçilmiş gider ihtimallerini hatırlatır ve Kasa & Muhasebe → Son Bakiye ve Gider Kayıtları bölümüne yönlendirir. Bu değişiklik yalnız kullanıcı yönlendirmesidir; hiçbir gider, ödeme, virman veya muhasebe kaydı otomatik değiştirilmez. Tahmini Nakit Kasa, POS, Ana Banka, kart aktarımı, Toplam Varlık, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client hesaplama/davranışları değiştirilmedi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.32.zip",
-  "sha256": "c80b318f8c2de767718ab0ea4f83903a033da5f1f8e5c41c461e091779d32d14"
+  "version": "3.1.33",
+  "publishedAt": "2026-08-18T11:23:14+03:00",
+  "notes": "v3.1.33 KÜMÜLATİF GİDER KAYDI DÜZENLEME: v3.1.29 yeni kafe STABLE tabanı, v3.1.30 Anlık Finans, v3.1.31 Kasa Kontrol / Fark Bul ve v3.1.32 gider kontrol uyarısı dahil önceki tüm güncellemeler korunur. Kasa & Muhasebe → Son Bakiye ve Gider Kayıtları bölümündeki Gider satırında DÜZENLE'ye basıldığında artık ayrı bir düzenleme penceresi açılır. Bu pencereden gider tutarı ve açıklaması değiştirilebilir. Kategori ve ödeme hesabı bu hızlı düzenleme penceresinde değiştirilmez; böylece yanlışlıkla nakit/banka/POS hesabı değiştirme riski azaltılır. Kaydetme mevcut /admin/accounting/update doğrulama yolunu kullanır; değişiklikten sonra Muhasebe, Anlık Finans, Dashboard ve canlı kayıtlar yenilenir. Mevcut muhasebe formülleri, Tahmini Nakit Kasa, POS, Ana Banka, Toplam Varlık, gider hesaplama mantığı, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client davranışları değiştirilmedi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.33.zip",
+  "sha256": "a717705714a6662b75abeda60f0380ed916929584cfe2b27d1d05437dd80d5f3"
 }
