@@ -1,7 +1,7 @@
 {
-  "version": "3.1.24",
-  "publishedAt": "2026-08-18T07:31:29+03:00",
-  "notes": "v3.1.24 EXPLORER ONE GETIRME: v3.1.23 hizli yedek/geri yukleme ve gun sonu duzeltme tabani korunur. Yonetim Merkezi'ndeki DB Klasoru, FULL ZIP Klasoru, KafePin Klasoru ve Yedek Klasoru tek /admin/pro/open-folder motorundan Windows Explorer hedef penceresini bulur. Hedef zaten aciksa yeni pencere uretmeden mevcut pencere restore edilip foreground'a getirilir; hedef kapaliysa Explorer acilir, pencere olusunca ShowWindow/BringWindowToTop/SetForegroundWindow ve gerekirse SwitchToThisWindow ile odak dogrulanir. Windows COM/foreground yardimi kullanilamazsa klasor acma fallback'i korunur ve arayuz odagin dogrulanamadigini acikca bildirir. v3.1.23 yedek/restore, gun sonu duzeltmesi, Server Manager, EveryCafe, Telegram, muhasebe, masa/cark ve gelir hesaplari degistirilmedi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.24.zip",
-  "sha256": "0292cca4ba4bcb866a4a98a308be0eb1bef2a717f1f9fe868ccda99224e9dd79"
+  "version": "3.1.25",
+  "publishedAt": "2026-08-18T07:57:22+03:00",
+  "notes": "v3.1.25 FINAL: (1) Sistem Güncelleme kartı sade kaldı; uzun sürüm notları kartta gösterilmez. (2) Yönetim Merkezi Yeniden Başlat artık Server Manager /restart-async handoff yolunu kullanır; Node kapanırken fetch yarıda kesilmediği için 'signal is aborted without reason' uyarısı oluşmaz. (3) Canlı Sistem Günlüğü restart öncesi eski startedAt kimliğini tutar; yeni Node farklı boot kimliğiyle açılana kadar eski oturum satırları yeniden gösterilmez ve yeni günlük temiz başlar. (4) DB Klasörü, FULL ZIP Klasörü, KafePin Klasörü ve Yedek Klasörü açma motoru sahada doğrulanmış v3.1.21 STABLE Explorer davranışına birebir geri döndürüldü; GUI child bekleme/COM foreground doğrulaması kaldırıldığı için Explorer zaman aşımı ve 'öne getirme doğrulanamadı' sahte uyarısı yoktur. v3.1.23 hızlı yedek/geri yükleme ve gün sonu düzeltmesi, v3.1.22 hız optimizasyonları, Admin bildirimleri, Server Manager, DB, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesapları korunur.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.25.zip",
+  "sha256": "6be14e2b625a51e2c32fe90a433e23e01c2fb36b8152ddc5b3dbb86206a9b639"
 }
