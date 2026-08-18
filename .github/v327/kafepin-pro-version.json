@@ -1,7 +1,0 @@
-{
-  "version": "3.1.27",
-  "name": "KafePin Pro",
-  "channel": "stable",
-  "updatedAt": "2026-08-18",
-  "notes": "v3.1.27 KÜMÜLATİF MASAÜSTÜ KÖPRÜSÜ: v3.1.26'daki tüm hız ve kararlılık yamaları korunur. Explorer klasör açma/öne getirme işlemi artık SYSTEM/Session 0 içinden yapılmaz. Sunucu yalnız ProgramData altında isteği yazar; KafePin Pro Desktop Action görevi aktif Windows kullanıcısının TASK_LOGON_INTERACTIVE_TOKEN oturumunda çalışır, hedef klasörü o gerçek masaüstü oturumunda açar, Explorer HWND'sini restore/foreground yapar ve sonuç doğrulanmadan başarı dönmez. İlk kullanımda görev yoksa KafePin_Desktop_Helper_Ensure.ps1 aktif kullanıcıyı bulup parolasız InteractiveToken görevini otomatik kaydeder; kullanıcı değişmiş/stale görev varsa yanıt gelmediğinde kendini bir kez yeniden kurar. DB/restore, EveryCafe, Telegram, muhasebe, masa/çark, gelir hesapları, hızlı yedek/geri yükleme, gecikmiş gün sonu ve temiz restart günlüğü değiştirilmedi."
-}
