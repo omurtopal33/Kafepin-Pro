@@ -11,172 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: v3.1.21 STABLE tabanini al
+      - name: Son kararlı dosyaları hazırla
         run: |
           set -euo pipefail
-          curl -fL --retry 3 -o /tmp/base.zip 'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.21.zip'
+          curl -fL --retry 3 -o /tmp/v325.zip 'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.25.zip'
+          curl -fL --retry 3 -o /tmp/v322.zip 'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.22.zip'
           rm -rf build && mkdir build
-          unzip -q /tmp/base.zip -d build
-      - name: v3.1.22-3.1.26 kümülatif yamalari uygula
+          unzip -q /tmp/v325.zip -d build
+          unzip -p /tmp/v322.zip KafePin_System_Manager.ps1 > build/KafePin_System_Manager.ps1
+          unzip -p /tmp/v322.zip KafePin_Manager_Ensure.ps1 > build/KafePin_Manager_Ensure.ps1
+      - name: v3.1.26 temiz restart yamasını uygula
         run: |
           set -euo pipefail
-          echo 'LS0tIGEvc2VydmVyLmpzCisrKyBiL3NlcnZlci5qcwpAQCAtNDEwLDYgKzQxMCw3IEBACiBjb25zdCBkYiA9IG5ldyBzcWxpdGUzLkRhdGFiYXNlKCIuL2RhdGFiYXNlLmRiIik7CiBjb25zdCBLQUZFUElOX0JBQ0tVUF9ST09UID0gcHJvY2Vzcy5lbnYuS0FGRVBJTl9CQUNLVVBfUk9PVCB8fCAiRDpcXEtBRkVQSU5fWUVERUsiOwogY29uc3QgRlVMTF9CQUNLVVBfRElSID0gcGF0aC5qb2luKEtBRkVQSU5fQkFDS1VQX1JPT1QsICJGVUxMIiwgIlpJUCIpOworY29uc3QgREJfQkFDS1VQX0RJUiA9IHBhdGguam9pbihLQUZFUElOX0JBQ0tVUF9ST09ULCAiREIiKTsKIC8vIEVza2kgc8O8csO8bWxlcmRlIGJhesSxIEZVTEwgWklQJ2xlciBkb8SfcnVkYW4gRDpcS0FGRVBJTl9ZRURFS1xhbHTEsW5hIHlhemlsbWlzIG9sYWJpbGlyLgogLy8gTGlzdGVsZW1lIHNpcsSxbmRhIGVzYXMgRjpcRlVMTFxCSVAsIHNvbnJhIGxlZ2FjeSBrw7ZrIGRpemluZSBhbcOnbGF5YWNhZ8Sxei4KIGNvbnN0IExFR0FDWV9GVUxMX0JBQ0tVUF9ESVIgPSBLQUZFUElOX0JBQ0tVUF9ST09UOwotY29uc3QgQkFDS1VQX1JFVEVOVElPTl9DT1VOVCA9IDEyOworY29uc3QgQkFDS1VQX1JFVEVOVElPTl9DT1VOVCA9IDY7CiBjb25zdCBCQUNLVVBfU0NIRURVTEQgPSB7CiAgIGhvdXJzOiBbMywgMTUsIDIzXSwKICAgbWludXRlOiAwLAotICB0aW1lem9uZTogIlR1cmtleSBTdGFuZGFyZCBUaW1lIgp+ICAgLy8gbm9kZS1jcm9uIHRhcmFmxLFuZGFuIGp1c3QtY2FsYyBpbGUgc2FiYXQgYmlyZ3VuIGdlcmNlbgp+ICAgLy8ga290dSBwb3N0IGthbGthbiB5YXBhcmFrawogICB0aW1lem9uZTogIlR1cmtleSBTdGFuZGFyZCBUaW1lIgpIH0KQEAICiBjb25zdCBLRVBJRl9QQUNLQUdFX1ZFUlNJT05fRklMRSA9IHBhdGguam9pbihfX2Rpcm5hbWUsICJrYWZlcGluLXByby12ZXJzaW9uLmpzb24iKTsKIGNvbnN0IEtBRkVQSU5fVVBEQVRFX0xPQ0tfRklMRSA9IHBhdGguam9pbihfX2Rpcm5hbWUsICIua2FmZXBpbi11cGRhdGUtbG9jay5qc29uIik7CiBjb25zdCBLQUZFUElOX1JFU1RPUkVfU1RBVEVfRklMRSA9IHBhdGguam9pbihfX2Rpcm5hbWUsICIua2FmZXBpbi1yZXN0b3JlLXN0YXRlLmpzb24iKTsKK2NvbnN0IEtBRkVQSU5fRlVMTF9CQUNLVVBfU1RBVEVfRklMRSA9IHBhdGguam9pbihfX2Rpcm5hbWUsICIua2FmZXBpbi1mdWxsLWJhY2t1cC1zdGF0ZS5qc29uIik7CiBjb25zdCBNQU5BR0VSX1JFU1RBUlRfRkxBR19GSUxFID0gcGF0aC5qb2luKHByb2Nlc3MuZW52LlBST0dSQU1EQVRBIHx8ICJDOlxcUHJvZ3JhbURhdGEiLCAiS2FmZVBpblBybyIsICJtYW5hZ2VyLXJlc3RhcnQtcmVxdWVzdC5qc29uIik7CiBjb25zdCBNQU5BR0VSX1VQREFURV9GT0tFTl9GSUxFID0gcGF0aC5qb2luKHByb2Nlc3MuZW52LlBST0dSQU1EQVRBIHx8ICJDOlxcUHJvZ3JhbURhdGEiLCAiS2FmZVBpblBybyIsICJtYW5hZ2VyLXVwZGF0ZS10b2tlbi50eHQiKTsKIGNvbnN0IFBST19TRVJWRVJfU1RBUlRFRF9BVCA9IERhdGUubm93KCk7CkBAIC0xNDQ4LDExICsxNDQ5LDExIEBACiBmdW5jdGlvbiBzdGFydEZ1bGxCYWNrdXAoKSB7CiAgIGlmIChmdWxsQmFja3VwU3RhdGUucnVubmluZykgcmV0dXJuOwogIGZ1bGxCYWNrdXBTdGF0ZS5ydW5uaW5nID0gdHJ1ZTsKLSAgZnVsbEJhY2t1cFN0YXRlLnN0YXJ0ZWRBdCA9IERhdGUubm93KCk7CisgIGZ1bGxCYWNrdXBTdGF0ZS5zdGFydGVkQXQgPSBEYXRlLm5vdygpOwogIGZ1bGxCYWNrdXBTdGF0ZS5sYXN0ID0gbnVsbDsKCiAgIGZ1bGxCYWNrdXBBc3luYyh7IHJlYXNvbjogIm1hbnVhbCIgfSkudGhlbigoYikgPT4gewotICAgIGZ1bGxCYWNrdXBTdGF0ZS5sYXN0ID0gYiA7CisgICAgZnVsbEJhY2t1cFN0YXRlLmxhc3QgPSBiOwogICAgIGFkZExpdmVMb2coImJhY2t1cCIsIGA💾IFRhbSB5ZWRlayBhbMSxbbmTEsSwgYcOnxLFsZMSxIHZlIGRvxJ9ydWxhbmTEsSAqIHlhbG7EsXogS2FmZVBpbiAqICR7Yi5maWxlTmFtZX0gKiAkeyhmLmJ5dGVzIC8gMTA0ODU3NikuZml4ZWQoMil9IE1CYCl9KS5jYXRjaCgoZSk9PiB7CiAgICAgZnVsbEJhY2t1cFN0YXRlLmxhc3QgPSB7IG9rOiBmYWxzZSwgZXJyb3I6IGUubWVzc2FnZSwgdGltZTogRGF0ZS5ub3coKSB9OwogICAgIGFkZExpdmVMb2coImJhY2t1cF9lcnJvciIsIGA⚠️IFRhbSB5ZWRlayBhbMSxbbmFtYWTEsSAqICR7ZS5tZXNzYWdlfWApOwpAQCAtMTQ2MSw2ICsxNDYyLDggQEAKICB9KS5maW5hbGx5KCgpID0+IHsKICAgIGZ1bGxCYWNrdXBTdGF0ZS5ydW5uaW5nID0gZmFsc2U7CiAgIH0pOworICB3cml0ZUZ1bGxCYWNrdXBTdGF0ZSgpOworfQojIFNoYXJlZCBzdGF0ZSBwZXJzaXN0ZW5jZSBmb3IgcmVzdGFydC1jZWFuIHByb2dyZXNzIG1ldGFkYXRhLiBObyB1c2VyIGRhdGEgaW4gdGhpcyBmaWxlLgogZnVuY3Rpb24gcmVhZEZ1bGxCYWNrdXBTdGF0ZSgpIHsKICB0cnkgewogICAgY29uc3QgcmF3ID0gZnMucmVhZEZpbGVTeW5jKEtBRkVQSU5fRlVMTF9CQUNLVVBfU1RBVEVfRklMRSwgInV0ZjgiKTsKICAgIGNvbnN0IGogPSBKU09OLnBhcnNlKHJhdyk7CiAgIHJldHVybiBqICYmIHR5cGVvZiBqID09PSAib2JqZWN0IiA/IHYgOiB7fTsKICB9IGNhdGNoIChfKSB7CiAgICByZXR1cm4ge307CiAgfQp9CgpmdW5jdGlvbiB3cml0ZUZ1bGxCYWNrdXBTdGF0ZSgpIHsKICB0cnkgewogICAgY29uc3QgZGlyID0gcGF0aC5kaXJuYW1lKEtBRkVQSU5fRlVMTF9CQUNLVVBfU1RBVEVfRklMRSk7CiAgICBmcy5ta2RpclN5bmMoZGlyLCB7IHJlY3Vyc2l2ZTogdHJ1ZSB9KTsKICAgIGNvbnN0IHBheWxvYWQgPSB7CiAgICAgIHJ1bm5pbmc6ICEhZnVsbEJhY2t1cFN0YXRlLnJ1bm5pbmcsCiAgICAgIHN0YXJ0ZWRBdDogTnVtYmVyKGZ1bGxCYWNrdXBTdGF0ZS5zdGFydGVkQXQgfHwgMCksCiAgICAgIGxhc3Q6IGZ1bGxCYWNrdXBTdGF0ZS5sYXN0IHx8IG51bGwsCiAgICAgIHdyaXR0ZW5BdDogRGF0ZS5ub3coKQogICAgfTsKICAgIGZzLndyaXRlRmlsZVN5bmMoS0FGRVBJTl9GVUxMX0JBQ0tVUF9TVEFURV9GSUxFLCBKU09OLnN0cmluZ2lmeShwYXlsb2FkLCBudWxsLCAyKSwgInV0ZjgiKTsKICB9IGNhdGNoIChfKSB7fQp9CgpyZXN0b3JlRlVMTEJhY2t1cFN0YXRlKCk7CgpmdW5jdGlvbiByZXN0b3JlRlVMTEJhY2t1cFN0YXRlKCkgewogIHRyeSB7CiAgICBjb25zdCBzID0gcmVhZEZ1bGxCYWNrdXBTdGF0ZSgpOwogICAgLy8gT25seSBjYXJyeSBmb3J3YXJkIHRoZSBsYXN0IGNvbXBsZXRlIHJlc3VsdCB0byBrZWVwIHRoZSB1aSBpbmZvcm1hdGl2ZSBhZnRlciByZXN0YXJ0LgogICAgZnVsbEJhY2t1cFN0YXRlLnJ1bm5pbmcgPSBmYWxzZTsKICAgIGZ1bGxCYWNrdXBTdGF0ZS5zdGFydGVkQXQgPSAwOwogICAgaWYgKHMgJiYgcy5sYXN0ICYmIHR5cGVvZiBzLmxhc3QgPT09ICJvYmplY3QiKSB7CiAgICAgIGZ1bGxCYWNrdXBTdGF0ZS5sYXN0ID0gcy5sYXN0OwogICAgfQogIH0gY2F0Y2ggKF8pIHt9Cn0KQEA' | base64 -d > /tmp/server.js.patch
-          (cd build && patch -p1 < /tmp/server.js.patch)
-          echo 'LS0tIGEvcHVibGljL2FkbWluLmh0bWwKKysrIGIvcHVibGljL2FkbWluLmh0bWwKQEAgLTE1Miw2ICsxNTIsMTMgQEAKICAgIC5xdWljay1uYXYtdGl0bGV7Zm9udC1zaXplOjEycHg7Y29sb3I6I2FhYmNkZTttYXJnaW4tcmlnaHQ6NHB4fQogICAgLnF1aWNrLW5hdiBidXR0b257bWFyZ2luOjA7YmFja2dyb3VuZDojMTkyODNiO2JvcmRlcjoxcHggc29saWQgIzNiNGQ2NTtjb2xvcjojZmZmO2JvcmRlci1yYWRpdXM6NnB4O3BhZGRpbmc6NnB4IDEwcHg7Zm9udC1zaXplOjExcHg7Y3Vyc29yOnBvaW50ZXJ9CiAgICAucXVpY2stbmF2IGJ1dHRvbi5hY3RpdmV7YmFja2dyb3VuZDojMGY1MjgzO2JvcmRlci1jb2xvcjojMzRhYTdiO2NvbG9yOiNjOGZmZGV9CisgICAuYWRtaW4tbm90aWZpY2F0aW9uLWJ0bntkaXNwbGF5OmlubGluZS1mbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtqdXN0aWZ5LWNvbnRlbnQ6Y2VudGVyO2dhcDo2cHg7bWFyZ2luOjA7YmFja2dyb3VuZDojMTkyODNiO2JvcmRlcjoxcHggc29saWQgIzNiNGQ2NTtjb2xvcjojZmZmO2JvcmRlci1yYWRpdXM6NnB4O3BhZGRpbmc6NnB4IDEwcHg7Zm9udC1zaXplOjExcHg7Zm9udC13ZWlnaHQ6NzAwO2N1cnNvcjpwb2ludGVyO3doaXRlLXNwYWNlOm5vd3JhcH0KKyAgLmFkbWluLW5vdGlmaWNhdGlvbi1idG4uaGFzLWFsZXJ0e2JhY2tncm91bmQ6IzY5MTUyMztib3JkZXItY29sb3I6I2ZiNzE4NTtjb2xvcjojZmZlNGU4O2FuaW1hdGlvbjpwdWxzZUJhZGdlIC45cyBpbmZpbml0ZX0KKyAgLmFkbWluLW5vdGlmaWNhdGlvbi1idG46aG92ZXJ7ZmlsdGVyOmJyaWdodG5lc3MoMS4wOSl9CisgICAuYWRtaW4tbm90aWZpY2F0aW9uLXBhbmVse3Bvc2l0aW9uOmZpeGVkO3RvcDo5MnB4O3JpZ2h0OjE4cHg7d2lkdGg6bWluKDQyMHB4LGNhbGMoMTAwdncgLSAzNnB4KSk7bWF4LWhlaWdodDpDYWxjKDEwMHZoIC0gMTEwcHg7b3ZlcmZsb3cteTphdXRvO3otaW5kZXg6MjAwMDA7YmFja2dyb3VuZDojMGYxODI2O2JvcmRlcjoxcHggc29saWQgIzNiNGQ2NTtib3JkZXItcmFkaXVzOjEwcHg7Ym94LXNoYWRvdzowIDE0cHggMzZweCByZ2JhKDAsMCwwLC40KTtwYWRkaW5nOjEwcHg7ZGlzcGxheTpub25lfQorICAuYWRtaW4tbm90aWZpY2F0aW9uLXBhbmVsLm9wZW57ZGlzcGxheTpibG9ja30KKyAgLmFkbWluLW5vdGlmaWNhdGlvbi1oZWFkZXJ7ZGlzcGxheTpmbGV4O2FsaWduLWl0ZW1zOmNlbnRlcjtqdXN0aWZ5LWNvbnRlbnQ6c3BhY2UtYmV0d2VlbjtnYXA6OHB4O21hcmdpbi1ib3R0b206OHB4O2NvbG9yOiNlZWY1ZmY7Zm9udC13ZWlnaHQ6ODBwfQorICAuYWRtaW4tbm90aWZpY2F0aW9uLWxpc3R7ZGlzcGxheTpmbGV4O2ZsZXgtZGlyZWN0aW9uOmNvbHVtbjtnYXA6OHB4fQorICAuYWRtaW4tbm90aWZpY2F0aW9uLWl0ZW17YmFja2dyb3VuZDojMTExZTJkO2JvcmRlcjoxcHggc29saWQgIzMwNDE1Nztiorder-radius:8px;padding:10px;color:#e9f3ff}.admin-notification-item.critical{border-color:#8b2a3a;background:#2b1118}.admin-notification-item.warning{border-color:#8a6819;background:#281f0c}.admin-notification-item .title{font-weight:800;margin-bottom:4px}.admin-notification-item .detail{font-size:11px;color:#b9c9dd;line-height:1.45}.admin-notification-item .actions{display:flex;gap:6px;justify-content:flex-end;margin-top:8px}.admin-notification-item .actions button{padding:5px 9px;font-size:10px;border-radius:6px}.admin-notification-empty{color:#8fe0ad;font-size:12px;padding:8px;border:1px dashed #2f6046;border-radius:8px;background:#0e2118}
-+    #paymentBadge,#cashMismatchBadge{display:none!important}
-@@ -803,6 +810,7 @@
-       <button id="nav-everycafe" type="button" onclick="switchAdminSection('everycafe')">🧾 EveryCafe</button>
-       <button id="nav-finance" type="button" onclick="switchAdminSection('finance')">💰 Kasa & Muhasebe</button>
-       <button type="button" onclick="toggleMaintenanceMode()">🛠️ Bakım Modu</button>
-+      <button id="adminNotificationBtn" class="admin-notification-btn quick-nav-notification" type="button" aria-expanded="false" aria-controls="adminNotificationPanel">🔔 Bildirimler: 0</button>
-     </div>
-+    <div id="adminNotificationPanel" class="admin-notification-panel" role="dialog" aria-label="Acil bildirimler"><div class="admin-notification-header"><span>🔔 Acil Bildirimler</span><button type="button" onclick="closeAdminNotificationPanel()">✕</button></div><div id="adminNotificationList" class="admin-notification-list"><div class="admin-notification-empty">Bildirimler yükleniyor...</div></div></div>
-@@ -4114,6 +4122,102 @@
- let adminCurrentSection = "kafe";
- let adminRefreshStarted = false;
-+const adminNotificationState = new Map();
-+let adminNotificationRefreshInFlight = false;
-+let adminNotificationBound = false;
-+
-+function upsertAdminNotification(key, payload){
-+  if(!key)return;
-+  if(!payload){adminNotificationState.delete(key);renderAdminNotifications();return;}
-+  adminNotificationState.set(key,{key,severity:payload.severity==="critical"?"critical":"warning",title:String(payload.title||"Uyarı"),detail:String(payload.detail||""),go:typeof payload.go==="function"?payload.go:null});
-+  renderAdminNotifications();
-+}
-+
-+function renderAdminNotifications(){
-+  const button=document.getElementById("adminNotificationBtn"),list=document.getElementById("adminNotificationList");
-+  if(!button||!list)return;
-+  const order = ["cash-mismatch","pending-payment","card-settlement","everycafe","critical-health"];
-+  const items=order.map(k=>adminNotificationState.get(k)).filter(Boolean);
-+  button.textContent=items.length?`🔴 🔔 Bildirimler: ${items.length}`:"🔔 Bildirimler: 0";
-+  button.classList.toggle("has-alert",items.length>0);
-+  if(!items.length){list.innerHTML='<div class="admin-notification-empty">Acil bildirim yok. Sistem sakin.</div>';return;}
-+  list.innerHTML=items.map((x,i)=>`<div class="admin-notification-item ${x.severity}"><div class="title">${escapeHtml(x.title)}</div><div class="detail">${escapeHtml(x.detail)}</div><div class="actions"><button type="button" data-notification-go="${i}">GİT</button></div></div>`).join("");
-+  list.querySelectorAll("[data-notification-go]").forEach(btn=>btn.onclick=()=>{const x=items[Number(btn.dataset.notificationGo)];closeAdminNotificationPanel();if(x&&x.go)x.go();});
-+}
-+
-+function closeAdminNotificationPanel(){
-+  const p=document.getElementById("adminNotificationPanel"),b=document.getElementById("adminNotificationBtn");
-+  if(p)p.classList.remove("open");if(b)b.setAttribute("aria-expanded","false");
-+}
-+
-+function bindAdminNotificationCenter(){
-+  if(adminNotificationBound)return;adminNotificationBound=true;
-+  const b=document.getElementById("adminNotificationBtn"),p=document.getElementById("adminNotificationPanel");
-+  if(!b||!p)return;
-+  b.onclick=(e)=>{e.stopPropagation();const open=!p.classList.contains("open");p.classList.toggle("open",open);b.setAttribute("aria-expanded",String(open));};
-+  document.addEventListener("click",e=>{if(p.classList.contains("open")&&!p.contains(e.target)&&e.target!==b)closeAdminNotificationPanel();});
-+}
-+
-+function focusAdminTarget(id){
-+  const el=document.getElementById(id);if(!el)return;el.scrollIntoView({behavior:"smooth",block:"center"});el.style.outline="2px solid #8fd3ff";setTimeout(()=>{el.style.outline=""},1800);
-+}
-+
-+function goToAdminNotificationTarget(key){
-+  if(key==="pending-payment"){switchAdminSection("finance");setTimeout(()=>focusAdminTarget("pendingPaymentsBox"),80);return;}
-+  if(key==="cash-mismatch"){switchAdminSection("finance");setTimeout(()=>focusAdminTarget("cashReconciliationAlert"),80);return;}
-+  if(key==="card-settlement"){switchAdminSection("finance");setTimeout(()=>{const box=document.getElementById("cardSettlementBox");if(box&&box.classList.contains("collapsed")){box.classList.remove("collapsed");const body=box.querySelector(".section-card-body");if(body)body.style.display="";}focusAdminTarget("cardSettlementBox");},80);return;}
-+  if(key==="everycafe"){switchAdminSection("everycafe");setTimeout(()=>focusAdminTarget("section-everycafe"),80);return;}
-+  if(key==="critical-health"){
-+    fetch("/admin/automatic-health",{cache:"no-store"}).then(r=>r.json()).then(d=>{
-+      const issues=Array.isArray(d&&d.issues)?d.issues:[];
-+      const hasRollover=issues.some(x=>String(x&&x.code||"").toLowerCase()==="rollover");
-+      if(hasRollover){window.location.href="/kafepin-pro-yonetim.html#rolloverRepairBox";return;}
-+      window.location.href="/kafepin-pro-yonetim.html#healthTitle";
-+    }).catch(()=>{window.location.href="/kafepin-pro-yonetim.html#healthTitle";});
-+  }
-+}
-+
-+async function refreshAdminNotificationCenter(){
-+  if(adminNotificationRefreshInFlight)return;adminNotificationRefreshInFlight=true;
-+  try{
-+    const health=await fetch("/admin/automatic-health",{cache:"no-store"}).then(r=>r.json()).catch(()=>null);
-+    const issues=Array.isArray(health&&health.issues)?health.issues:[];
-+    const criticalCodes=new Set(["database","finalize","rollover","disk"]);
-+    const critical=issues.find(x=>criticalCodes.has(String(x&&x.code||"").toLowerCase())&&String(x&&x.severity||"").toLowerCase()==="critical");
-+    upsertAdminNotification("critical-health",critical?{severity:"critical",title:"Kritik Sistem Sağlığı",detail:String(critical.message||"Sistem sağlığı kritik durumda."),go:()=>goToAdminNotificationTarget("critical-health")}:null);
-+    const everyCafe=issues.find(x=>String(x&&x.code||"").toLowerCase()==="everycafe"&&!String(x&&x.message||"").toLocaleLowerCase("tr-TR").includes("gün sonu farkı"));
-+    upsertAdminNotification("everycafe",everyCafe?{severity:String(everyCafe.severity||"").toLowerCase()==="critical"?"critical":"warning",title:"EveryCafe Entegrasyon Sorunu",detail:String(everyCafe.message||"EveryCafe bağlantısını kontrol et."),go:()=>goToAdminNotificationTarget("everycafe")}:null);
-+  }finally{adminNotificationRefreshInFlight=false;}
-+}
-@@ -4208,6 +4312,8 @@
-   if(nav) nav.classList.add("active");
-+  setTimeout(()=>refreshAdminNotificationCenter(),50);
- }
-@@ -4225,6 +4331,8 @@
- function startAdminAutoRefresh(){
-   if(adminRefreshStarted)return;adminRefreshStarted=true;
-+  bindAdminNotificationCenter();
-+  refreshAdminNotificationCenter();
-@@ -4233,6 +4341,7 @@
-     if(document.hidden)return;
-+    refreshAdminNotificationCenter();
-@@ -4479,6 +4588,12 @@
- function showCashMismatchBanner(data){
-@@ -4495,6 +4610,11 @@
-+  upsertAdminNotification("cash-mismatch",diff>=0.01?{severity:"critical",title:"Kasa / Gelir Uyuşmazlığı",detail:`Kasa ile gelir arasında ${diff.toFixed(2)} ₺ fark var.`,go:()=>goToAdminNotificationTarget("cash-mismatch")}:null);
-@@ -5762,6 +5882,12 @@
-     pendingCount = Number(d.pendingCount)||0;
-+    upsertAdminNotification("pending-payment",pendingCount>0?{severity:"warning",title:"Bekleyen Ödeme",detail:`${pendingCount} bekleyen ödeme kaydı var.`,go:()=>goToAdminNotificationTarget("pending-payment")}:null);
-@@ -6109,6 +6235,14 @@
-+  const lateDays=Number(d&&d.overdueDays||0);
-+  upsertAdminNotification("card-settlement",lateDays>=1?{severity:lateDays>=2?"critical":"warning",title:"Kart Banka Yatırımı Doğrulama",detail:lateDays>=2?`Kart tahsilatı ${lateDays} gündür banka yatırımıyla doğrulanmadı.`:"Kart tahsilatının banka yatırımı doğrulaması bekleniyor.",go:()=>goToAdminNotificationTarget("card-settlement")}:null);
-' | base64 -d > /tmp/public__admin.html.patch
-          (cd build && patch -p1 < /tmp/public__admin.html.patch)
-          echo 'LS0tIGEvcHVibGljL2thZmVwaW4tcHJvLXlvbmV0aW0uaHRtbAorKysgYi9wdWJsaWMva2FmZXBpbi1wcm8teW9uZXRpbS5odG1sCkBAIC0zNCw2ICszNCw4OSBAQAogICAgICAgICA8YnV0dG9uIGlkPSJyZWxlYXNlTm90ZXNDbG9zZSIgY2xhc3M9InJlbGVhc2UtY2xvc2UiPuKclCBLYXBhdDwvYnV0dG9uPgogICAgICAgPC9kaXY+CisKKyAgICAgIDxkaXYgY2xhc3M9InJlbGVhc2UtaXRlbSIgZGF0YS12ZXJzaW9uPSIzLjEuMjYiPgorICAgICAgICA8ZGl2IGNsYXNzPSJyZWxlYXNlLXRpdGxlIj48c3Bhbj52My4xLjI2IOKAlCBHZXLDp2VrIFRlbWl6IFJlc3RhcnQgR8O8bmzDvGfDvDwvc3Bhbj48L2Rpdj4KKyAgICAgICAgPHVsPgorICAgICAgICAgIDxsaT48Yj5SZXN0YXJ0IGfDvG5sw7zEn8O8IHN1bnVjdSB0YXJhZsSxbmRhIGRhIHPEsWbEsXJsYW7EsXI6PC9iPiBZw7ZuZXRpbSBNZXJrZXppJ25kZSBZZW5pZGVuIEJhxZ9sYXQgb25hexSxbmRhbiBzb25yYSwgU2VydmVyIE1hbmFnZXIgcmVzdGFydCBrb211dHUgdmVyaWxtZWRlbiDDtm5jZSBtZXZjdXQgTm9kZSd1biA8Y29kZT5saXZlTG9nczwvY29kZT4gYmVsbGXEn2kgdGVtaXpsZW5pci48L2xpPgorICAgICAgICAgIDxsaT48Yj5Fc2tpIHNhdMSxcmxhciBnZXJpIGdlbGVtZXo6PC9iPiBhcmF5w7x6IHlhbG7EsXogZXNraSA8Y29kZT5zdGFydGVkQXQ8L2NvZGU+IGRlxJ9pxZ9lbmUga2FkYXIgYmVrbGVyOyB5ZW5pIE5vZGUgZmFya2zEsSBiYcWfbGFuZ8Sxp8O8IGtpbWxpxJ9peWxlIGHDp8SxbGTEscSfxLFuZGEgeWFsbsSxeiB5ZW5pIG90dXJ1bSBrYXnEsXRsYXLEsW7EsSBnw7ZzdGVyaXIuPC9saT4KKyAgICAgICAgICA8bGk+PGI+UmVzdGFydCBnw7x2ZW5sacSfaSBrb3J1bnVyOjwvYj4gPGNvZGU+L3Jlc3RhcnQtYXN5bmM8L2NvZGU+IGhhbmRvZmYgeW9sdSBheW5lbiBrdWxsYW7EsWzEsXI7IDxjb2RlPnNpZ25hbCBpcyBhYm9ydGVkIHdpdGhvdXQgcmVhc29uPC9jb2RlPiBkw7x6ZWx0bWVzaSBrb3J1bnVyLjwvbGk+CiAgICAgICAgICA8bGk+PGI+RGnEn2VyIGFsYW5sYXIga29ydW51cjo8L2I+IHYzLjEuMjUgRXhwbG9yZXIgZm9yZWdyb3VuZCBkw7x6ZWx0bWVzaSwgdjMuMS4yMyBoYXpsxLEgeWVkZWsvZ2VyaSB5w7xrbGVtZSB2ZSBnw7xuIHNvbnUgZMO8emVsdG1lc2ksIHYzLjEuMjIgaMSxem9wdGltaXphc3lvbmxhcsSxIGF5bmVuIGRldmFtIGVkZXIuPC9saT4KKyAgICAgICAgPC91bD4KKyAgICAgIDwvZGl2PgorICAgICAgPGRpdiBjbGFzcz0icmVsZWFzZS1pdGVtIiBkYXRhLXZlcnNpb249IjMuMS4yNSI+CiAgICAgICAgPGRpdiBjbGFzcz0icmVsZWFzZS10aXRsZSI+PHNwYW4+djMuMS4yNSDigJQgU2FkZSBHw7xuY2VsbGVtZSBLYXJ0xLEgKyBUZW1peiBSZXN0YXJ0ICsgRXhwbG9yZXIgU3RhYmlsaXRlc2k8L3NwYW4+PC9kaXY+CiAgICAgICAgPHVsPgogICAgICAgICAgPGxpPjxiPkvDvMOxa8O8bCBnw7xuY2VsbGVtZSBrYXJ0xLE6PC9iPiB5ZW5pIHPDvHLDvG0gZ2VsZGnEn2luZGUgZGV0YXlsxLEgPGNvZGU+bm90ZXM8L2NvZGU+IG1ldG5pIGthcnTEsSB1emF0bWF6OyBrYXJ0dGEgeWFsbsSxeiDigJxZZW5pIHPDvHLDvG0gaGF6xLFyOiB2eC554I2igJ0gdmUg4oCcTWV2Y3V0IHZ4LngueCDihpIgdngu eC54eOKAnSBnw7Zyw7xuw7xyLjwvbGk+CiAgICAgICAgICA8bGk+PGI+UmVzdGFydCBoYXRhc8SxIGTDvHplbHRpbGRpOjwvYj4gWcO2bmV0aW0gTWVya2V6aSBZZW5pZGVuIEJhxZ9sYXQgYXJ0xLFrIFNlcnZlciBNYW5hZ2VyJ8SxbiA8Y29kZT4vcmVzdGFydC1hc3luYzwvY29kZT4gaGFuZG9mZiB5b2x1bnUga3VsbGFuxLFyOyBOb2RlIGthcGFuxLFya2VuIHRhcmF5xLFjxLEgaXN0ZcSfaSB5YXLEsWRhIGtlc2lsbWVkacSfaSBpw6dpbiA8Y29kZT5zaWduYWwgaXMgYWJvcnRlZCB3aXRob3V0IHJlYXNvbjwvY29kZT4gdXlhcsSxc8SxIG9sdcWfbWF6LjwvbGk+CiAgICAgICAgICA8bGk+PGI+Q2FubsSxIFNpc3RlbSBHw7xubMO8xJ/DvCBnZXLDp2VrIHRlbWl6IGJhxZ9sYXI6PC9iPiByZXN0YXJ0IMO2bmNlc2kgZXNraSA8Y29kZT5zdGFydGVkQXQ8L2NvZGU+IGtpbWxpZ2kga29ydW51cjsg eWVuaSBOb2RlIGZhcmtsxLEgYm9vdCBraW1sacSfaXlsZSBnZWxlbmUga2FkYXIgZXNraSBnw7xubMO8ayB0ZWtyYXIgZ8O2c3RlcmlsbWV6LjwvbGk+CiAgICAgICAgICA8bGk+PGI+S2xhc8O2ciBhY8OnbWEgc3RhYmlsaXRlc2k6PC9iPiBEQiBLbGFzw7Zyw7wsIEZVTEwgWklQIEtsYXPDtlLDvCwgS2FmZVBpbiBLbGFzw7Zyw7wgdmUgWWVkZWsgS2xhc8O2csO8IHNkYcSjYW5kYXJ0IEV4cGxvcmVyIGFjbWEgeW9sdW51IGt1bGxhbsSxcjsgdsMuMS4yNCd0ZWtpIHRpbWVvdXQvT2RhayBkZW5leXNlbCBtb3RvcnUgZ2VyaSBhbMSxtm3Em8SxxLFsZMSxLjwvbGk+CiAgICAgICAgPC91bD4KKyAgICAgIDwvZGl2PgogICAgICAgPGRpdiBjbGFzcz0icmVsZWFzZS1pdGVtIiBkYXRhLXZlcnNpb249IjMuMS4yNCI+CiAgICAgICAgPGRpdiBjbGFzcz0icmVsZWFzZS10aXRsZSI+PHNwYW4+djMuMS4yNCDigJQgRXhwbG9yZXIgS2xhc8O2cmxlcmluZGUgR8O8dmVubGkgw5ZuZSBHZXRpcjwvc3Bhbj48L2Rpdj4KICAgICAgICA8dWw+CkBAIC03NzIsNiArODU1LDE4IEBACiAgICAgIDxkaXYgaWQ9ImhlYWx0aERldGFpbCIgY2xhc3M9Im11dGVkIj5WZXJpdGFiYW7EsSwgZ8O8biBzb251LCB5ZWRlaywgZmluYWxpemUsIEV2ZXJ5Q2FmZSB2ZSBkaXNrIGR1cnVtdSBrb250cm9sIGVkaWxpeW9yLjwvZGl2PgogICAgICA8YnV0dG9uIGlkPSJoZWFsdGhDaGVja0J0biI+wq8gxZ5pbWRpIEtvbnRyb2wgRXQ8L2J1dHRvbj4KICAgIDwvYXJ0aWNsZT4KKyAgPGFydGljbGUgY2xhc3M9ImNhcmQgaGVhbHRoLXJlcGFpci1jYXJkIiBpZD0icm9sbG92ZXJSZXBhaXJCb3giIHN0eWxlPSJkaXNwbGF5Om5vbmUiPgorICAgICAgPGgyPvCfjIkgR8O8biBTb251IETDvHplbHRtZTwvaDI+CiAgICAgIDxkaXYgY2xhc3M9InZhbHVlIG9yYW5nZSIgaWQ9InJvbGxvdmVyUmVwYWlyVGl0bGUiPkVrc2lrIGfDvG4gc29udSBrYXnEsXLEsTwvZGl2PgogICAgICA8ZGl2IGNsYXNzPSJtdXRlZCIgaWQ9InJvbGxvdmVyUmVwYWlyRGV0YWlsIj5ZYWxuxLF6IGdlY2lrbWnFnyBvbGFuIDIwOjAwIGfDvG4gc29udSBzxLFuxLFyxLEgeWVuaWRlbiBoZXNhcGxhbsSxcjsgeWVuaSBnw7xuw7xuIGHDp8SxayBtYXNhbGFyxLFuYSBkb2t1bnVsbWF6LjwvZGl2PgogICAgICA8YnV0dG9uIGNsYXNzPSJvcmFuZ2UiIGlkPSJyb2xsb3ZlclJlcGFpckJ0biI+8J+MjSBEw7xuw7xuIEfDvG4gU29udW51IMWeaW1kaSBBbDwvYnV0dG9uPgorICAgIDwvYXJ0aWNsZT4KQEAICi0gICAgPGFydGljbGUgY2xhc3M9ImNhcmQiPjxoMj7wn5OFIEZVTEwgWklQIEdlcmkgWcO8a2xlPC9oMj48ZGl2IGNsYXNzPSJtdXRlZCI+QW5hxI9hIHDDvHLDvHogZG9sYXPEsXLEsSDEsXPDsMSxIGR1cmR1cnVsdXIsIHlhbG7EsXogS2FmZVBpbiB2ZXJpbGVyaSBnw7x2ZW5saSBiacOnaW1kZSBnw7ZyZXYgZGViZXk9dHIuIERExLEgZG9ydWxhbmTEsSBiYWNrIHVwIGFsaW5pci48L2Rpdj4KKyAgICA8YXJ0aWNsZSBjbGFzcz0iY2FyZCI+PGgyPvCfjYUgRlVMTCBaSVAgR2VyaSBZw7xrbGU8L2gyPjxkaXYgY2xhc3M9Im11dGVkIj5Hw7x2ZW5saSBrdXJ1bCB6aW5jaXJpOiDDtm5jZSBjYW5sxLEgdmVyaXRhYmFuxLEgxLFjaW4gZG/Fn3J1bGFubcSxxZ8gPGNvZGU+ZGF0YWJhc2VfcHJlX3Jlc3RvcmVfKi5kYjwvY29kZT4gZW1uaXlldCB5ZWRlxJ9pIGFsaW7EsXI7IGRhcmRkYcSfaSBzZXJ2ZXIgZHVyZHVydWx1cCBBUFBBVCByZXN0b3JlIHdvcmtlcidzIVkgZGV2YW0gZWRlci4gS3VydWx1IHByb2dyYW0gc8O8csO8bcO8IHZlIG1hc2HDvHN0w7wgIGRveWFsYXLEsSBrb3J1bnVyLjwvZGl2PgorICAgICAgPHNlbGVjdCBpZD0icmVzdG9yZVNlbGVjdCI+PG9wdGlvbj5ZZWRlayB5b2s8L29wdGlvbj48L3NlbGVjdD48YnI+CiAgICAgIDxidXR0b24gY2xhc3M9Im9yYW5nZSIgaWQ9InJlc3RvcmVCdG4iPseJIFNlw6dpbGkgWWVkZcSfaSBHZXJpIFnDvGtsZTwvYnV0dG9uPgorICAgIDwvYXJ0aWNsZT4KQEAICiAgICA8YXJ0aWNsZSBjbGFzcz0iY2FyZCI+PGgyPvCfk4EtIFN1bnVjdTwvaDI+PGRpdiBpZD0ic2VydmVyU3RhdGUiIGNsYXNzPSJ2YWx1ZSI+S29udHJvbC4uLjwvZGl2PjxkaXYgaWQ9InNlcnZlckRldGFpbCIgY2xhc3M9Im11dGVkIj5XaW5kb3dzIFNpc3RlbSBZw7ZuZXRpY2lzaSBrb250cm9sIGVkaWxpeW9yLjwvZGl2PjxidXR0b24gY2xhc3M9ImdyZWVuIiBpZD0ic3RhcnRCdG4iPvCfk7YgQmHFnyBsYXQ8L2J1dHRvbj4gPGJ1dHRvbiBjbGFzcz0icmVkIiBpZD0ic3RvcEJ0biI+4pagIER1cmR1cjwvYnV0dG9uPiA8YnV0dG9uIGNsYXNzPSJvcmFuZ2UiIGlkPSJyZXN0YXJ0QnRuIj7GqiBZZW5pZGVuIEJhxZ9sYXQ8L2J1dHRvbj48L2FydGljbGU+Ci@@ -860,6 +955,20 @@
-     }
-+    const managerRequestCache={value:null,time:0};
-+    let managerRequestInFlight=null;
-+    async function loadManagerInfo(force=false){
-+      const now=Date.now();
-+      if(!force&&managerRequestCache.value&&now-managerRequestCache.time<3000)return managerRequestCache.value;
-+      if(managerRequestInFlight)return managerRequestInFlight;
-+      managerRequestInFlight=fetch('/admin/pro/manager-info',{cache:'no-store'}).then(r=>r.json()).then(d=>{managerRequestCache.value=d;managerRequestCache.time=Date.now();return d;}).finally(()=>{managerRequestInFlight=null});
-+      return managerRequestInFlight;
-+    }
-+    async function managerCall(path,method='GET'){
-+      const info=await loadManagerInfo(method!=='GET');
-+      if(!info||!info.ok||!info.token||!info.controlUrl)throw new Error('Server Manager bilgisi alınamadı');
-+      const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),6000);
-+      try{
-+        const r=await fetch(info.controlUrl+path,{method,headers:{'X-KafePin-Manager-Token':info.token},signal:ctrl.signal});
-+        const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||`Manager HTTP ${r.status}`);return d;
-+      }finally{clearTimeout(timer)}
-+    }
-@@ -897,16 +1006,22 @@
--    async function loadServer(){
--      try{const d=await fetch('/admin/pro/manager-info').then(r=>r.json());if(!d.ok)throw new Error();const r=await fetch(d.controlUrl+'/status',{headers:{'X-KafePin-Manager-Token':d.token}});const m=await r.json();$('serverState').textContent=m.running?'Çalışıyor':'Kapalı';$('serverState').className='value '+(m.running?'green':'red');$('serverDetail').textContent=m.running?`Windows Sistem Yöneticisi aktif • PID ${m.pid||'-'}`:'Windows Sistem Yöneticisi aktif • sunucu kapalı';$('startBtn').disabled=m.running;$('stopBtn').disabled=!m.running;$('restartBtn').disabled=!m.running}catch(_){$('serverState').textContent='Manager yok';$('serverState').className='value red';$('serverDetail').textContent='Windows Sistem Yöneticisi ulaşılamıyor';$('startBtn').disabled=true;$('stopBtn').disabled=true;$('restartBtn').disabled=true}}
-+    async function loadServer(){
-+      try{const info=await loadManagerInfo();if(!info||!info.ok)throw new Error();const ctrl=new AbortController(),timer=setTimeout(()=>ctrl.abort(),3500);let m;try{m=await fetch(info.controlUrl+'/status',{cache:'no-store',headers:{'X-KafePin-Manager-Token':info.token},signal:ctrl.signal}).then(r=>r.json())}finally{clearTimeout(timer)};$('serverState').textContent=m.running?'Çalışıyor':'Kapalı';$('serverState').className='value '+(m.running?'green':'red');$('serverDetail').textContent=m.running?`Windows Sistem Yöneticisi aktif • PID ${m.pid||'-'}`:'Windows Sistem Yöneticisi aktif • sunucu kapalı';$('startBtn').disabled=m.running;$('stopBtn').disabled=!m.running;$('restartBtn').disabled=!m.running}catch(_){$('serverState').textContent='Manager yok';$('serverState').className='value red';$('serverDetail').textContent='Windows Sistem Yöneticisi ulaşılamıyor';$('startBtn').disabled=true;$('stopBtn').disabled=true;$('restartBtn').disabled=true}}
-+    let liveLogBootId='';let liveLogRestartPending=false,liveLogRestartOldBootId='',liveLogRestartTimer=null,liveLogRestartDeadline=0;
-+    function beginRestartLogWait(oldBoot){liveLogRestartPending=true;liveLogRestartOldBootId=String(oldBoot||liveLogBootId||'');liveLogRestartDeadline=Date.now()+25000;if(liveLogRestartTimer){clearTimeout(liveLogRestartTimer);liveLogRestartTimer=null}$('logs').innerHTML='<div class="muted">Sunucu yeniden başlatılıyor; yeni oturum günlüğü bekleniyor.</div>'}
-+    function clearRestartLogWait(){liveLogRestartPending=false;liveLogRestartOldBootId='';liveLogRestartDeadline=0;if(liveLogRestartTimer){clearTimeout(liveLogRestartTimer);liveLogRestartTimer=null}}
-+    function renderRestartLogWaiting(){$('logs').innerHTML='<div class="muted">Sunucu yeniden başlatılıyor; yeni oturum günlüğü bekleniyor.</div>'}
-+    function pollRestartLogUntilNewBoot(){if(liveLogRestartTimer)clearTimeout(liveLogRestartTimer);const tick=async()=>{if(!liveLogRestartPending)return;const ok=await loadLiveSystemLog();if(ok&&!liveLogRestartPending){await Promise.allSettled([loadServer(),loadHealth(true)]);return}if(Date.now()>=liveLogRestartDeadline){clearRestartLogWait();$('logs').innerHTML='<div class="muted">Yeni sunucu oturumu 25 saniye içinde doğrulanamadı. Sistem durumu yeniden kontrol ediliyor.</div>';await loadServer();return}liveLogRestartTimer=setTimeout(tick,650)};liveLogRestartTimer=setTimeout(tick,450)}
-@@ -921,14 +1036,28 @@
-     async function loadLiveSystemLog(){
--      try{const d=await fetch('/admin/live-log').then(r=>r.json()),list=Array.isArray(d.list)?d.list.slice(0,12):[];$('logs').innerHTML=list.length?list.map(x=>`<div class="log"><span class="time">${new Date(x.time).toLocaleTimeString('tr-TR')}</span>${String(x.text||'')}</div>`).join(''):'<div class="muted">Henüz sistem kaydı yok.</div>'}catch(_){$('logs').innerHTML='<div class="muted">Sunucuya ulaşılamıyor; günlük bekleniyor.</div>'}}
-+      try{const d=await fetch('/admin/live-log?_boot='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache'}}).then(r=>r.json());const boot=String(d&&d.startedAt||'');const list=Array.isArray(d.list)?d.list.slice(0,12):[];if(liveLogRestartPending){const oldBoot=String(liveLogRestartOldBootId||liveLogBootId||'');if(!boot||!oldBoot||boot===oldBoot){renderRestartLogWaiting();return false}clearRestartLogWait();liveLogBootId=boot;$('logs').innerHTML=list.length?list.map(x=>`<div class="log"><span class="time">${new Date(x.time).toLocaleTimeString('tr-TR')}</span>${String(x.text||'')}</div>`).join(''):'<div class="muted">Yeni sunucu oturumu başladı • henüz sistem kaydı yok.</div>';return true}if(boot)liveLogBootId=boot;$('logs').innerHTML=list.length?list.map(x=>`<div class="log"><span class="time">${new Date(x.time).toLocaleTimeString('tr-TR')}</span>${String(x.text||'')}</div>`).join(''):'<div class="muted">Henüz sistem kaydı yok.</div>';return true}catch(_){if(liveLogRestartPending)renderRestartLogWaiting();else $('logs').innerHTML='<div class="muted">Sunucuya ulaşılamıyor; günlük bekleniyor.</div>';return false}}
-@@ -950,8 +1079,18 @@
--    $('restartBtn').onclick=async()=>{if(!(await askUser('Sunucu güvenli şekilde yeniden başlatılsın mı?','Yeniden Başlat')))return;const b=$('restartBtn');b.disabled=true;try{await managerCall('/restart','POST');notifyUser('Sunucu yeniden başlatıldı.');setTimeout(load,1200)}catch(e){notifyUser(e.message||'Yeniden başlatılamadı.',true)}finally{setTimeout(loadServer,1400)}};
-+    $('restartBtn').onclick=async()=>{if(!(await askUser('Sunucu güvenli şekilde yeniden başlatılsın mı? Canlı Sistem Günlüğü yeni oturumda temiz başlayacak.','Yeniden Başlat')))return;const b=$('restartBtn');if(b.disabled)return;b.disabled=true;let oldBoot=String(liveLogBootId||'');try{if(!oldBoot){try{const d=await fetch('/admin/live-log?_beforeRestart='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache'}}).then(r=>r.json());oldBoot=String(d&&d.startedAt||'');if(oldBoot)liveLogBootId=oldBoot}catch(_){}}$('status').textContent='● Sunucu yeniden başlatılıyor...';const resetLog=await post('/admin/live-log/reset-session');if(!resetLog||!resetLog.ok)throw new Error('Canlı Sistem Günlüğü yeni oturum için sıfırlanamadı');oldBoot=String(resetLog.startedAt||oldBoot||liveLogBootId||'');if(oldBoot)liveLogBootId=oldBoot;beginRestartLogWait(oldBoot);await managerCall('/restart-async','POST');$('status').textContent='● Yeniden başlatma Server Manager’a teslim edildi • yeni sunucu bekleniyor';pollRestartLogUntilNewBoot()}catch(e){clearRestartLogWait();await loadLiveSystemLog();notifyUser(e.message||'Yeniden başlatma başlatılamadı.',true);setTimeout(loadServer,900)}};
-@@ -988,6 +1127,22 @@
-+    function openFolder(kind,label){fetch('/admin/pro/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind})}).then(async r=>{const d=await r.json().catch(()=>({}));if(!r.ok||!d.ok)throw new Error(d.error||`${label||'Klasör'} açılamadı`);notifyUser(`${label||'Klasör'} açıldı ve öne getirildi.`)}).catch(e=>notifyUser(e.message||`${label||'Klasör'} açılamadı`,true))}
-+    $('appFolderBtn').onclick=()=>openFolder('app','KafePin klasörü');
-+    $('backupFolderBtn').onclick=()=>openFolder('backups','Ana yedek klasörü');
-+    $('dbFolderBtn').onclick=()=>openFolder('db','DB yedek klasörü');
-+    $('fullFolderBtn').onclick=()=>openFolder('full','FULL ZIP yedek klasörü');
-' | base64 -d > /tmp/public__kafepin-pro-yonetim.html.patch
-          (cd build && patch -p1 < /tmp/public__kafepin-pro-yonetim.html.patch)
-          echo 'LS0tIGE/S2FmZVBpbl9TeXN0ZW1fTWFuYWdlci5wczEKKysrIGIvS2FmZVBpbl9TeXN0ZW1fTWFuYWdlci5wczEKQEAgLTE1OSw2ICsxNTksMjYgQEAKIGZ1bmN0aW9uIEdldC1LYWZlUGluUHJvY2Vzc2VzIHsKKyAgIyB2My4xLjIyOiB5YXTEsWvEsW4gaGl6IHlvbHU6IGdlY2Vy bGkgc2VydmVyLnBpZCB2ZSBwcm9jZXNzIGhhbGEgeWFzYXPEsXlhIEHDp8SxayBhxJ/EsXIgQ0lNL3BvcnQgdGFyYW1hxJ/EsW7EsSBiacOnbWUgZG9rdW5tYS4KKyAgIyBCdSBhZGltIG5vcm1hbCBk7ZKInGFsYcWfbWFkYSBXbWkgd2UgcG9ydCBrb3N1bGFyaW5pIG5lcmVkZXlzZSBzaWxlci4KKyAgdHJ5IHsKKyAgICBpZiAoVGVzdC1QYXRoICRQaWRGaWxlKSB7CisgICAgICAkcmF3ID0gKEdldC1Db250ZW50IC1MaXRlcmFsUGF0aCAkUGlkRmlsZSAtRXJyb3JBY3Rpb24gU3RvcCkgfCBTZWxlY3QtT2JqZWN0IC1GaXJzdCAxCisgICAgICAkaWQgPSAwCisgICAgICBpZiAoW2ludF06OlRyeVBhcnNlKFtzdHJpbmddJHJhdywgW3JlZl0kaWQpIC1hbmQgJGlkIC1ndCAwKSB7CisgICAgICAgICRwID0gR2V0LVByb2Nlc3MgLUlkICRpZCAtRXJyb3JBY3Rpb24gU2lsZW50bHlDb250aW51ZQorICAgICAgICBpZiAoJHApIHsKKyAgICAgICAgICAjIE5vZGUgYWRpbmkgYmlyIGhhZnRpZiBzYW5pdHkgdGVzdDogZWtzaWsgb3BzLiBwcm9jZXNzIG9iamVjdCBoYWxhIGthYnVsIGVkZWJpbGlyLgorICAgICAgICAgIGlmICgoW3N0cmluZ10kcC5Qcm9jZXNzTmFtZSkgLWVxICdub2RlJykgeworICAgICAgICAgICAgcmV0dXJuIEAsKFtQU0N1c3RvbU9iamVjdF1AeyBQcm9jZXNzSWQgPSAkaWQ7IENvbW1hbmRMaW5lID0gJyc7IE5hbWUgPSAkcC5Qcm9jZXNzTmFtZSB9KQorICAgICAgICAgIH0KKyAgICAgICAgfQorICAgICAgfQorICAgIH0KKyAgfSBjYXRjaCB7fQorCiAgICRsaXN0ID0gQCgpCiAKICB0cnkgewpAQCAtNDM1LDcgKzQ1NSw5IEBACiAgICAgICAgICAkaG9zdC5SZXNwb25zZS5TdGF0dXNEZXNjcmlwdGlvbiA9ICdBY2NlcHRlZCcKICAgICAgICAgICRTZW5kLUpzb24gJENvbnRleHQgMjAyIEB7IG9rID0gJHRydWU7IGFjY2VwdGVkID0gJHRydWU7IGFjdGlvbiA9ICdyZXN0YXJ0LWFzeW5jJzsgbWFuYWdlclZlcnNpb24gPSAkTWFuYWdlclZlcnNpb24gfQogICAgICAgICAgJFNlbmRQcm90b2NvbC5DbG9zZSgkYnl0ZXMpCisgICAgICAgICAgIyB2My4xLjIxOiBjZXZhcCB0YXJhZmluYSB1bGFzdGlrdGFuIHNvbnJhIGF5bsSxIE1hbmFnZXIgcmVhbCBBcHAgUElEJ2luaSBrYXBhbnNpaworICAgICAgICAgICMgdmUgeWVuaWRlbiBhY2FyLiBCdSBoYW5kb2ZmIGFydGlrIHNhZGVjZSBiaXIga3V5cnVrIGRvc3lhc8SxbmEgZGF5YW5tYXouCiAgICAgICAgICBTdGFydC1TbGVlcCAtTWlsbGlzZWNvbmRzIDUwMAotICAgICAgICAgIFNldC1SZXN0YXJ0UmVxdWVzdCAnY29udHJvbC1yZXN0YXJ0LWFzeW5jJworICAgICAgICAgIFJlc3RhcnQtS2FmZVBpblNlcnZlcgorICAgICAgICAgIGJyZWFrCiAgICAgICAgfQon | base64 -d > /tmp/KafePin_System_Manager.ps1.patch
-          (cd build && patch -p1 < /tmp/KafePin_System_Manager.ps1.patch)
-          echo 'LS0tIGE/S2FmZVBpbl9NYW5hZ2VyX0Vuc3VyZS5wczEKKysrIGIvS2FmZVBpbl9NYW5hZ2VyX0Vuc3VyZS5wczEKQEAgLTE1OCw2ICsxNTgsMjEgQEAKICAgfQogfQorIyB2My4xLjIyOiBtYW5hZ2VyIGF5bsSxIHN1cnVtIG9sc2EgYmlsZSBkb3N5YSBpw6dlcmlrIGhhc2hpIGRlxJ9pxZ9taXNzZSB5ZW5pIHNkY3JpcHRpIGt1bGw7CisjIGJ1bmRhbiBkb2xhecSxIGRhdmljIG1hbmFnZXIgbm9ybWFsIHNhZ2xpa2x1IHN0YXJ0IHZhIHJlc3RhcnQgZGlnaTgKKyNpZmluZ3VyaW5nIHdpdGhvdXQgbWFuYWdlciB2ZXJzaW9uIGJ1bXAuCiskY3VycmVudEhhc2ggPSAnJworJG9uRGlza0hhc2ggPSAnJworIHRyeSB7CisgICBpZiAoVGVzdC1QYXRoICRNQU5BR0VSX1BTVEFUSCkgeyAkY3VycmVudEhhc2ggPSAoR2V0LUZpbGVIYXNoIC1BbGdvcml0aG0gU0hBMjU2ICRNQU5BR0VSX1BTVEFUSCkuSGFzaCB9CisgICBpZiAoVGVzdC1QYXRoICRNYW5hZ2VyU291cmNlKSB7ICRvbkRpc2tIYXNoID0gKEdldC1GaWxlSGFzaCAtQWxnb3JpdGhtIFNIQTI1NiAkTWFuYWdlclNvdXJjZSkuSGFzaCB9CisgfSBjYXRjaCB7fQorICRpZiAoJGN1cnJlbnRIYXNoIC1hbmQgJG9uRGlza0hhc2ggLWFuZCAkY3VycmVudEhhc2ggLW5lICRv bkRpc2tIYXNoKSB7CisgICAgU3RvcC1Qcm9jZXNzIC1OYW1lIFBvd2VyU2hlbGwgLUVycm9yQWN0aW9uIFNpbGVudGx5Q29udGludWUKKyAgICBjb3B5ICRNQU5BR0VSX1BTVEFUSCAkTWFuYWdlclNvdXJjZSAtRm9yY2UKKyAgICBTdGFydC1Qcm9jZXNzIC1GaWxlUGF0aCAicG93ZXJzaGVsbC5leGUiIC1Bcmd1bWVudExpc3QgIi1Ob1Byb2ZpbGUgLVdpbmRvd1N0eWxlIEhpZGRlbiAtRXhlY3V0aW9uUG9saWN5IEJ5cGFzcyAtRmlsZSBgIiRNYW5hZ2VyU291cmNlYCIiIC1XaW5kb3dTdHlsZSBIaWRkZW4KKyAgICBTdGFydC1TbGVlcCAtU2Vjb25kcyAxCisgfQon | base64 -d > /tmp/KafePin_Manager_Ensure.ps1.patch
-          (cd build && patch -p1 < /tmp/KafePin_Manager_Ensure.ps1.patch)
-          echo 'ewogICJ2ZXJzaW9uIjogIjMuMS4yNiIsCiAgIm5hbWUiOiAiS2FmZVBpbiBQcm8iLAogICJjaGFubmVsIjogInN0YWJsZSIsCiAgInVwZGF0ZWRBdCI6ICIyMDI2LTA4LTE4IiwKICAibm90ZXMiOiAidjMuMS4yNiBLw5xNw5xMQVTEsEZJVDogdjMuMS4yMSBTVEFCTEUgdGFiYW7EsSB1c3TDvG5kZWtpIHTDvG0gaMSxemZvciB2ZSBrYXJhcmzEsWzEsWsgeWFtYWxhcsSxbsSxIHRlayBwYWtldHRlIHRvcGxhci4gTWFudWVsIFllbmlkZW4gQmHFnyBsYXQgYWtsxLFzxLFuZGEgQ2FubsSxIFNpc3RlbSBHw7xubMO8xJ/DvCBhcnTEsWsgeWFsbsSxeiBhcmF5w7x6ZGUgZ2l6bGVubWV6OyBTZXJ2ZXIgTWFuYWdlciByZXN0YXJ0IGhhbmRvZmYndW5kYW4gaGVtZW4gw7ZuY2UgbWV2Y3V0IE5vZGUndW4gbGl2ZUxvZ3MgYmVsbGXEn2kgL2FkbWluL2xpdmUtbG9nL3Jlc2V0LXNlc3Npb24gaWxlIGdlcmNlayB0ZW1pemxlbmlyLiBSZXNldCBkb8SfcnVsYW5tYWRhbiByZXN0YXJ0IGJhxZ9sYXRpbG1hejsgYXJhecO8eiBlc2tpIHN0YXJ0ZWRBdCBkZcSfaXPEn2VuZSBrYWRhciBiZWtsZXIgdmUgeWVuaSBOb2RlIGHDp8SxbGTEscSfxLFuZGEgeWFsbsSxeiB5ZW5pIG90dXJ1bSBrYXnEsXRsYXLEsW7EsSBnw7ZzdGVyaXIuIHYzLjEuMjUgRXhwbG9yZXIgZm9yZWdyb3VuZCBkb8SfcnVsYW1hc8SxIHZlIHNhZGUgZ8O8bmNlbGxlbWUga2FydMSxLCB2My4xLjIzIGhhc8SxbCB5ZWRlay9nZXJpIHnDvGtsZW1lIGlsZSBnZWNpa21pcyBnw7xuIHNvbnUgZMO8emVsdG1lc2ksIHYzLjEuMjIgcG9sbGluZy9NYW5hZ2VyIGhhc3ZvcHRpbWl6YXN5b25sYXLEsSB2ZSB2My4xLjIxIFNlcnZlciBNYW5hZ2VyIHN0YWJpbGl0ZXNpIGRhaGlsZGlyLiBEQi9yZXN0b3JlLCBFdmVyeUNhZmUsIFRlbGVncmFtLCBtdWhhc2ViZSwgbWFzYS/Dp2FyayB2ZSBnZWxpciBoZXNhcGxhcsSxbmRhIGJhxZ9rYSBkZcSfaXPEn2lrbGlrIHlva3R1ci4iCn0K' | base64 -d > build/kafepin-pro-version.json
-          echo 'ewogICJ2ZXJzaW9uIjogIjMuMS4yNiIsCiAgImZpbGVzIjogWwogICAgInNlcnZlci5qcyIsCiAgICAiS2FmZVBpbl9TeXN0ZW1fTWFuYWdlci5wczEiLAogICAgIkt hZmVQaW5fTWFuYWdlcl9FbnN1cmUucHMxIiwKICAgICJwdWJsaWMvYWRtaW4uaHRtbCIsCiAgICAicHVibGljL2thZmVwaW4tcHJvLXlvbmV0aW0uaHRtbCIsCiAgICAia2FmZXBpbi1wcm8tdmVyc2lvbi5qc29uIiwKICAgICJ1cGRhdGUuanNvbiIKICBdLAogICJub3RlcyI6ICJ2My4xLjI2IEvDvE3DvE1VTEFUSUY6IHYzLjEuMjEgU1RBQkxFIHRhYmFuxLEgdXN0dW5kZWtpIHR1bSBoaXp2ZSB2ZSBrYXJhcmzEsWzEsWsgeWFtYWxhcsSxbsSxIHRlayBwYWtldHRlIHRvcGxhci4gTWFudWVsIFllbmlkZW4gQmHFnyBsYXQgYWtsxLFzxLFuZGEgQ2FubsSxIFNpc3RlbSBHw7xubMO8xJ/DvCBhcnTEsWsgeWFsbsSxeiBhcmF5w7x6ZGUgZ2l6bGVubWV6OyBTZXJ2ZXIgTWFuYWdlciByZXN0YXJ0IGhhbmRvZmYndW5kYW4gaGVtZW4gw7ZuY2UgbWV2Y3V0IE5vZGUndW4gbGl2ZUxvZ3MgYmVsbGXEn2kgL2FkbWluL2xpdmUtbG9nL3Jlc2V0LXNlc3Npb24gaWxlIGdlcmNlayB0ZW1pemxlbmlyLiBSZXNldCBkb8SfcnVsYW5tYWRhbiByZXN0YXJ0IGJhxZ9sYXRpbG1hejsgYXJhecO8eiBlc2tpIHN0YXJ0ZWRBdCBkZcSfaXPEn2VuZSBrYWRhciBiZWtsZXIgdmUgeWVuaSBOb2RlIGHDp8SxbGTEscSf xLFuZGEgeWFsbsSxeiB5ZW5pIG90dXJ1bSBrYXnEsXRsYXLEsW7EsSBnw7ZzdGVyaXIuIHYzLjEuMjUgRXhwbG9yZXIgZm9yZWdyb3VuZCBkb8SfcnVsYW1hc8SxIHZlIHNhZGUgZ8O8bmNlbGxlbWUga2FydMSxLCB2My4xLjIzIGhhc8SxbCB5ZWRlay9nZXJpIHnDvGtsZW1lIGlsZSBnZWNpa21pcyBnw7xuIHNvbnUgZMO8emVsdG1lc2ksIHYzLjEuMjIgcG9sbGluZy9NYW5hZ2VyIGhhc3ZvcHRpbWl6YXN5b25sYXLEsSB2ZSB2My4xLjIxIFNlcnZlciBNYW5hZ2VyIHN0YWJpbGl0ZXNpIGRhaGlsZGlyLiBEQi9yZXN0b3JlLCBFdmVyeUNhZmUsIFRlbGVncmFtLCBtdWhhc2ViZSwgbWFzYS/Dp2FyayB2ZSBnZWxpciBoZXNhcGxhcsSxbmRhIGJhxZ9rYSBkZcSfaXPEn2lrbGlrIHlva3R1ci4iCn0K' | base64 -d > build/update.json
-      - name: Birebir dosya hash ve syntax kontrolu
+          (cd build && patch -p1 < ../.github/v326/server.patch)
+          (cd build && patch -p1 < ../.github/v326/management.patch)
+          cp .github/v326/kafepin-pro-version.json build/kafepin-pro-version.json
+          cp .github/v326/update.json build/update.json
+      - name: Birebir hash ve syntax kontrolü
         run: |
           set -euo pipefail
           echo '4d0a4f48f11870dc00a74caca372bf941cfb3a2531c90b04c3ffcab4d84ca964  build/server.js' | sha256sum -c -
@@ -187,17 +38,15 @@ jobs:
           echo '2996506f48d05be4829798bc5906f126959ce9a42e87e933f7286ce837b8145c  build/kafepin-pro-version.json' | sha256sum -c -
           echo 'da027cefeee2d7fa1d2b14eb1af20843ae47d61cd758f2d68fa0fa1b780ac1fc  build/update.json' | sha256sum -c -
           node --check build/server.js
-          python3 - <<'PY2'
-          import re, pathlib, subprocess, sys
-          for p in [pathlib.Path('build/public/admin.html'), pathlib.Path('build/public/kafepin-pro-yonetim.html')]:
-              s=p.read_text(encoding='utf-8')
-              for i,x in enumerate(re.findall(r'<script[^>]*>(.*?)</script>',s,re.S|re.I)):
-                  q=pathlib.Path('/tmp')/(p.stem+f'_{i}.js')
-                  q.write_text(x,encoding='utf-8')
+          python3 - <<'PY'
+          import re,pathlib,subprocess
+          for p in [pathlib.Path('build/public/admin.html'),pathlib.Path('build/public/kafepin-pro-yonetim.html')]:
+              for i,x in enumerate(re.findall(r'<script[^>]*>(.*?)</script>',p.read_text(encoding='utf-8'),re.S|re.I)):
+                  q=pathlib.Path('/tmp')/(p.stem+f'_{i}.js'); q.write_text(x,encoding='utf-8')
                   subprocess.run(['node','--check',str(q)],check=True)
           print('INLINE_JS_OK')
-          PY2
-      - name: Kümülatif ZIP olustur ve latest.json yaz
+          PY
+      - name: Kümülatif ZIP ve latest.json
         run: |
           set -euo pipefail
           rm -f KafePin-Pro-Update-v3.1.26.zip
@@ -205,26 +54,20 @@ jobs:
           unzip -t KafePin-Pro-Update-v3.1.26.zip
           ZIP_SHA="$(sha256sum KafePin-Pro-Update-v3.1.26.zip | awk '{print $1}')"
           export ZIP_SHA
-          python3 - <<'PY2'
-          import json, os
-          from datetime import datetime, timezone, timedelta
+          python3 - <<'PY'
+          import json,os
+          from datetime import datetime,timezone,timedelta
           u=json.load(open('build/update.json',encoding='utf-8'))
-          out={
-            'version':'3.1.26',
-            'publishedAt':datetime.now(timezone(timedelta(hours=3))).isoformat(timespec='seconds'),
-            'notes':u['notes'],
-            'downloadUrl':'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.26.zip',
-            'sha256':os.environ['ZIP_SHA']
-          }
+          out={'version':'3.1.26','publishedAt':datetime.now(timezone(timedelta(hours=3))).isoformat(timespec='seconds'),'notes':u['notes'],'downloadUrl':'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.26.zip','sha256':os.environ['ZIP_SHA']}
           with open('latest.json','w',encoding='utf-8') as f: json.dump(out,f,ensure_ascii=False,indent=2); f.write('\n')
           print('GITHUB_ZIP_SHA256='+os.environ['ZIP_SHA'])
-          PY2
-      - name: v3.1.26 STABLE adayini yayinla ve workflowu temizle
+          PY
+      - name: Yayınla ve geçici dosyaları sil
         run: |
           set -euo pipefail
           git config user.name 'KafePin Update Bot'
           git config user.email 'actions@users.noreply.github.com'
-          rm -f .github/workflows/publish-v326-cumulative.yml
-          git add -A KafePin-Pro-Update-v3.1.26.zip latest.json .github/workflows/publish-v326-cumulative.yml
+          rm -rf .github/v326 .github/workflows/publish-v326-cumulative.yml
+          git add -A KafePin-Pro-Update-v3.1.26.zip latest.json .github/v326 .github/workflows/publish-v326-cumulative.yml
           git commit -m 'KafePin: v3.1.26 cumulative publish'
           git push
