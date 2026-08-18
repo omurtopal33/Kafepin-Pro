@@ -1,0 +1,80 @@
+name: KafePin Pro v3.1.27 publish
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Build verify publish
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 -o /tmp/v326.zip 'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.26.zip'
+          rm -rf build && mkdir build
+          unzip -q /tmp/v326.zip -d build
+          (cd build && patch -p1 < ../.github/v327/server.patch)
+          (cd build && patch -p1 < ../.github/v327/management.patch)
+          cp .github/v327/kafepin-pro-version.json build/kafepin-pro-version.json
+          cp .github/v327/update.json build/update.json
+          python3 - <<'PY'
+          from pathlib import Path
+          for name in ['KafePin_Desktop_Action.ps1','KafePin_Desktop_Helper_Ensure.ps1']:
+              text=Path('.github/v327',name).read_text(encoding='utf-8')
+              Path('build',name).write_text(text,encoding='utf-8-sig')
+          PY
+          checks=(
+          '3b05b8e0512a75ab7decc242a9aff29a30c2e43aadfc2ca7e274ba7ecfc41c14  build/server.js'
+          'a80fa4e716cb517e60600fed3541dcaca17e9498040ffd7a7bb350317c74b75d  build/KafePin_System_Manager.ps1'
+          'b53fbbb055ec8427f5b61e0e466c76325a067f6c72017416319347982df1136c  build/KafePin_Manager_Ensure.ps1'
+          'f121df315e7dea2ed407393e6091a2334336200f1747b3473932a29fb1b51427  build/KafePin_Desktop_Action.ps1'
+          '2191e0098f331eba7550ac8e47c55402f9c45d33fa9cf258b607036fbc0b2758  build/KafePin_Desktop_Helper_Ensure.ps1'
+          '0923235b8e2570461ac9a57798ae7bfaf27f69b380834180cf46855cd2f77a9f  build/public/admin.html'
+          'b5e8357a839c19df010a3c4e76db3f92bf25c34e0c5ce9742b1d79342cf3eac6  build/public/kafepin-pro-yonetim.html'
+          '6fc1a59d6c6c41bc82edde0283c1e3f6f59f50092da4a0ebc64701483c69cd71  build/kafepin-pro-version.json'
+          '65e8e5281737a5c71426f25544a87b593877d14407798ee64d4cb3d4440ce7c2  build/update.json'
+          )
+          printf '%s\n' "${checks[@]}" | sha256sum -c -
+          node --check build/server.js
+          python3 - <<'PY'
+          import re,pathlib,subprocess
+          for p in [pathlib.Path('build/public/admin.html'),pathlib.Path('build/public/kafepin-pro-yonetim.html')]:
+              for i,x in enumerate(re.findall(r'<script[^>]*>(.*?)</script>',p.read_text(encoding='utf-8'),re.S|re.I)):
+                  q=pathlib.Path('/tmp')/(p.stem+f'_{i}.js'); q.write_text(x,encoding='utf-8')
+                  subprocess.run(['node','--check',str(q)],check=True)
+          print('INLINE_JS_OK')
+          PY
+          python3 - <<'PY'
+          from pathlib import Path
+          for n in ['KafePin_Desktop_Action.ps1','KafePin_Desktop_Helper_Ensure.ps1']:
+              s=Path('build',n).read_text(encoding='utf-8-sig')
+              assert s.count('{')==s.count('}'), n+' brace mismatch'
+              assert s.count('(')==s.count(')'), n+' paren mismatch'
+          assert 'TASK_LOGON_INTERACTIVE_TOKEN' in Path('build/KafePin_Desktop_Helper_Ensure.ps1').read_text(encoding='utf-8-sig')
+          assert 'SessionId -le 0' in Path('build/KafePin_Desktop_Action.ps1').read_text(encoding='utf-8-sig')
+          print('DESKTOP_HELPER_STATIC_OK')
+          PY
+          rm -f KafePin-Pro-Update-v3.1.27.zip
+          (cd build && zip -q -r ../KafePin-Pro-Update-v3.1.27.zip server.js KafePin_System_Manager.ps1 KafePin_Manager_Ensure.ps1 KafePin_Desktop_Action.ps1 KafePin_Desktop_Helper_Ensure.ps1 public/admin.html public/kafepin-pro-yonetim.html kafepin-pro-version.json update.json)
+          test "$(unzip -Z1 KafePin-Pro-Update-v3.1.27.zip | wc -l)" -eq 9
+          unzip -t KafePin-Pro-Update-v3.1.27.zip
+          ZIP_SHA="$(sha256sum KafePin-Pro-Update-v3.1.27.zip | awk '{print $1}')"
+          export ZIP_SHA
+          python3 - <<'PY'
+          import json,os
+          from datetime import datetime,timezone,timedelta
+          u=json.load(open('build/update.json',encoding='utf-8'))
+          out={'version':'3.1.27','publishedAt':datetime.now(timezone(timedelta(hours=3))).isoformat(timespec='seconds'),'notes':u['notes'],'downloadUrl':'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.27.zip','sha256':os.environ['ZIP_SHA']}
+          with open('latest.json','w',encoding='utf-8') as f: json.dump(out,f,ensure_ascii=False,indent=2); f.write('\n')
+          print('GITHUB_ZIP_SHA256='+os.environ['ZIP_SHA'])
+          PY
+          rm -rf build .github/v327 .github/workflows/publish-v327.yml
+          git config user.name 'KafePin Update Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A KafePin-Pro-Update-v3.1.27.zip latest.json .github/v327 .github/workflows/publish-v327.yml
+          git commit -m 'KafePin: v3.1.27 cumulative publish'
+          git push origin HEAD:v327-publish
