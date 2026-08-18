@@ -1,0 +1,114 @@
+--- a/KafePin_Desktop_Action.ps1
++++ b/KafePin_Desktop_Action.ps1
+@@ -6,14 +6,17 @@
+ $requestFile = Join-Path $BridgeDir 'request.json'
+ $resultFile = Join-Path $BridgeDir 'result.json'
+ 
+-function Write-Result([string]$RequestId, [bool]$Ok, [bool]$Foreground, [long]$Hwnd, [string]$ErrorText) {
++function Write-Result([string]$RequestId, [bool]$Ok, [bool]$Foreground, [long]$Hwnd, [string]$ErrorText, [string]$SelectedPath = '', [bool]$Cancelled = $false, [string]$ActionName = '') {
+   try {
+     New-Item -ItemType Directory -Force -Path $BridgeDir | Out-Null
+     $payload = [ordered]@{
+       requestId = $RequestId
++      action = $ActionName
+       ok = $Ok
+       foreground = $Foreground
+       hwnd = $Hwnd
++      selectedPath = $SelectedPath
++      cancelled = $Cancelled
+       sessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
+       error = $ErrorText
+       completedAt = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+@@ -31,8 +34,66 @@
+   if (-not (Test-Path -LiteralPath $requestFile -PathType Leaf)) { throw 'Masaüstü isteği bulunamadı.' }
+   $request = Get-Content -LiteralPath $requestFile -Raw -Encoding UTF8 | ConvertFrom-Json
+   $requestId = [string]$request.requestId
+-  $target = [string]$request.folder
++  $actionName = [string]$request.action
++  if (-not $actionName) { $actionName = 'open-folder' }
+   if (-not $requestId) { throw 'İstek kimliği boş.' }
++
++  if ($actionName -eq 'select-update-zip') {
++    Add-Type -AssemblyName System.Windows.Forms
++
++    # Bu script aktif kullanıcının interaktif oturumunda çalıştığı için HKCU,
++    # gerçekten oturum açmış kullanıcının profilidir. Known Folder GUID ile
++    # Windows'un taşınmış/özelleştirilmiş İndirilenler klasörü de doğru bulunur.
++    $downloads = ''
++    try {
++      $key = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders'
++      $value = (Get-ItemProperty -LiteralPath $key -Name '{374DE290-123F-4565-9164-39C4925E467B}' -ErrorAction Stop).'{374DE290-123F-4565-9164-39C4925E467B}'
++      if ($value) { $downloads = [Environment]::ExpandEnvironmentVariables([string]$value) }
++    } catch {}
++    if (-not $downloads -or -not (Test-Path -LiteralPath $downloads -PathType Container)) {
++      $downloads = Join-Path ([Environment]::GetFolderPath('UserProfile')) 'Downloads'
++    }
++    if (-not (Test-Path -LiteralPath $downloads -PathType Container)) {
++      $downloads = [Environment]::GetFolderPath('UserProfile')
++    }
++
++    $owner = New-Object System.Windows.Forms.Form
++    $owner.Text = 'KafePin Pro'
++    $owner.ShowInTaskbar = $false
++    $owner.TopMost = $true
++    $owner.Width = 1
++    $owner.Height = 1
++    $owner.StartPosition = 'CenterScreen'
++    $owner.Opacity = 0.01
++    $owner.Show()
++    $owner.Activate()
++    [System.Windows.Forms.Application]::DoEvents()
++
++    $dialog = New-Object System.Windows.Forms.OpenFileDialog
++    $dialog.Title = 'KafePin Pro güncelleme paketi seçin'
++    $dialog.Filter = 'KafePin güncelleme paketi (*.zip)|*.zip'
++    $dialog.Multiselect = $false
++    $dialog.CheckFileExists = $true
++    $dialog.CheckPathExists = $true
++    $dialog.RestoreDirectory = $true
++    $dialog.InitialDirectory = $downloads
++    try { $dialog.AutoUpgradeEnabled = $true } catch {}
++
++    $choice = $dialog.ShowDialog($owner)
++    $owner.Close()
++    $owner.Dispose()
++    if ($choice -eq [System.Windows.Forms.DialogResult]::OK) {
++      $selected = [System.IO.Path]::GetFullPath([string]$dialog.FileName)
++      if (-not $selected.EndsWith('.zip', [System.StringComparison]::OrdinalIgnoreCase)) { throw 'Seçilen dosya ZIP değil.' }
++      if (-not (Test-Path -LiteralPath $selected -PathType Leaf)) { throw 'Seçilen ZIP dosyası bulunamadı.' }
++      Write-Result $requestId $true $true 0 '' $selected $false $actionName
++      exit 0
++    }
++    Write-Result $requestId $true $true 0 '' '' $true $actionName
++    exit 0
++  }
++
++  $target = [string]$request.folder
+   if (-not $target) { throw 'Klasör yolu boş.' }
+   $target = [System.IO.Path]::GetFullPath($target).TrimEnd('\')
+   if (-not (Test-Path -LiteralPath $target -PathType Container)) { throw ('Klasör bulunamadı: ' + $target) }
+@@ -114,7 +175,7 @@
+         Force-Foreground $hwnd
+         Start-Sleep -Milliseconds 110
+         if ([KafePinDesktopNative]::GetForegroundWindow() -eq $hwnd) {
+-          Write-Result $requestId $true $true ([Int64]$hwnd) ''
++          Write-Result $requestId $true $true ([Int64]$hwnd) '' '' $false $actionName
+           exit 0
+         }
+       }
+@@ -134,13 +195,13 @@
+     Force-Foreground $hwnd
+     Start-Sleep -Milliseconds 180
+     if ([KafePinDesktopNative]::GetForegroundWindow() -eq $hwnd) {
+-      Write-Result $requestId $true $true ([Int64]$hwnd) ''
++      Write-Result $requestId $true $true ([Int64]$hwnd) '' '' $false $actionName
+       exit 0
+     }
+   }
+ 
+   throw 'Explorer penceresi kullanıcı masaüstünde öne alınamadı.'
+ } catch {
+-  Write-Result $requestId $false $false 0 ([string]$_.Exception.Message)
++  Write-Result $requestId $false $false 0 ([string]$_.Exception.Message) '' $false $actionName
+   exit 31
+ }
