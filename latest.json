@@ -1,7 +1,7 @@
 {
-  "version": "3.1.41",
-  "publishedAt": "2026-08-18T19:58:15+03:00",
-  "notes": "v3.1.41 KÜMÜLATİF UPDATE: v3.1.40 FINAL STABLE ve önceki tüm çalışan özellikler aynen korunur. İstatistikler > Çark Özeti bölümüne, Bugünkü çark maliyetinin hemen altına 'Tüm zamanlar çark maliyeti' satırı eklendi. Bu değer yeni veya tahmini bir hesap kullanmaz; mevcut gerçek toplam spin maliyeti alanı (spinMaliyeti/spinCostTotal) üzerinden gösterilir. Toplam çark net kârı hesabı ve diğer finans/EveryCafe/KafePin kartları değiştirilmemiştir. Paket kümülatiftir; yeni kafede v3.1.29 STABLE kurulumundan ara sürümleri tek tek kurmadan doğrudan v3.1.41'e güncellenebilir.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.41.zip",
-  "sha256": "60702dfaccc2dce67faa034bb00e6d8ec7f1167e7480402fc6758150e730ce68"
+  "version": "3.1.42",
+  "publishedAt": "2026-08-18T20:12:13+03:00",
+  "notes": "v3.1.42 KÜMÜLATİF UPDATE: v3.1.40 FINAL STABLE, v3.1.41 Tüm Zamanlar Çark Maliyeti satırı ve önceki tüm çalışan özellikler korunur. Telegram KAFEPİN CANLI DURUM ve /admin/everycafe/source-today artık 'Bugün' için KafePin'in 20:00-20:00 kafe günü sınırını kullanır; 20:00'dan sonra eski takvim gününün EveryCafe geliri yeni güne taşınmaz. 20:00 sınırını geçen EveryCafe masa kapanışları mevcut devir bölme kuralıyla eski/yeni güne ayrılır; yeni güne yalnız 20:00 sonrası bölüm yazılır ve Telegram'da '20:00 Devir Geliri' ayrı satırda gösterilir. Devir yoksa bu satır 0.00 ₺ olur. Genel ciro kuralı değişmez: EveryCafe gerçek gelir + KafePin doğrudan satış; çark maliyeti cirodan düşülmez. Paket kümülatiftir; yeni kafede v3.1.29 STABLE kurulumundan ara sürümleri tek tek kurmadan doğrudan v3.1.42'ye güncellenebilir.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.42.zip",
+  "sha256": "ab4758548df85375bbace534164d879b82f6a97a1737afde8c46bc404102e9fd"
 }
