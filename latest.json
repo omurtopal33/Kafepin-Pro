@@ -1,6 +1,6 @@
 {
   "version": "3.1.28",
-  "publishedAt": "2026-08-18T09:05:58+03:00",
+  "publishedAt": "2026-08-18T09:06:19+03:00",
   "notes": "v3.1.28 KÜMÜLATİF YEREL ZIP SEÇİCİ: v3.1.27'deki tüm hız ve kararlılık yamaları korunur. 'Bilgisayardan ZIP Seç ve Kur' artık SYSTEM/Session 0 içinde OpenFileDialog açmaz; v3.1.27 Desktop Bridge üzerinden aktif Windows kullanıcısının TASK_LOGON_INTERACTIVE_TOKEN masaüstünde gerçek Windows dosya seçici açılır. Dosya seçici varsayılan olarak Windows Known Folder ile çözülen gerçek İndirilenler klasöründen başlar; ZIP başka yerdeyse kullanıcı dialog içinde istediği klasör veya diske geçebilir. Seçimden sonraki emniyet FULL ZIP yedeği, mevcut güncelleme motoru, restart ve doğrulama akışı değiştirilmedi. Klasör/Explorer öne getirme, temiz restart günlüğü, hızlı yedek/geri yükleme, gecikmiş gün sonu, DB/restore, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesaplarında başka değişiklik yoktur.",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.28.zip",
   "sha256": "d1baa94e5ca01bfb8621ca55fb7a877d6fd74e8c4491fcdfd7e3220379d00aa3"
