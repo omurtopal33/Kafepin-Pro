@@ -1,7 +1,7 @@
 {
-  "version": "3.1.30",
-  "publishedAt": "2026-08-18T10:28:39+03:00",
-  "notes": "v3.1.30 KÜMÜLATİF ANLIK FİNANS GÖRÜNÜMÜ: v3.1.29 yeni kafe STABLE tabanı ve önceki tüm güncelleme/stabilite altyapısı korunur. Admin üst panel seçicisine KAFE & ÇARK ve EVERYCAFE ile KASA & MUHASEBE arasında ayrı 'ANLIK FİNANS' sekmesi eklendi. Yeni ekran mevcut /admin/accounting/summary verisini salt-okunur olarak kullanır; Tahmini Nakit Kasa, Ana Banka, POS Bankası, Bankaya Geçecek Kart, Şahsi Kart Borcu ve Toplam Varlık tek ekranda gösterilir. Aynı ekranda 20:00–20:00 kafe günü için Nakit, Kart, Ciro, Gider, Kart Komisyonu ve Net Sonuç kartları bulunur. Son güncelleme saati, manuel Yenile düğmesi ve doğrudan Muhasebe bölümüne geçiş eklendi. Dört ana sekme dar ekranlarda 2x2/tek sütun olacak şekilde uyarlanır. Muhasebe veritabanı, bakiye formülleri, kasa/POS hesapları, virman, gider kayıtları, kart yatırımı doğrulaması, server.js, EveryCafe, Telegram, masa/ücret/çark hesapları ve Kafe Client davranışı değiştirilmedi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.30.zip",
-  "sha256": "f99511d5b9ac7b4a8f045c4d7514c6e6b6a50a2a3bc06413ca940c1e7bf7c62d"
+  "version": "3.1.31",
+  "publishedAt": "2026-08-18T10:50:06+03:00",
+  "notes": "v3.1.31 KÜMÜLATİF KASA KONTROL / FARK BUL: v3.1.29 yeni kafe STABLE tabanı ve v3.1.30 Anlık Finans görünümü dahil önceki tüm güncellemeler korunur. Anlık Finans ekranına fiziksel kasa sayım tutarı girilerek Tahmini Nakit Kasa ile karşılaştırılan Kasa Kontrol / Fark Bul bölümü eklendi. Sistem beklenen kasa, fiziksel sayım ve Açık/Fazla farkını gösterir. Yeni salt-okunur /admin/cash-check/candidates endpoint'i son 7 gündeki nakit kasayı etkileyen kayıtlı hareketleri döndürür; masa/KafePin/EveryCafe nakit tahsilatları, nakit gider ve bakiye hareketleri ile Nakit Kasa virmanları listelenir. Fark yardımcısı farka tam/yakın tek kayıtları ve farkı birlikte oluşturan iki kayıt kombinasyonlarını aday olarak gösterir. Hiçbir ödeme, gider, virman veya muhasebe kaydı otomatik değiştirilmez. Tahmini Nakit Kasa, POS, Ana Banka, kart aktarımı, gider, komisyon, Toplam Varlık, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client hesaplama/davranışları değiştirilmedi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.31.zip",
+  "sha256": "ca7a977edc4fb65deb263f092a13162c6bba00a16ed993c5717494e181ae2adf"
 }
