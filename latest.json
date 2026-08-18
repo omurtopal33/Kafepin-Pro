@@ -1,7 +1,7 @@
 {
-  "version": "3.1.31",
-  "publishedAt": "2026-08-18T10:50:06+03:00",
-  "notes": "v3.1.31 KÜMÜLATİF KASA KONTROL / FARK BUL: v3.1.29 yeni kafe STABLE tabanı ve v3.1.30 Anlık Finans görünümü dahil önceki tüm güncellemeler korunur. Anlık Finans ekranına fiziksel kasa sayım tutarı girilerek Tahmini Nakit Kasa ile karşılaştırılan Kasa Kontrol / Fark Bul bölümü eklendi. Sistem beklenen kasa, fiziksel sayım ve Açık/Fazla farkını gösterir. Yeni salt-okunur /admin/cash-check/candidates endpoint'i son 7 gündeki nakit kasayı etkileyen kayıtlı hareketleri döndürür; masa/KafePin/EveryCafe nakit tahsilatları, nakit gider ve bakiye hareketleri ile Nakit Kasa virmanları listelenir. Fark yardımcısı farka tam/yakın tek kayıtları ve farkı birlikte oluşturan iki kayıt kombinasyonlarını aday olarak gösterir. Hiçbir ödeme, gider, virman veya muhasebe kaydı otomatik değiştirilmez. Tahmini Nakit Kasa, POS, Ana Banka, kart aktarımı, gider, komisyon, Toplam Varlık, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client hesaplama/davranışları değiştirilmedi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.31.zip",
-  "sha256": "ca7a977edc4fb65deb263f092a13162c6bba00a16ed993c5717494e181ae2adf"
+  "version": "3.1.32",
+  "publishedAt": "2026-08-18T10:52:27+03:00",
+  "notes": "v3.1.32 KÜMÜLATİF KASA FARKI GİDER KONTROL UYARISI: v3.1.29 yeni kafe STABLE tabanı, v3.1.30 Anlık Finans ve v3.1.31 Kasa Kontrol / Fark Bul dahil önceki tüm güncellemeler korunur. Kasa Kontrol yardımcısı farka tam/yakın tek kayıt veya iki kayıt kombinasyonu bulamazsa artık belirgin şekilde 'önce GİDER GİRİŞLERİNİ kontrol et' uyarısı verir. Uyarı; kasadan nakit ödenmiş fakat sisteme girilmemiş gider, yanlış tutarlı gider veya yanlış hesap seçilmiş gider ihtimallerini hatırlatır ve Kasa & Muhasebe → Son Bakiye ve Gider Kayıtları bölümüne yönlendirir. Bu değişiklik yalnız kullanıcı yönlendirmesidir; hiçbir gider, ödeme, virman veya muhasebe kaydı otomatik değiştirilmez. Tahmini Nakit Kasa, POS, Ana Banka, kart aktarımı, Toplam Varlık, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client hesaplama/davranışları değiştirilmedi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.32.zip",
+  "sha256": "c80b318f8c2de767718ab0ea4f83903a033da5f1f8e5c41c461e091779d32d14"
 }
