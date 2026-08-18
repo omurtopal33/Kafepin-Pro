@@ -1,0 +1,21 @@
+--- a/server.js
++++ b/server.js
+@@ -14557,6 +14557,18 @@
+     list: liveLogs
+   });
+ });
++// v3.1.26: Yönetim Merkezi'nden manuel restart başlamadan hemen önce
++// mevcut Node oturumunun Canlı Sistem Günlüğü belleğini gerçekten temizle.
++// Böylece restart handoff yavaşlasa bile eski oturum satırları arayüzde veya
++// aynı Node belleğinde yeniden görünmez; yeni Node zaten boş liveLogs ile açılır.
++app.post("/admin/live-log/reset-session", (req, res) => {
++  liveLogs.length = 0;
++  res.json({
++    ok: true,
++    startedAt: PRO_SERVER_STARTED_AT,
++    clearedAt: Date.now()
++  });
++});
+ app.get("/admin/diagnostics", (req, res) => {
+ 
+   db.get(
