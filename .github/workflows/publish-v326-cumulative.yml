@@ -1,8 +1,7 @@
 name: KafePin Pro v3.1.26 publish
 on:
-  push:
-    paths:
-      - '.github/workflows/publish-v326-cumulative.yml'
+  pull_request:
+    branches: [main]
 permissions:
   contents: write
 jobs:
@@ -10,5 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
       - name: Build verify publish
         run: bash .github/v326/publish.sh
