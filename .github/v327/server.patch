@@ -1,0 +1,293 @@
+--- a/server.js
++++ b/server.js
+@@ -5110,6 +5110,38 @@
+   });
+ });
+ 
++function runDesktopBridgeProcess(exe, args, timeoutMs, callback) {
++  let child;
++  let stdout = "";
++  let stderr = "";
++  let settled = false;
++  const finish = (err, detail) => {
++    if (settled) return;
++    settled = true;
++    callback(err, detail || {});
++  };
++  try {
++    child = spawn(exe, args, { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
++  } catch (err) {
++    return finish(err);
++  }
++  if (child.stdout) child.stdout.on("data", chunk => { stdout += String(chunk || ""); });
++  if (child.stderr) child.stderr.on("data", chunk => { stderr += String(chunk || ""); });
++  const timer = setTimeout(() => {
++    try { child.kill(); } catch (_err) {}
++    finish(new Error(`${path.basename(exe)} zaman aşımı`), { stdout, stderr });
++  }, Math.max(500, Number(timeoutMs) || 3000));
++  child.on("error", err => {
++    clearTimeout(timer);
++    finish(err, { stdout, stderr });
++  });
++  child.on("close", code => {
++    clearTimeout(timer);
++    if (Number(code) === 0) return finish(null, { code: 0, stdout, stderr });
++    finish(new Error((stderr || stdout || `${path.basename(exe)} çıkış kodu ${code}`).trim()), { code, stdout, stderr });
++  });
++}
++
+ function focusExplorerFolderWindows(folder, callback) {
+   const finishOnce = (() => {
+     let done = false;
+@@ -5120,7 +5152,7 @@
+     };
+   })();
+ 
+-  // Linux/test ortami icin sadece koruyucu fallback. KafePin saha kurulumu Windows'tur.
++  // Linux/test ortami icin koruyucu fallback. Saha kurulumu Windows'tur.
+   if (process.platform !== "win32") {
+     try {
+       const child = spawn("xdg-open", [folder], { detached: true, stdio: "ignore" });
+@@ -5131,172 +5163,87 @@
+     }
+   }
+ 
+-  // Windows foreground kisiti yuzunden sadece explorer.exe <klasor> komutu gondermek
+-  // yeterli degildir. Hedef Explorer penceresinin HWND'si bulunur; pencere restore edilir,
+-  // foreground thread ile gecici input baglantisi kurulur ve HWND gercekten foreground
+-  // olana kadar kisa araliklarla yeniden denenir. Basari ancak GetForegroundWindow == HWND.
+-  const psScript = String.raw`
+-$ErrorActionPreference = 'SilentlyContinue'
+-$target = [System.IO.Path]::GetFullPath($env:KAFEPIN_FOCUS_FOLDER).TrimEnd('\\')
+-Add-Type @'
+-using System;
+-using System.Runtime.InteropServices;
+-public static class KafePinForeground {
+-  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+-  [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr hWnd);
+-  [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr hWnd);
+-  [DllImport("user32.dll")] public static extern bool ShowWindowAsync(IntPtr hWnd, int nCmdShow);
+-  [DllImport("user32.dll")] public static extern IntPtr SetActiveWindow(IntPtr hWnd);
+-  [DllImport("user32.dll")] public static extern IntPtr SetFocus(IntPtr hWnd);
+-  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+-  [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+-  [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+-  [DllImport("user32.dll")] public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint flags);
+-  [DllImport("user32.dll")] public static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extraInfo);
+-  [DllImport("user32.dll")] public static extern void SwitchToThisWindow(IntPtr hWnd, bool altTab);
+-}
+-'@
+-
+-function Normalize-Path([string]$value) {
+-  try { return [System.IO.Path]::GetFullPath($value).TrimEnd('\\') } catch { return '' }
+-}
++  // v3.1.27: Node/Server Manager SYSTEM oturumunda calisir. Windows, Session 0'daki
++  // bir prosesin kullanicinin Explorer penceresini foreground yapmasini guvenlik geregi
++  // engelleyebilir. Bu nedenle pencere islemi artik SYSTEM'den yapilmaz. Sunucu sadece
++  // ProgramData bridge istegini yazar ve "KafePin Pro Desktop Action" gorevini tetikler.
++  // O gorev aktif kullanicinin TASK_LOGON_INTERACTIVE_TOKEN oturumunda calisir; Explorer'i
++  // ayni masaustu/session icinde acar, HWND'yi one getirir ve sonucu bridge dosyasina yazar.
++  const programData = process.env.ProgramData || "C:\\ProgramData";
++  const bridgeDir = path.join(programData, "KafePinPro", "DesktopBridge");
++  const requestFile = path.join(bridgeDir, "request.json");
++  const resultFile = path.join(bridgeDir, "result.json");
++  const helperEnsure = path.join(__dirname, "KafePin_Desktop_Helper_Ensure.ps1");
++  const taskName = "KafePin Pro Desktop Action";
++  const requestId = crypto.randomBytes(12).toString("hex");
+ 
+-function Find-TargetWindow {
+   try {
+-    $shell = New-Object -ComObject Shell.Application
+-    foreach ($window in @($shell.Windows())) {
+-      try {
+-        if (-not $window.HWND) { continue }
+-        $url = [string]$window.LocationURL
+-        if (-not $url.StartsWith('file:', [System.StringComparison]::OrdinalIgnoreCase)) { continue }
+-        $candidate = Normalize-Path ([System.Uri]::UnescapeDataString(([System.Uri]$url).LocalPath))
+-        if ($candidate -ieq $target) { return $window }
+-      } catch {}
+-    }
+-  } catch {}
+-  return $null
+-}
++    fs.mkdirSync(bridgeDir, { recursive: true });
++    const tempRequest = `${requestFile}.${process.pid}.${Date.now()}.tmp`;
++    fs.writeFileSync(tempRequest, JSON.stringify({ requestId, folder, createdAt: Date.now() }), "utf8");
++    try { fs.unlinkSync(requestFile); } catch (_err) {}
++    fs.renameSync(tempRequest, requestFile);
++    try { fs.unlinkSync(resultFile); } catch (_err) {}
++  } catch (err) {
++    return finishOnce(new Error(`Masaüstü klasör isteği hazırlanamadı: ${err.message || err}`));
++  }
+ 
+-function Force-Foreground([IntPtr]$hwnd) {
+-  try {
+-    [KafePinForeground]::ShowWindowAsync($hwnd, 9) | Out-Null # SW_RESTORE
+-    $foreground = [KafePinForeground]::GetForegroundWindow()
+-    [uint32]$pidA = 0
+-    [uint32]$pidB = 0
+-    $foregroundThread = if ($foreground -ne [IntPtr]::Zero) { [KafePinForeground]::GetWindowThreadProcessId($foreground, [ref]$pidA) } else { 0 }
+-    $targetThread = [KafePinForeground]::GetWindowThreadProcessId($hwnd, [ref]$pidB)
+-    $currentThread = [KafePinForeground]::GetCurrentThreadId()
+-    $attachedForeground = $false
+-    $attachedTarget = $false
+-    try {
+-      if ($foregroundThread -gt 0 -and $foregroundThread -ne $currentThread) {
+-        $attachedForeground = [KafePinForeground]::AttachThreadInput($currentThread, $foregroundThread, $true)
+-      }
+-      if ($targetThread -gt 0 -and $targetThread -ne $currentThread) {
+-        $attachedTarget = [KafePinForeground]::AttachThreadInput($currentThread, $targetThread, $true)
+-      }
+-      # Windows'un foreground-lock davranisini kullanici ALT girdisiyle serbest birak.
+-      [KafePinForeground]::keybd_event(0x12, 0, 0, [UIntPtr]::Zero)
+-      [KafePinForeground]::keybd_event(0x12, 0, 2, [UIntPtr]::Zero)
+-      [KafePinForeground]::SwitchToThisWindow($hwnd, $true)
+-      # Kisa TOPMOST -> NOTOPMOST dansi pencereyi Z-order'in basina tasir ama kalici topmost birakmaz.
+-      $flags = 0x0001 -bor 0x0002 -bor 0x0040
+-      [KafePinForeground]::SetWindowPos($hwnd, [IntPtr](-1), 0, 0, 0, 0, $flags) | Out-Null
+-      [KafePinForeground]::SetWindowPos($hwnd, [IntPtr](-2), 0, 0, 0, 0, $flags) | Out-Null
+-      [KafePinForeground]::BringWindowToTop($hwnd) | Out-Null
+-      [KafePinForeground]::SetActiveWindow($hwnd) | Out-Null
+-      [KafePinForeground]::SetForegroundWindow($hwnd) | Out-Null
+-      [KafePinForeground]::SetFocus($hwnd) | Out-Null
+-    } finally {
+-      if ($attachedTarget) { [KafePinForeground]::AttachThreadInput($currentThread, $targetThread, $false) | Out-Null }
+-      if ($attachedForeground) { [KafePinForeground]::AttachThreadInput($currentThread, $foregroundThread, $false) | Out-Null }
++  let ensureAttempted = false;
++  const ensureAndRetry = () => {
++    if (ensureAttempted) return finishOnce(new Error("Explorer masaüstü yardımcısı yanıt vermedi"));
++    ensureAttempted = true;
++    if (!fs.existsSync(helperEnsure)) {
++      return finishOnce(new Error("KafePin masaüstü yardımcısı kurulum dosyası bulunamadı"));
+     }
+-  } catch {}
+-}
+-
+-$window = Find-TargetWindow
+-if (-not $window) {
+-  try { Start-Process -FilePath (Join-Path $env:WINDIR 'explorer.exe') -ArgumentList @($target) | Out-Null } catch {}
+-}
++    runDesktopBridgeProcess("powershell.exe", [
++      "-NoProfile",
++      "-NonInteractive",
++      "-ExecutionPolicy", "Bypass",
++      "-File", helperEnsure,
++      "-InstallRoot", __dirname
++    ], 7000, ensureErr => {
++      if (ensureErr) return finishOnce(new Error(`Masaüstü yardımcısı hazırlanamadı: ${ensureErr.message || ensureErr}`));
++      triggerTask(false);
++    });
++  };
+ 
+-$deadline = (Get-Date).AddSeconds(4.5)
+-do {
+-  $window = Find-TargetWindow
+-  if ($window) {
+-    try {
+-      $hwnd = [IntPtr]([Int64]$window.HWND)
+-      Force-Foreground $hwnd
+-      Start-Sleep -Milliseconds 120
+-      if ([KafePinForeground]::GetForegroundWindow() -eq $hwnd) {
+-        Write-Output ('FOCUSED|' + [string]$window.HWND)
+-        exit 0
++  const pollResult = () => {
++    const deadline = Date.now() + (ensureAttempted ? 6500 : 3500);
++    const poll = () => {
++      if (Date.now() > deadline) {
++        return ensureAndRetry();
+       }
+-    } catch {}
+-  }
+-  Start-Sleep -Milliseconds 140
+-} while ((Get-Date) -lt $deadline)
+-
+-# Ilk acilis Explorer tarafinda gec kaldiysa bir kez daha shell'i tetikle ve zorla.
+-try { Start-Process -FilePath (Join-Path $env:WINDIR 'explorer.exe') -ArgumentList @($target) | Out-Null } catch {}
+-$retryDeadline = (Get-Date).AddSeconds(2.0)
+-do {
+-  $window = Find-TargetWindow
+-  if ($window) {
+-    try {
+-      $hwnd = [IntPtr]([Int64]$window.HWND)
+-      Force-Foreground $hwnd
+-      Start-Sleep -Milliseconds 120
+-      if ([KafePinForeground]::GetForegroundWindow() -eq $hwnd) {
+-        Write-Output ('FOCUSED|' + [string]$window.HWND)
+-        exit 0
++      try {
++        const raw = fs.readFileSync(resultFile, "utf8").replace(/^\uFEFF/, "");
++        const data = JSON.parse(raw);
++        if (!data || String(data.requestId || "") !== requestId) {
++          return setTimeout(poll, 80);
++        }
++        if (data.ok === true && data.foreground === true) {
++          return finishOnce(null, {
++            verified: true,
++            hwnd: Number(data.hwnd) || 0,
++            sessionId: Number(data.sessionId) || 0,
++            method: "interactive-desktop-task"
++          });
++        }
++        return finishOnce(new Error(String(data.error || "Explorer kullanıcı masaüstünde öne getirilemedi")));
++      } catch (_err) {
++        return setTimeout(poll, 80);
+       }
+-    } catch {}
+-  }
+-  Start-Sleep -Milliseconds 140
+-} while ((Get-Date) -lt $retryDeadline)
+-
+-Write-Output 'NOT_FOCUSED'
+-exit 3
+-`;
++    };
++    poll();
++  };
+ 
+-  const encoded = Buffer.from(psScript, "utf16le").toString("base64");
+-  let stdout = "";
+-  let stderr = "";
+-  let child;
+-  try {
+-    child = spawn("powershell.exe", [
+-      "-NoProfile",
+-      "-NonInteractive",
+-      "-STA",
+-      "-ExecutionPolicy", "Bypass",
+-      "-EncodedCommand", encoded
+-    ], {
+-      windowsHide: true,
+-      env: { ...process.env, KAFEPIN_FOCUS_FOLDER: folder },
+-      stdio: ["ignore", "pipe", "pipe"]
++  function triggerTask(allowEnsure) {
++    runDesktopBridgeProcess("schtasks.exe", ["/Run", "/TN", taskName], 3000, err => {
++      if (!err) return pollResult();
++      if (!allowEnsure) return finishOnce(err);
++      ensureAndRetry();
+     });
+-  } catch (err) {
+-    return finishOnce(err);
+   }
+ 
+-  const timer = setTimeout(() => {
+-    try { child.kill(); } catch (_err) {}
+-    finishOnce(new Error("Explorer penceresi öne getirilemedi (odak zaman aşımı)"));
+-  }, 8000);
+-  if (child.stdout) child.stdout.on("data", chunk => { stdout += String(chunk || ""); });
+-  if (child.stderr) child.stderr.on("data", chunk => { stderr += String(chunk || ""); });
+-  child.on("error", err => {
+-    clearTimeout(timer);
+-    finishOnce(err);
+-  });
+-  child.on("close", code => {
+-    clearTimeout(timer);
+-    const match = stdout.match(/FOCUSED\|(\d+)/i);
+-    if (Number(code) === 0 && match) {
+-      return finishOnce(null, { verified: true, hwnd: Number(match[1]) || 0, method: "hwnd-foreground" });
+-    }
+-    finishOnce(new Error((stderr || stdout || "Explorer penceresi öne getirilemedi").trim()));
+-  });
++  triggerTask(true);
+ }
+ 
+ app.post("/admin/pro/open-folder", (req, res) => {
