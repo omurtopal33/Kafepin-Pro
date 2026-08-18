@@ -1,7 +1,7 @@
 {
-  "version": "3.1.25",
-  "publishedAt": "2026-08-18T07:57:22+03:00",
-  "notes": "v3.1.25 FINAL: (1) Sistem Güncelleme kartı sade kaldı; uzun sürüm notları kartta gösterilmez. (2) Yönetim Merkezi Yeniden Başlat artık Server Manager /restart-async handoff yolunu kullanır; Node kapanırken fetch yarıda kesilmediği için 'signal is aborted without reason' uyarısı oluşmaz. (3) Canlı Sistem Günlüğü restart öncesi eski startedAt kimliğini tutar; yeni Node farklı boot kimliğiyle açılana kadar eski oturum satırları yeniden gösterilmez ve yeni günlük temiz başlar. (4) DB Klasörü, FULL ZIP Klasörü, KafePin Klasörü ve Yedek Klasörü açma motoru sahada doğrulanmış v3.1.21 STABLE Explorer davranışına birebir geri döndürüldü; GUI child bekleme/COM foreground doğrulaması kaldırıldığı için Explorer zaman aşımı ve 'öne getirme doğrulanamadı' sahte uyarısı yoktur. v3.1.23 hızlı yedek/geri yükleme ve gün sonu düzeltmesi, v3.1.22 hız optimizasyonları, Admin bildirimleri, Server Manager, DB, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesapları korunur.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.25.zip",
-  "sha256": "6be14e2b625a51e2c32fe90a433e23e01c2fb36b8152ddc5b3dbb86206a9b639"
+  "version": "3.1.26",
+  "publishedAt": "2026-08-18T08:28:01+03:00",
+  "notes": "v3.1.26 KÜMÜLATİF: v3.1.21 STABLE tabanı üstündeki tüm hız ve kararlılık yamalarını tek pakette toplar. Manuel Yeniden Başlat akışında Canlı Sistem Günlüğü artık yalnız arayüzde gizlenmez; Server Manager restart handoff'undan hemen önce mevcut Node'un liveLogs belleği /admin/live-log/reset-session ile gerçekten temizlenir. Reset doğrulanmadan restart başlatılmaz; arayüz eski startedAt değişene kadar bekler ve yeni Node açıldığında yalnız yeni oturum kayıtlarını gösterir. v3.1.25 Explorer foreground doğrulaması ve sade güncelleme kartı, v3.1.23 hızlı yedek/geri yükleme ile gecikmiş gün sonu düzeltmesi, v3.1.22 polling/Manager hız optimizasyonları ve v3.1.21 Server Manager stabilitesi dahildir. DB/restore, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesaplarında başka değişiklik yoktur.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.26.zip",
+  "sha256": "72ad2dce53dc4f6b61f380195625ac7938f141e77412fa0f9d0451c3ea808926"
 }
