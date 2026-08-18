@@ -1,7 +1,7 @@
 {
-  "version": "3.1.26",
-  "publishedAt": "2026-08-18T08:28:58+03:00",
-  "notes": "v3.1.26 KÜMÜLATİF: v3.1.21 STABLE tabanı üstündeki tüm hız ve kararlılık yamalarını tek pakette toplar. Manuel Yeniden Başlat akışında Canlı Sistem Günlüğü artık yalnız arayüzde gizlenmez; Server Manager restart handoff'undan hemen önce mevcut Node'un liveLogs belleği /admin/live-log/reset-session ile gerçekten temizlenir. Reset doğrulanmadan restart başlatılmaz; arayüz eski startedAt değişene kadar bekler ve yeni Node açıldığında yalnız yeni oturum kayıtlarını gösterir. v3.1.25 Explorer foreground doğrulaması ve sade güncelleme kartı, v3.1.23 hızlı yedek/geri yükleme ile gecikmiş gün sonu düzeltmesi, v3.1.22 polling/Manager hız optimizasyonları ve v3.1.21 Server Manager stabilitesi dahildir. DB/restore, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesaplarında başka değişiklik yoktur.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.26.zip",
-  "sha256": "72ad2dce53dc4f6b61f380195625ac7938f141e77412fa0f9d0451c3ea808926"
+  "version": "3.1.27",
+  "publishedAt": "2026-08-18T08:45:42+03:00",
+  "notes": "v3.1.27 KÜMÜLATİF MASAÜSTÜ KÖPRÜSÜ: v3.1.26'daki tüm hız ve kararlılık yamaları korunur. Explorer klasör açma/öne getirme işlemi artık SYSTEM/Session 0 içinden yapılmaz. Sunucu yalnız ProgramData altında isteği yazar; KafePin Pro Desktop Action görevi aktif Windows kullanıcısının TASK_LOGON_INTERACTIVE_TOKEN oturumunda çalışır, hedef klasörü o gerçek masaüstü oturumunda açar, Explorer HWND'sini restore/foreground yapar ve sonuç doğrulanmadan başarı dönmez. İlk kullanımda görev yoksa KafePin_Desktop_Helper_Ensure.ps1 aktif kullanıcıyı bulup parolasız InteractiveToken görevini otomatik kaydeder; kullanıcı değişmiş/stale görev varsa yanıt gelmediğinde kendini bir kez yeniden kurar. DB/restore, EveryCafe, Telegram, muhasebe, masa/çark, gelir hesapları, hızlı yedek/geri yükleme, gecikmiş gün sonu ve temiz restart günlüğü değiştirilmedi.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.27.zip",
+  "sha256": "68e2290f70ac9174e943140e888bb38de8ff72060b070b44ad123a49c05dd1bb"
 }
