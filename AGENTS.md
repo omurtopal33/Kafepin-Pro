@@ -24,14 +24,15 @@ Bu repoda herhangi bir kod değişikliği yapmadan önce aşağıdaki dosyaları
 - Genel Ciro = EveryCafe Gerçek Gelir + KafePin Doğrudan Satış. Çark maliyeti cirodan düşülmez.
 - İşletme günü sınırı 20:00'dır; 20:00 sonrası yeni işletme günüdür.
 - Canlı Sistem Günlüğü anlamlı operasyonel hareketlerin ana teknik takip yeridir. Ping/heartbeat spam edilmez.
-- Her sürümde sürüm notu zorunludur.
+- Her sürümde ayrıntılı sürüm notu zorunludur ve Yönetim panelindeki Sürüm Notları ekranında görünürlüğü test edilir.
 
 ## Sürüm disiplini
 
-- v3.1.43 kilitli FINAL STABLE referansıdır; yerinde değiştirilmez.
-- Yeni değişiklikler yeni kümülatif sürüm numarasıyla çıkar.
-- Yeni kafe kurulumu v3.1.29 STABLE taban + doğrudan en güncel kümülatif update şeklindedir.
-- Paketlemeden önce syntax, finans formülleri, spin tarifeleri, 45 dakika yaşam döngüsü, EveryCafe read-only, 20:00 sınırı, UI tema bütünlüğü ve metadata test edilir.
+- **v3.1.45 kilitli FINAL STABLE referansıdır; yerinde değiştirilmez.**
+- v3.1.44, v3.1.45'e temel olan sahada/testte doğrulanmış önceki geliştirme sürümüdür.
+- Bundan sonraki değişiklikler **v3.1.46+** yeni kümülatif sürüm numarasıyla çıkar.
+- Yeni kafe kurulumu v3.1.29 STABLE taban + doğrudan en güncel kümülatif stable update şeklindedir.
+- Paketlemeden önce syntax, finans formülleri, spin tarifeleri, 45 dakika yaşam döngüsü, EveryCafe read-only, 20:00 sınırı, UI tema bütünlüğü, sürüm metadata'sı ve Sürüm Notları ekranı test edilir.
 - Test sonuçlarını kullanıcıya açıkla; kullanıcı paketleme istediyse paketle.
 
 Bir kural ile kullanıcı isteği çelişirse kod yazmadan önce çelişkiyi kullanıcıya açıkça bildir ve onay iste.
