@@ -48,6 +48,8 @@ Bu dosya KafePin MP3 Bot PRO entegrasyonu ve sonraki MP3 geliştirmeleri için d
 - Otomatik liste çözümleme/indirme seçiminde yanlış parçaya sessizce geçilmez; `Sanatçı + Şarkı` birlikte yüksek güvenle eşleşmeli, kullanıcı özellikle istemediyse `live`, `remix`, `cover`, `karaoke` gibi farklı sürümler otomatik seçilmemelidir.
 - Bir YouTube sonucu elle seçildiyse seçilen videonun URL'si korunur; sistem onu sonradan benzer adlı başka videoyla değiştirmez.
 - Sanatçı listeleri/playlistlerinde seçilen sanatçıya ait olmadığı doğrulanan parçalar sanatçı listesi gibi sunulmaz.
+- Bir şarkı sonucundan sanatçı listeleri açıldığında önce gerçek sanatçı çözülür; video bir label/uploader kanalındaysa label kanalı sanatçı kanalı sayılmaz. Mümkün olduğunda sanatçının gerçek YouTube kanalındaki `/playlists` bölümü öncelikli gösterilir.
+- Sanatçının kendi YouTube kanalından açılan playlist içindeki videolar doğrudan o playlistteki video URL'leriyle kullanıcıya sunulur; benzer başlıklı başka videolarla otomatik değiştirilmez.
 
 ## 7. Sürüm ve test disiplini
 
