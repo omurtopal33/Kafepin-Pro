@@ -69,7 +69,16 @@ Bu dosya yeni sohbetlerde ve yeni sürümlerde referans alınacak ana kuralları
 - İlk kontrol noktası **Sistem Sağlığı** ekranıdır.
 - Finans Tutarlılığı, 20:00 Gün Devri, Otomatik Yedek, Anomali Denetimi, DB, Telegram ve diğer bağlantılar görünür olmalıdır.
 - Güvenli Self-Test gerçek satış/finans kayıtlarını değiştirmeden formül ve DB kontrollerini çalıştırır.
-- Entegrasyon Günlüğü mümkün olduğunca ayrıntılı olmalıdır; masa kapanışında sadece kapanma nedeni değil, yapılan temizlik ve yeni müşteriye hazırlık sonucu da görünmelidir.
+- Entegrasyon Günlüğü finans ve EveryCafe aktarım/audit ayrıntıları için kullanılır; gereksiz şekilde Canlı Sistem Günlüğü ile aynı kayıtlar çoğaltılmaz.
+
+## Canlı Sistem Günlüğü – takip kuralı
+
+- **KafePin'deki anlamlı tüm operasyonel hareketler Canlı Sistem Günlüğü'ne yazılır.** Amaç bir sorunda olay sırasını tek ekrandan geriye doğru takip edebilmektir.
+- Masa açılması/kapanması, EveryCafe kapanış algısı, yeni müşteriye hazırlama, session finalize/temizlik, spin verilmesi ve sayaç sıfırlama, admin müdahaleleri, ücretsiz kapanış, gün sonu/devir, yedek, güncelleme/restart, finans düzeltmesi, alarm/anomali ve önemli entegrasyon sonuçları günlükte görünmelidir.
+- Kayıt mümkün olduğunda `masa + olay + sonuç` biçiminde anlaşılır yazılmalıdır; örneğin `Masa 20 • EveryCafe kapandı • session/spin/runtime temizlendi • yeni müşteriye hazır`.
+- Hata veya başarısız işlem yalnız hata mesajını değil, mümkünse hangi adımda kaldığını da belirtmelidir.
+- Aynı saniyede tekrar eden ping/heartbeat gibi yüksek frekanslı teknik olaylar günlüğü boğmamalıdır; yalnız durum değişimi veya anlamlı sonuç olduğunda kayıt oluşturulur.
+- Canlı Sistem Günlüğü operasyonel takip içindir; Entegrasyon Günlüğü finans/audit ayrıntısı için ayrı tutulabilir.
 
 ## Sürüm notu zorunluluğu
 
