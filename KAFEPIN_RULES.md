@@ -30,26 +30,14 @@ Bu dosya yeni sohbetlerde ve yeni sürümlerde referans alınacak ana kuralları
 - Kapanışta eski session/runtime/spin sayacı/kilitler temizlenir; yeni müşteri kendi yeni oturumu ve 45 dk çark sayacıyla başlar.
 - Finans tutarı tahmin edilmez; kapanış/tahsilat EveryCafe'nin gerçek salt-okunur kaydından senkronlanır.
 
-## Çark 45 dakika – değişmez ana kural
+## Çark kuralları
 
-- Çark bekleme süresi sabit **45 dakika**dır.
-- **45 dakika sayacı yalnız müşteri çark penceresini/sayfasını gerçekten açtığında başlar.**
-- **Çark penceresi kapalıysa sayaç ASLA başlamaz, ilerlemez veya arka planda tüketilmez.**
-- PC'nin açık olması, ping gelmesi, EveryCafe masasının açık olması, `/status` benzeri arka plan çağrıları, monitor/admin yenilemeleri veya başka servis trafiği tek başına 45 dakika sayacını başlatamaz.
-- Pencere hiç açılmadıysa müşteri spin hakkı için süre biriktirmiş sayılmaz; spin kullanamaz.
-- İlk gerçek pencere açılışında müşteri **45:00** ile başlar; anında spin hakkı verilmez.
-- Pencere açık kaldığı sürece geri sayım normal şekilde 45:00 → 00:00 ilerler.
-- Pencere kapatılırsa sayaç arka planda tüketilmemelidir. Sonraki açılış davranışı uygulamadaki kayıtlı pencere/sayaç durumu ile tutarlı olmalı; hiçbir koşulda kapalı pencere süresi bekleme süresinden düşmemelidir.
-- Her başarılı spin sonrası aynı müşteri için yeni bekleme turu **45:00** olarak sıfırlanır.
-- Başarılı spin sonrası pencere açık ise yeni 45 dakika geri sayar; pencere kapalı ise yeni 45 dakika bekleme penceresi açılana kadar tüketilmez.
-- EveryCafe ücretsiz/hediye süreleri, masa ücreti, oturum süresi veya GiftTime çark 45 dakika sayacını değiştiremez.
-- Yalnız Admin `Acil Hazır / force-ready` bekleme kuralını bilinçli olarak atlayabilir.
-- Mevcut 5 spin hakkı kuralı korunur; yeni müşteri eski müşterinin hak/sayaç durumunu devralmaz.
-- EveryCafe hesabı kapandığında eski müşterinin çark sayacı ve runtime durumu temizlenir; yeni müşteri ilk pencere açılışında kendi 45:00 sayacıyla başlar.
-- Her release testinde en az şu senaryolar doğrulanır: `pencere kapalı → sayaç değişmez`, `ilk açılış → 45:00`, `pencere açık → geri sayım`, `spin → tekrar 45:00`, `EveryCafe hediye süre → çark sayacı değişmez`, `eski müşteri kapanış → sayaç temiz`, `yeni müşteri → yeni 45:00`.
-
-## Çark maliyet kuralları
-
+- Çark bekleme süresi sabit **45 dakika**.
+- İlk çark sayfası açılışında 45:00 başlar; anında spin hakkı verilmez.
+- Her başarılı spin sonrası sayaç yeniden 45:00 olur.
+- Mevcut 5 spin hakkı kuralı korunur.
+- Yalnız Admin `Acil Hazır / force-ready` beklemeyi atlayabilir.
+- EveryCafe ücretsiz/hediye süreleri çark sayacını değiştirmez.
 - Spin maliyetleri merkezi ve sabittir:
   - Normal 30 dk = 25 TL
   - Normal 60 dk = 50 TL
@@ -114,4 +102,3 @@ Bu dosya yeni sohbetlerde ve yeni sürümlerde referans alınacak ana kuralları
 - Yeni değişiklikler bir sonraki sürüm numarasıyla çıkarılır.
 - Gereksiz çalışan kodlara dokunulmaz; değişiklikler mümkün olduğunca hedefli yapılır.
 - Paketlemeden önce Node/HTML JS syntax, ZIP bütünlüğü, finans formülleri, spin tarifeleri, read-only EveryCafe erişimleri ve sürüm metadata'sı kontrol edilir.
-- Çark tarafında ayrıca 45 dakika pencere kuralı regresyon testi zorunludur; `pencere kapalıyken sayaç tüketiliyor` davranışı release engelleyici hata kabul edilir.
