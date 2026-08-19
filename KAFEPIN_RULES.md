@@ -4,8 +4,9 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 
 ## 1. Sürüm ve kurulum kuralları
 
-- **v3.1.43 = kilitli FINAL STABLE referans sürümüdür.** Değiştirilmez.
-- v3.1.44 ve sonrası geliştirmeler yeni kümülatif sürüm numarasıyla çıkar.
+- **v3.1.45 = kilitli FINAL STABLE referans sürümüdür.** Yerinde değiştirilmez.
+- v3.1.44 sahada/testte doğrulanan ve v3.1.45'e temel olan önceki geliştirme sürümüdür.
+- Bundan sonraki geliştirmeler **v3.1.46+** yeni kümülatif sürüm numarasıyla çıkar.
 - Yeni kafe kurulumu: **v3.1.29 STABLE taban → doğrudan en güncel kümülatif STABLE UPDATE**.
 - Ara sürümlerin tek tek kurulması gerekmez.
 - Her yeni sürüm önceki gerekli düzeltmeleri ve onaylı davranışları korur.
@@ -118,12 +119,13 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
   - Kümülatif güncelleme bilgisi
   - Varsa bilinen sınırlamalar
 - Paket içi `kafepin-pro-version.json` ve `update.json`, GitHub `latest.json` ve README güncel sürüm bilgisini doğru taşımalıdır.
+- **Yönetim panelindeki “KafePin Pro Sürüm Notları” ekranında yeni sürümün ayrıntılı kartının gerçekten göründüğü paket testinde doğrulanır.**
 
 ## 12. Paketleme ve test yaklaşımı
 
 - Kilitli stable sürüm yerinde değiştirilmez.
 - Yeni değişiklikler bir sonraki sürüm numarasıyla çıkarılır.
 - Gereksiz çalışan kodlara dokunulmaz; değişiklikler mümkün olduğunca hedefli yapılır.
-- Paketlemeden önce Node/HTML JS syntax, ZIP bütünlüğü, finans formülleri, spin tarifeleri, **45 dakika yaşam döngüsü**, read-only EveryCafe erişimleri, 20:00 gün sınırı ve sürüm metadata'sı kontrol edilir.
+- Paketlemeden önce Node/HTML JS syntax, ZIP bütünlüğü, finans formülleri, spin tarifeleri, **45 dakika yaşam döngüsü**, read-only EveryCafe erişimleri, 20:00 gün sınırı, sürüm metadata'sı ve Sürüm Notları ekranı kontrol edilir.
 - Ana UI/Monitor tema ve kart düzeninin istemeden değişmediği ayrıca kontrol edilir.
 - Test sonucu kullanıcıya paketlemeden önce açıklanır; kullanıcı isterse ondan sonra paketlenir.
