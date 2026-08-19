@@ -5,6 +5,7 @@ Bu repoda herhangi bir kod değişikliği yapmadan önce aşağıdaki dosyaları
 1. `KAFEPIN_RULES.md` — değişmez proje kuralları ve ana işleyiş.
 2. `CODEX_HANDOFF.md` — güncel proje durumu, sürüm ilişkileri ve devam noktası.
 3. `README.md` ve `latest.json` — dağıtım/stable durumu.
+4. MP3 Bot ile ilgili herhangi bir işte ayrıca `MP3_BOT_RULES.md` — KafePin/MP3 kesin izolasyon sınırları ve v2.26 fonksiyonel referansı.
 
 ## Zorunlu çalışma şekli
 
@@ -25,6 +26,7 @@ Bu repoda herhangi bir kod değişikliği yapmadan önce aşağıdaki dosyaları
 - İşletme günü sınırı 20:00'dır; 20:00 sonrası yeni işletme günüdür.
 - Canlı Sistem Günlüğü anlamlı operasyonel hareketlerin ana teknik takip yeridir. Ping/heartbeat spam edilmez.
 - Her sürümde ayrıntılı sürüm notu zorunludur ve Yönetim panelindeki Sürüm Notları ekranında görünürlüğü test edilir.
+- **MP3 Bot ile KafePin çekirdeği birbirinden bağımsızdır.** MP3 Bot KafePin DB/session/spin/finans/EveryCafe/gün sonu/Telegram/runtime yapısına erişmez; KafePin Node prosesine MP3/Python/yt-dlp/FFmpeg iş mantığı gömülmez. Ayrıntılar `MP3_BOT_RULES.md` içindedir.
 
 ## Sürüm disiplini
 
