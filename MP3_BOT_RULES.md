@@ -44,6 +44,10 @@ Bu dosya KafePin MP3 Bot PRO entegrasyonu ve sonraki MP3 geliştirmeleri için d
 - İndirme Modu ve Dinleme Modu korunur.
 - YouTube arama, çift tıkla listeye ekleme, Direct/ByClick, 128/320 kbps, canlı EQ, EQ önizleme, müşteri klasörleri, -14 LUFS / -1.5 dBTP 2-pass normalizasyon, 403 fallback zinciri ve Dinleme Modu oynatıcı özellikleri regresyona uğratılmaz.
 - Kalıcı indirme geçmişi tutulmaz. Aynı `Sanatçı + Şarkı` mevcut indirme listesinde ikinci kez eklenmez; ayrıca hedef müşteri klasöründe aynı `Sanatçı + Şarkı` MP3 zaten varsa tekrar indirilmez.
+- Web arama kutusu normal YouTube araması gibi davranır: kullanıcının yazdığı sorgu anlamı değiştirilmeden YouTube aramasına gönderilir ve kullanıcıya arama sonuçları gösterilir.
+- Otomatik liste çözümleme/indirme seçiminde yanlış parçaya sessizce geçilmez; `Sanatçı + Şarkı` birlikte yüksek güvenle eşleşmeli, kullanıcı özellikle istemediyse `live`, `remix`, `cover`, `karaoke` gibi farklı sürümler otomatik seçilmemelidir.
+- Bir YouTube sonucu elle seçildiyse seçilen videonun URL'si korunur; sistem onu sonradan benzer adlı başka videoyla değiştirmez.
+- Sanatçı listeleri/playlistlerinde seçilen sanatçıya ait olmadığı doğrulanan parçalar sanatçı listesi gibi sunulmaz.
 
 ## 7. Sürüm ve test disiplini
 
