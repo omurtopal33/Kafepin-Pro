@@ -43,7 +43,7 @@ Bu dosya KafePin MP3 Bot PRO entegrasyonu ve sonraki MP3 geliştirmeleri için d
 - Web sürümüne taşınacak fonksiyonel referans **KafePin MP3 Bot PRO v2.26**'dır.
 - İndirme Modu ve Dinleme Modu korunur.
 - YouTube arama, çift tıkla listeye ekleme, Direct/ByClick, 128/320 kbps, canlı EQ, EQ önizleme, müşteri klasörleri, -14 LUFS / -1.5 dBTP 2-pass normalizasyon, 403 fallback zinciri ve Dinleme Modu oynatıcı özellikleri regresyona uğratılmaz.
-- MP3 duplicate davranışı yalnız mevcut listeye eklerken çalışır; kalıcı indirme geçmişi tutulmaz.
+- Kalıcı indirme geçmişi tutulmaz. Aynı `Sanatçı + Şarkı` mevcut indirme listesinde ikinci kez eklenmez; ayrıca hedef müşteri klasöründe aynı `Sanatçı + Şarkı` MP3 zaten varsa tekrar indirilmez.
 
 ## 7. Sürüm ve test disiplini
 
