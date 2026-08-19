@@ -1,6 +1,6 @@
 {
   "version": "3.1.44",
-  "publishedAt": "2026-08-19T08:09:32+03:00",
+  "publishedAt": "2026-08-19T09:28:22+03:00",
   "notes": "v3.1.44 KÜMÜLATİF EVERYCAFE OTURUM OTORİTESİ GÜNCELLEMESİ: v3.1.43 FINAL STABLE ve önceki tüm çalışan özellikler korunur. EveryCafe entegrasyonu açıkken müşteri oturumunun açık/kapalı kararını yalnız EveryCafe Sessions.IsActive kaynağı verir; ping artık müşteri kapatmaz ve 8/12 dakikalık offline-stale kapanışları EveryCafe modunda devre dışıdır. PC donması, restart veya ağ/ping kesintisinde EveryCafe oturumu açık kaldığı sürece aynı KafePin müşterisi/session ve çark durumu korunur; ping geri geldiğinde aynı oturum devam eder. EveryCafe hesabı ücretli veya ücretsiz kapatıldığında kaynak aktif oturum eşlemesi en geç 5 saniyelik salt-okunur senkron turunda anında runtime temizliğine girer: eski session görünümü, çark sayacı, ücretsiz durum ve bağlantı/runtime bilgileri temizlenir ve masa yeni müşteriye hazır olur. Kapanış sonrası eski istemci ping/status/spin çağrıları aktif EveryCafe eşlemesi yoksa yeni session veya çark sayacı oluşturamaz. Kesin tahsilat/ücretsiz kapanış finans kaydı ayrı EveryCafe kapanış senkronunda gerçek kaynak tutarıyla doğrulanmaya devam eder. Paket kümülatiftir; yeni kafede v3.1.29 STABLE tabanından ara sürümleri tek tek kurmadan doğrudan v3.1.44'e güncellenebilir.",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.44.zip",
   "sha256": "ddd993db041ef2fdb2be95f35aedcc102888a72c4f95f0502a25c8b02d4cc577"
