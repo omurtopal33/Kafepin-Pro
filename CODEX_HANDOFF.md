@@ -4,37 +4,24 @@ Bu dosya Codex / yeni sohbet / yeni geliştirici için güncel devam noktasıdı
 
 ## Güncel sürüm durumu
 
-- **v3.1.43 = kilitli FINAL STABLE referans sürüm.** Değiştirilmez.
-- **v3.1.44 = mevcut test/geliştirme update'i.** v3.1.43 üzerine gelen EveryCafe masa-otoritesi düzeltmesini içerir.
-- Yeni kafe kurulum modeli: **v3.1.29 STABLE taban → doğrudan en güncel kümülatif UPDATE**.
+- **v3.1.45 = kilitli FINAL STABLE referans sürüm.** Yerinde değiştirilmez.
+- **v3.1.44 = v3.1.45'e temel olan sahada/testte doğrulanmış EveryCafe oturum-otoritesi sürümü.**
+- Bundan sonraki geliştirmeler **v3.1.46+** olarak devam eder.
+- Yeni kafe kurulum modeli: **v3.1.29 STABLE taban → doğrudan en güncel kümülatif STABLE UPDATE**.
 - Ara sürümler tek tek kurulmaz.
 
-## v3.1.43 FINAL STABLE'da bulunan ana özellikler
+## v3.1.45 FINAL STABLE özeti
 
-- EveryCafe gerçek gelir + KafePin doğrudan satış kaynak ayrımı.
-- Genel Ciro = EveryCafe Gerçek Gelir + KafePin Doğrudan Satış.
-- Çark maliyeti cirodan düşmez; ayrı maliyettir.
-- 20:00–20:00 işletme günü; 20:00 sonrası yeni gün.
-- 20:00 devir geliri ayrı gösterilebilir, ikinci kez ciroya eklenmez.
-- 20:02 FULL ZIP yedek ve 20:08 sağlık raporu; cron kaçarsa catch-up.
-- Finans tutarlılık kontrolü, anomali denetimi, Sistem Sağlığı, Self-Test, aylık Telegram özeti.
-- EveryCafe DB yalnız read-only.
-- Monitor/Telegram finans kaynakları aynı gerçek veri mantığına göre hizalanmıştır.
-- İstatistiklerde tüm zamanlar çark maliyeti görünür.
+- v3.1.44'te test edilen EveryCafe masa/oturum otoritesi davranışı aynen korunur.
+- EveryCafe entegrasyonu açıkken müşteri oturumunun açık/kapalı kararında tek otorite EveryCafe'dir; ping yalnız PC bağlantı bilgisidir.
+- EveryCafe hesabı açıkken ping kaybı, PC donması veya restart müşteriyi kapatmaz.
+- EveryCafe hesabı kapanınca ücretli/ücretsiz fark etmeden KafePin eski müşteriyi temizler ve masayı yeni müşteriye hazırlar; eski istemcinin geç ping/status/spin isteği eski session'ı diriltemez.
+- v3.1.43'teki finans tutarlılığı, 20:00 işletme günü, FULL ZIP yedek, sağlık raporu, anomali denetimi, Self-Test, veri kaynağı rozetleri ve aylık Telegram özeti korunur.
+- Yönetim panelindeki **KafePin Pro Sürüm Notları** ekranına v3.1.39–v3.1.45 arasındaki eksik ayrıntılı sürüm kartları eklendi.
+- Gelecekte statik sürüm kartı unutulsa bile gerçek update-status/latest notes bilgisi geldiğinde oluşturulan geçici sürüm kartı güncellenir; gerçek not varken “ayrıntılı not kaydı eklenmemiş” mesajı kalıcı kalmaz.
+- `server.js` ana işleyişi, Monitor/Admin tema-yapısı, finans formülleri, 20:00 sınırı ve 45 dakika çark mantığı bu düzeltme için değiştirilmedi.
 
-## v3.1.44'te eklenen davranış
-
-EveryCafe entegrasyonu açıkken müşteri oturumunun açık/kapalı otoritesi artık EveryCafe'dir:
-
-- EveryCafe'de masa hesabı açık → müşteri devam eder. Ping kesilmesi / PC donması / PC restartı müşteriyi kapatmaz.
-- EveryCafe'de masa hesabı kapanmış → ücretli/ücretsiz fark etmeden KafePin eski müşteriyi temizler ve masayı yeni müşteriye hazırlar.
-- Eski 5 dakika / offline timeout yaklaşımı EveryCafe modunda müşteri kapatma nedeni değildir.
-- Kapanmış eski müşteriden gelen geç ping/status/spin eski session'ı yeniden diriltmemelidir.
-- Finans tutarı tahmin edilmez; EveryCafe kapanış kaydı salt-okunur kaynaktan doğrulanır.
-
-## Çark 45 dakika yaşam döngüsü — kritik
-
-Bu davranış daha önce sorun çıkardığı için özellikle korunmalıdır:
+## Çark 45 dakika yaşam döngüsü — kritik ve değişmez
 
 1. Yeni müşteri KafePin çark sayfasını hiç açmadıysa sayaç **başlamaz**.
 2. İlk gerçek sayfa açılışında `45:00` başlar; anında spin yoktur.
@@ -61,11 +48,11 @@ Sabit çark maliyetleri:
 - KafePin kendi session/spin/audit/ayar/muhasebe kayıtlarını kendi DB'sinde tutar.
 - EveryCafe gelirinin bileşenleri aynı geliri ikinci kez genel ciroya eklememelidir.
 - EveryCafe Gerçek Gelir + KafePin Doğrudan = Genel Ciro.
-- Çark maliyeti sadece maliyet/net sonuç hesabında dikkate alınır; genel ciroyu değiştirmez.
+- Çark maliyeti yalnız maliyet/net sonuç hesabında dikkate alınır; genel ciroyu değiştirmez.
 
 ## UI / tema koruması
 
-- Mevcut Monitor/Admin tema, renk, kart yerleşimi ve genel görünüm kullanıcı tarafından beğenilmiş ve korunacaktır.
+- Mevcut Monitor/Admin tema, renk, kart yerleşimi ve genel görünüm korunur.
 - Görsel yapı onaysız değiştirilmez.
 - Yeni özellik mevcut tasarıma küçük ve uyumlu ekleme şeklinde yapılmalıdır.
 - Özellikle `monitor.html` teması ve mevcut finans kartlarının düzeni başka düzeltmeler sırasında bozulmamalıdır.
@@ -74,7 +61,7 @@ Sabit çark maliyetleri:
 
 - **Sistem Sağlığı**: ilk sorun kontrol noktası.
 - **Canlı Sistem Günlüğü**: anlamlı operasyonel hareketlerin ana teknik geçmişi. Masa kapanışı, EveryCafe kapanış algısı, session/spin/runtime temizliği, yeni müşteriye hazırlık, admin işlemi, yedek, gün sonu, güncelleme, alarm/anomali gibi olaylar anlaşılır şekilde kaydedilir.
-- Ping/heartbeat gibi yüksek frekanslı tekrarlar log spam yapmamalıdır; sadece durum değişiklikleri anlamlı şekilde loglanır.
+- Ping/heartbeat gibi yüksek frekanslı tekrarlar log spam yapmamalıdır; yalnız durum değişiklikleri anlamlı şekilde loglanır.
 - **Entegrasyon Günlüğü**: finans/EveryCafe audit ayrıntıları için ayrı tutulabilir; Sistem Günlüğü ile gereksiz tekrar oluşturulmaz.
 
 ## Çalışma şekli / kullanıcı beklentisi
@@ -88,7 +75,7 @@ Yeni bir istek geldiğinde:
 4. İlgisiz çalışan kodlara dokunma.
 5. Paketlemeden önce test et ve sonucu kullanıcıya açıkla.
 6. Kullanıcı paketleme istediyse yeni kümülatif sürüm numarasıyla paketle.
-7. Her sürümde sürüm notlarını eksiksiz yaz.
+7. Her sürümde ayrıntılı sürüm notlarını eksiksiz yaz ve Yönetim panelindeki Sürüm Notları ekranında görünürlüğünü test et.
 
 ## Bilinen takip konusu
 
@@ -96,6 +83,7 @@ Yeni bir istek geldiğinde:
 
 ## Son kararlar
 
-- Entegrasyon Günlüğü'ne aynı masa temizleme mesajlarını ikinci kez kopyalamak için ayrı v3.1.45 çıkarmak gereksiz bulundu.
-- Anlamlı operasyonel hareketlerin Canlı Sistem Günlüğü'nde izlenmesi ana kural oldu.
-- Yeni sürüm yalnız gerçek ihtiyaç/düzeltme varsa çıkarılmalı; sürüm numarası sırf tekrar kayıt için yükseltilmemelidir.
+- v3.1.45 FINAL STABLE kilitlidir; bundan sonra v3.1.46+ üzerinden devam edilir.
+- Entegrasyon Günlüğü ile Canlı Sistem Günlüğü gereksiz şekilde aynı kayıtlarla doldurulmaz.
+- Anlamlı operasyonel hareketlerin Canlı Sistem Günlüğü'nde izlenmesi ana kuraldır.
+- Yeni sürüm yalnız gerçek ihtiyaç/düzeltme varsa çıkarılır; sürüm notu ve paket testleri zorunludur.
