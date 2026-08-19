@@ -1,0 +1,105 @@
+--- a/public/kafepin-pro-yonetim.html
++++ b/public/kafepin-pro-yonetim.html
+@@ -42,6 +42,73 @@
+         <button id="releaseNotesClose" class="release-close">✕ Kapat</button>
+       </div>
+ 
++      <div class="release-item" data-version="3.1.45">
++        <div class="release-title"><span>v3.1.45 — FINAL STABLE • Sürüm Notları Tamamlama</span></div>
++        <ul>
++          <li><b>FINAL STABLE:</b> Sahada/testte kullanılan v3.1.44 EveryCafe oturum-otoritesi davranışı aynen korunarak v3.1.45 kilitli stabil sürüm olarak hazırlanmıştır.</li>
++          <li><b>Sürüm Notları tamamlandı:</b> v3.1.39–v3.1.45 arasındaki eksik ayrıntılı sürüm kartları bu ekrana eklendi.</li>
++          <li><b>Gelecek sürüm güvenliği:</b> Statik sürüm kartı yanlışlıkla unutulursa güncelleme merkezinden gelen gerçek <code>notes</code> bilgisi geçici kartı sonradan da günceller; “ayrıntılı not eklenmemiş” uyarısı kalıcı kalmaz.</li>
++          <li><b>Ana işleyiş korunuyor:</b> <code>server.js</code> oturum/finans/20:00/çark mantığı, EveryCafe masa otoritesi, 45 dakika yaşam döngüsü ve Monitor/Admin tema-yerleşimi değiştirilmedi.</li>
++          <li><b>EveryCafe güvenliği:</b> EveryCafe veritabanı yalnız <code>sqlite3.OPEN_READONLY</code> ile okunur; EveryCafe'ye yazma yapılmaz.</li>
++          <li><b>Kümülatif:</b> v3.1.29 STABLE tabanı üzerine ara sürümler kurulmadan doğrudan uygulanabilir.</li>
++        </ul>
++      </div>
++      <div class="release-item" data-version="3.1.44">
++        <div class="release-title"><span>v3.1.44 — Kümülatif EveryCafe Oturum Otoritesi</span></div>
++        <ul>
++          <li><b>Tek otorite EveryCafe:</b> Entegrasyon açıkken müşterinin açık/kapalı durumu EveryCafe <code>Sessions.IsActive</code> kaynağından belirlenir; ping yalnız PC bağlantı bilgisidir.</li>
++          <li><b>Restart/ping kesintisi müşteriyi kapatmaz:</b> EveryCafe oturumu açık kaldığı sürece aynı KafePin session ve çark durumu korunur.</li>
++          <li><b>Kapanışta hızlı temizlik:</b> EveryCafe hesabı ücretli veya ücretsiz kapanınca en geç salt-okunur senkron turunda eski session/runtime/çark/ücretsiz durum temizlenir ve masa yeni müşteriye hazırlanır.</li>
++          <li><b>Eski istemci geri diriltemez:</b> Kapanmış müşteriden gelen geç ping/status/spin isteği aktif EveryCafe eşleşmesi yoksa yeni session veya 45 dakika sayacı başlatamaz.</li>
++          <li><b>Finans kaynağı değişmez:</b> Kesin tahsilat/ücretsiz kapanış gerçek EveryCafe kaynağından salt-okunur doğrulanır; tahmin edilmez.</li>
++        </ul>
++      </div>
++      <div class="release-item" data-version="3.1.43">
++        <div class="release-title"><span>v3.1.43 — Kümülatif Güvenilirlik / Tam Denetim</span></div>
++        <ul>
++          <li><b>Finans tutarlılığı:</b> EveryCafe gerçek kaynak + KafePin doğrudan satış + yerel muhasebe bağımsız çapraz kontrol edilir; kalıcı farklar audit geçmişine alınır.</li>
++          <li><b>Anomali denetimi:</b> şüpheli oturumlar, negatif satışlar ve benzeri durumlar Sistem Sağlığına bağlandı; geçici senkron farkı 10 dakika kalıcı olmadan Telegram alarmı olmaz.</li>
++          <li><b>20:00 sonrası otomasyon:</b> gün devri sonrası FULL ZIP yedek ve 20:08 sağlık raporu çalışır; kaçırılan cron açılışta catch-up ile tamamlanır.</li>
++          <li><b>Sistem Sağlığı:</b> Finans Tutarlılığı, 20:00 Gün Devri, Otomatik Yedek, Anomali Denetimi ve güvenli Self-Test eklendi.</li>
++          <li><b>Aylık özet:</b> Her ayın 1'i 20:15'te önceki ayın işletme özeti Telegram'a gönderilir.</li>
++        </ul>
++      </div>
++      <div class="release-item" data-version="3.1.42">
++        <div class="release-title"><span>v3.1.42 — Kümülatif 20:00 İşletme Günü Düzeltmesi</span></div>
++        <ul>
++          <li><b>20:00–20:00 kaynak günü:</b> Telegram canlı durum ve EveryCafe “Bugün” kaynağı artık KafePin işletme günü sınırını kullanır.</li>
++          <li><b>Eski gün taşınmaz:</b> 20:00'dan sonra önceki takvim gününün EveryCafe geliri yeni güne yanlışlıkla eklenmez.</li>
++          <li><b>Devir:</b> 20:00 sınırını geçen masa yalnız 20:00 sonrası bölümüyle yeni güne yansır ve <code>20:00 Devir Geliri</code> ayrı gösterilir; ikinci kez ciroya eklenmez.</li>
++          <li><b>Genel Ciro:</b> EveryCafe gerçek gelir + KafePin doğrudan satış kuralı aynen korunur; çark maliyeti cirodan düşülmez.</li>
++        </ul>
++      </div>
++      <div class="release-item" data-version="3.1.41">
++        <div class="release-title"><span>v3.1.41 — Tüm Zamanlar Çark Maliyeti</span></div>
++        <ul>
++          <li><b>İstatistikler → Çark Özeti:</b> “Bugünkü çark maliyeti” satırının altına “Tüm zamanlar çark maliyeti” eklendi.</li>
++          <li><b>Gerçek veri:</b> Yeni/tahmini formül kullanılmaz; mevcut gerçek <code>spinMaliyeti / spinCostTotal</code> toplamı gösterilir.</li>
++          <li><b>Finans yapısı korunur:</b> Toplam çark net kârı ve diğer EveryCafe/KafePin finans hesapları değiştirilmedi.</li>
++        </ul>
++      </div>
++      <div class="release-item" data-version="3.1.40">
++        <div class="release-title"><span>v3.1.40 — Gerçek Gelir / Kart Tutarlılığı</span></div>
++        <ul>
++          <li><b>Satış ekranı sadeleştirildi:</b> Soldaki tekrar eden satış listesi kaldırıldı; satış kayıtları yalnız sağdaki Son Satışlar alanında tutuldu.</li>
++          <li><b>Finans kartları denetlendi:</b> Ana kartlar EveryCafe gerçek salt-okunur kaynak, KafePin doğrudan satış, muhasebe ve tek çark maliyeti kaynağına bağlandı.</li>
++          <li><b>EveryCafe Gerçek Gelir:</b> Dashboard, Ürün/Hizmet ve Telegram alanlarında kaynak adı/netliği aynı gerçek veri mantığıyla hizalandı.</li>
++          <li><b>Ciro kuralı:</b> Genel Ciro = EveryCafe gerçek gelir + KafePin doğrudan satış; çark maliyeti ayrı maliyet olarak kalır.</li>
++        </ul>
++      </div>
++      <div class="release-item" data-version="3.1.39">
++        <div class="release-title"><span>v3.1.39 — Sabit 45 Dakika Çark + Gerçek Ciro</span></div>
++        <ul>
++          <li><b>45 dakika yaşam döngüsü:</b> Yeni müşteri çark sayfasını ilk kez açmadan sayaç başlamaz; ilk gerçek açılışta 45:00 başlar. Pencere sonradan kapansa da gerçek zaman ilerler ve başarılı spin sonrası yeniden 45:00 başlar.</li>
++          <li><b>5 hak korunur:</b> Mevcut aktif müşteri/session bazlı maksimum 5 spin kuralı devam eder; yalnız Admin Acil Hazır beklemeyi atlayabilir.</li>
++          <li><b>Hediye süre bağımsız:</b> EveryCafe ücretsiz/hediye süreleri çark sayacını değiştirmez; Test Mode ve kısa/değişken spin süresi yoktur.</li>
++          <li><b>Sabit maliyetler:</b> Normal 30=25 ₺, Normal 60=50 ₺, VIP 30=35 ₺, VIP 60=70 ₺; içecek/atıştırmalık/anahtarlık=20 ₺. Hafta içi/hafta sonu ayrımı yoktur.</li>
++          <li><b>Gerçek ciro:</b> Genel Ciro EveryCafe gerçek salt-okunur gelir + yalnız KafePin Doğrudan Satış'tır; çark maliyeti Genel Ciro'dan düşülmez.</li>
++        </ul>
++      </div>
+       <div class="release-item" data-version="3.1.38">
+         <div class="release-title"><span>v3.1.38 — Kümülatif EveryCafe İptal / Ücretsiz / Silinenler Audit Sistemi</span></div>
+         <ul>
+@@ -648,17 +715,25 @@
+ 
+       // Kalıcı güvenlik: bir gelecek pakette ayrıntılı not kartı unutulursa
+       // ASLA eski kartın sürüm numarasını değiştirme. Kurulu sürüm için ayrı
+-      // ve açıkça geçici bir kart üret.
++      // ve açıkça geçici bir kart üret. update-status gerçek notes bilgisini
++      // daha sonra getirirse ilk açılışta oluşan geçici "not yok" kartını güncelle.
++      const note=String(remoteNotes||'').trim();
++      const escapeReleaseText=value=>String(value||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+       if(!item){
+         item=document.createElement('div');
+         item.className='release-item';
+         item.dataset.version=current;
+-        const note=String(remoteNotes||'').trim();
++        item.dataset.generatedRelease='1';
+         item.innerHTML=`<div class="release-title"><span>v${current}</span></div>
+-          <ul><li>${note ? note.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])) : 'Bu sürüm için ayrıntılı not kaydı pakete eklenmemiş.'}</li></ul>`;
++          <ul><li>${note ? escapeReleaseText(note) : 'Bu sürüm için ayrıntılı not kaydı pakete eklenmemiş.'}</li></ul>`;
+         const first=document.querySelector('.release-item');
+         if(first) first.insertAdjacentElement('beforebegin',item);
+         else modal.appendChild(item);
++      }else if(note && item.dataset.generatedRelease==='1'){
++        const generatedTitle=item.querySelector('.release-title span');
++        if(generatedTitle) generatedTitle.textContent=`v${current}`;
++        const generatedList=item.querySelector('ul');
++        if(generatedList) generatedList.innerHTML=`<li>${escapeReleaseText(note)}</li>`;
+       }
+ 
+       item.classList.add('current');
