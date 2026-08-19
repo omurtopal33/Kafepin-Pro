@@ -1,0 +1,118 @@
+name: Scheduled one-shot KafePin v3.1.45 FINAL STABLE Publisher
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build from tested v3.1.44
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _kp3145
+          mkdir _kp3145
+          unzip -q KafePin-Pro-Update-v3.1.44.zip -d _kp3145
+          (cd _kp3145 && patch -p1 < ../.github/v3.1.45-html.patch)
+          python3 - <<'PY'
+          from pathlib import Path
+          import json
+          root=Path('_kp3145')
+          notes="v3.1.45 FINAL STABLE — SÜRÜM NOTLARI TAMAMLAMA: Sahada/testte kullanılan v3.1.44 EveryCafe oturum-otoritesi davranışı ve v3.1.43 güvenilirlik altyapısı aynen korunarak v3.1.45 kilitli FINAL STABLE olarak hazırlanmıştır. Yönetim panelindeki KafePin Pro Sürüm Notları ekranında v3.1.39–v3.1.45 arasındaki eksik ayrıntılı sürüm kartları tamamlandı. Gelecekte statik bir sürüm kartı unutulursa, kurulu sürüm için oluşturulan geçici kart update-status/latest notes bilgisi sonradan geldiğinde gerçek notla otomatik güncellenir; 'Bu sürüm için ayrıntılı not kaydı pakete eklenmemiş' mesajı gerçek notes mevcutken kalıcı kalmaz. Bu sürümde server.js ana oturum/finans/20:00/çark işleyişine, EveryCafe masa otoritesine, 45 dakika çark yaşam döngüsüne ve Monitor/Admin tema-yerleşimine müdahale edilmemiştir. EveryCafe veritabanı yalnız sqlite3.OPEN_READONLY ile okunur ve EveryCafe'ye yazma yapılmaz. Paket kümülatiftir; v3.1.29 STABLE tabanı üzerine ara sürümler tek tek kurulmadan doğrudan v3.1.45 uygulanabilir."
+          for name in ('kafepin-pro-version.json','update.json'):
+              p=root/name; d=json.loads(p.read_text(encoding='utf-8-sig')); d['version']='3.1.45'; d['notes']=notes
+              if name=='kafepin-pro-version.json': d['channel']='stable'; d['updatedAt']='2026-08-19'
+              p.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          PY
+
+      - name: Validate locked core rules
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check _kp3145/server.js
+          node --check _kp3145/services/spinService.js
+          node --check _kp3145/utils/fee.js
+          python3 - <<'PY'
+          from pathlib import Path
+          import re,json,subprocess
+          root=Path('_kp3145'); html=(root/'public/kafepin-pro-yonetim.html').read_text(encoding='utf-8')
+          for v in ('3.1.39','3.1.40','3.1.41','3.1.42','3.1.43','3.1.44','3.1.45'): assert html.count(f'data-version="{v}"')==1, v
+          assert "dataset.generatedRelease='1'" in html and "else if(note && item.dataset.generatedRelease==='1')" in html
+          for i,b in enumerate(re.findall(r'<script(?:\s[^>]*)?>(.*?)</script>',html,re.I|re.S)):
+              if b.strip():
+                  p=Path(f'/tmp/kp3145-{i}.js'); p.write_text(b,encoding='utf-8'); subprocess.run(['node','--check',str(p)],check=True)
+          server=(root/'server.js').read_text(encoding='utf-8')
+          opens=list(re.finditer(r'new\s+sqlite3\.Database\s*\(\s*EVERYCAFE_DB_PATH\s*,([^\)]*)\)',server,re.S))
+          assert len(opens)==11 and all('sqlite3.OPEN_READONLY' in m.group(0) for m in opens)
+          assert not re.search(r'\bsource\.(?:run|exec)\s*\(',server,re.I)
+          assert re.search(r'SPIN_SURE_DK\s*=\s*45\b',server) and 'const SPIN_WAIT_MS = 45 * 60 * 1000;' in server
+          v=json.loads((root/'kafepin-pro-version.json').read_text(encoding='utf-8')); u=json.loads((root/'update.json').read_text(encoding='utf-8'))
+          assert v['version']==u['version']=='3.1.45' and v['channel']=='stable' and v['notes']==u['notes']
+          print('OK: 11/11 EveryCafe OPEN_READONLY; 45 dk; release notes; syntax')
+          PY
+          for f in server.js public/monitor.html public/admin.html public/everycafe-reconcile.html services/spinService.js utils/fee.js KafePin_System_Manager.ps1 KafePin_Manager_Ensure.ps1 KafePin_Desktop_Action.ps1 KafePin_Desktop_Helper_Ensure.ps1; do
+            T="/tmp/base-$(echo "$f"|tr '/' '_')"; unzip -p KafePin-Pro-Update-v3.1.44.zip "$f" > "$T"; cmp -s "$T" "_kp3145/$f" || { echo "Unexpected core change: $f"; exit 1; }
+          done
+
+      - name: Package and write FINAL STABLE metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f KafePin-Pro-Update-v3.1.45.zip
+          (cd _kp3145 && zip -qr ../KafePin-Pro-Update-v3.1.45.zip .)
+          unzip -t KafePin-Pro-Update-v3.1.45.zip >/dev/null
+          SHA="$(sha256sum KafePin-Pro-Update-v3.1.45.zip | awk '{print $1}')"; export SHA
+          python3 - <<'PY'
+          from pathlib import Path
+          from datetime import datetime
+          from zoneinfo import ZoneInfo
+          import json,os
+          notes=json.loads(Path('_kp3145/update.json').read_text(encoding='utf-8'))['notes']
+          Path('latest.json').write_text(json.dumps({'version':'3.1.45','publishedAt':datetime.now(ZoneInfo('Europe/Istanbul')).isoformat(timespec='seconds'),'notes':notes,'downloadUrl':'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.45.zip','sha256':os.environ['SHA']},ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          Path('README.md').write_text('''# KafePin Pro Update Center
+
+Bu depo KafePin Pro guncelleme paketleri icindir.
+
+## KILITLI / STABLE DURUM
+
+- **v3.1.29 = STABLE FULL BASE.** Yeni kafe kurulumunun guvenli tabanidir.
+- **v3.1.45 = FINAL STABLE.** Sahada test edilen v3.1.44 EveryCafe oturum-otoritesi davranisini, v3.1.43 guvenilirlik/20:00/yedek/saglik altyapisini ve Surum Notlari duzeltmesini kapsayan guncel kilitli surumdur.
+- v3.1.45 kumulatiftir; v3.1.29 uzerine dogrudan kurulabilir. Ara surumleri kurmak gerekmez.
+- v3.1.43 onceki stable referans, v3.1.44 v3.1.45'e temel olan test surumudur; eski paketler yerinde degistirilmez.
+- Depoda dagitim paketi olarak yalniz v3.1.29 tabani ve v3.1.45 FINAL STABLE tutulur.
+
+## Guncelleme guvenligi
+
+- Kafe veritabani, token, IP, Telegram bilgisi ve yedek yuklenmez.
+- `latest.json` aktif FINAL STABLE surumu bildirir ve v3.1.45'i gosterir.
+- EveryCafe DB yalniz `sqlite3.OPEN_READONLY` ile okunur; EveryCafe'ye yazma yapilmaz.
+- Genel Ciro = EveryCafe gercek gelir + KafePin dogrudan satis; cark maliyeti ayri maliyettir.
+- Cark sayaci yeni musteri sayfayi ilk kez acmadan baslamaz; ilk gercek acilista 45:00 baslar, pencere kapansa da gercek zaman ilerler, spin sonrasi yeniden 45:00 olur.
+- Isletme gunu siniri 20:00'dir; devir geliri ikinci kez ciroya eklenmez.
+- `server.js` ana mantigi ve Monitor/Admin tema-yapisi onaysiz degistirilmez; once konusulur, sonra hedefli degisiklik yapilir.
+- Her yeni surumde ayrintili surum notu zorunludur ve Surum Notlari ekraninda gorunurlugu test edilir.
+- Bundan sonraki degisiklikler v3.1.45 yerinde degistirilmeden v3.1.46+ ile devam eder.
+''',encoding='utf-8')
+          PY
+
+      - name: Commit and self-clean publisher files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf _kp3145
+          git rm -f --ignore-unmatch KafePin-Pro-Update-v3.1.43.zip KafePin-Pro-Update-v3.1.44.zip
+          git rm -f --ignore-unmatch .github/v3.1.45-html.patch .github/workflows/publish-v3.1.45.yml .github/workflows/publish-v3.1.45-issue.yml .github/workflows/publish-v3.1.45-scheduled.yml
+          git add KafePin-Pro-Update-v3.1.45.zip latest.json README.md
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'release: lock v3.1.45 FINAL STABLE'
+          git push
