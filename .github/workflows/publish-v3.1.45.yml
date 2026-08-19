@@ -2,8 +2,6 @@ name: Publish KafePin v3.1.45 FINAL STABLE
 
 on:
   push:
-    paths:
-      - '.github/workflows/publish-v3.1.45.yml'
 
 permissions:
   contents: write
