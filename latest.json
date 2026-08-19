@@ -1,6 +1,6 @@
 {
   "version": "3.1.45",
-  "publishedAt": "2026-08-19T09:31:12+03:00",
+  "publishedAt": "2026-08-19T09:32:46+03:00",
   "notes": "v3.1.45 FINAL STABLE — SÜRÜM NOTLARI TAMAMLAMA: Sahada/testte kullanılan v3.1.44 EveryCafe oturum-otoritesi davranışı ve v3.1.43 güvenilirlik altyapısı aynen korunarak v3.1.45 kilitli FINAL STABLE olarak hazırlanmıştır. Yönetim panelindeki KafePin Pro Sürüm Notları ekranında v3.1.39–v3.1.45 arasındaki eksik ayrıntılı sürüm kartları tamamlandı. Gelecekte statik bir sürüm kartı unutulursa, kurulu sürüm için oluşturulan geçici kart update-status/latest notes bilgisi sonradan geldiğinde gerçek notla otomatik güncellenir; 'Bu sürüm için ayrıntılı not kaydı pakete eklenmemiş' mesajı gerçek notes mevcutken kalıcı kalmaz. Bu sürümde server.js ana oturum/finans/20:00/çark işleyişine, EveryCafe masa otoritesine, 45 dakika çark yaşam döngüsüne ve Monitor/Admin tema-yerleşimine müdahale edilmemiştir. EveryCafe veritabanı yalnız sqlite3.OPEN_READONLY ile okunur ve EveryCafe'ye yazma yapılmaz. Paket kümülatiftir; v3.1.29 STABLE tabanı üzerine ara sürümler tek tek kurulmadan doğrudan v3.1.45 uygulanabilir.",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.45.zip",
   "sha256": "e9d0ac1f3ada7156d1b013c36c9946f9da1deefeb81fa2ab79f2443d84900401"
