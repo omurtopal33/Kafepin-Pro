@@ -9,46 +9,60 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Inspect v3.1.49 package
+      - name: Extract Yazici PRO text sources
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf dev/inspect-v3149
+          mkdir -p dev/inspect-v3149
           python3 - <<'PY'
           from pathlib import Path
-          import io, zipfile, re
+          import io, zipfile, re, json
           root = Path('KafePin-Pro-Update-v3.1.49.zip')
-          print('ROOT_EXISTS', root.exists(), 'SIZE', root.stat().st_size if root.exists() else 0)
+          report=[]
           with zipfile.ZipFile(root) as z:
-              names = z.namelist()
-              print('--- ROOT MATCHES ---')
-              for n in names:
-                  if re.search(r'yazici|printer|17891', n, re.I):
-                      print(n)
-              nested = [n for n in names if n.lower().endswith('.zip') and re.search(r'yazici|printer', n, re.I)]
-              print('NESTED', nested)
-              for nz in nested:
-                  print('=== NESTED ZIP', nz, '===')
-                  data = z.read(nz)
+              names=z.namelist()
+              report.append('ROOT MATCHES:')
+              matches=[n for n in names if re.search(r'yazici|printer|17891', n, re.I)]
+              report.extend(matches)
+              nested=[n for n in names if n.lower().endswith('.zip') and re.search(r'yazici|printer', n, re.I)]
+              report.append('NESTED: '+repr(nested))
+              out=Path('dev/inspect-v3149')
+              for zi,nz in enumerate(nested):
+                  data=z.read(nz)
                   with zipfile.ZipFile(io.BytesIO(data)) as q:
-                      qnames=q.namelist()
-                      for n in qnames:
-                          print('FILE', n)
-                      print('--- TEXT CONTENT ---')
-                      for n in qnames:
-                          if n.lower().endswith(('.py','.html','.js','.json','.txt','.ps1','.cmd')):
+                      report.append('NESTED FILES '+nz+':')
+                      report.extend(q.namelist())
+                      for n in q.namelist():
+                          if not n.lower().endswith(('.py','.html','.js','.json','.txt','.ps1','.cmd','.css')):
+                              continue
+                          raw=q.read(n)
+                          text=None
+                          for enc in ('utf-8-sig','cp1254','latin1'):
                               try:
-                                  raw=q.read(n)
-                                  text=raw.decode('utf-8-sig')
-                              except Exception:
-                                  try: text=raw.decode('cp1254')
-                                  except Exception: continue
-                              print(f'\n##### {n} #####\n')
-                              print(text[:30000])
+                                  text=raw.decode(enc); break
+                              except Exception: pass
+                          if text is None: continue
+                          safe=re.sub(r'[^A-Za-z0-9._-]+','_',n).strip('_')
+                          (out/f'{zi:02d}_{safe}').write_text(text,encoding='utf-8')
+          (Path('dev/inspect-v3149')/'REPORT.txt').write_text('\n'.join(report),encoding='utf-8')
           PY
+      - name: Commit inspection output
+        shell: bash
+        run: |
+          if git diff --quiet -- dev/inspect-v3149 && git ls-files --error-unmatch dev/inspect-v3149/REPORT.txt >/dev/null 2>&1; then
+            echo 'Inspection output unchanged.'
+            exit 0
+          fi
+          git config user.name 'KafePin Test Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- dev/inspect-v3149
+          git commit -m 'test: export v3.1.49 Yazici PRO sources'
+          git push origin HEAD:test/v3.1.50-yazici-gelir
