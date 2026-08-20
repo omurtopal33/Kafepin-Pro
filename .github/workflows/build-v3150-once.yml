@@ -1,0 +1,70 @@
+name: Build v3.1.50 TEST once
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/build-v3150-once.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout TEST branch
+        uses: actions/checkout@v4
+        with:
+          ref: test/v3.1.50-yazici-gelir
+          fetch-depth: 0
+      - name: Build cumulative v3.1.50 TEST
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+          src=Path('.github/workflows/build-v3150-test.yml').read_text(encoding='utf-8')
+          marker="python3 - <<'PY'\n"
+          a=src.index(marker)+len(marker)
+          b=src.index("\n          PY\n\n      - name: Static checks",a)
+          code=textwrap.dedent(src[a:b])
+          compile(code,'build_v3150_embedded.py','exec')
+          exec(compile(code,'build_v3150_embedded.py','exec'),{})
+          PY
+      - name: Verify TEST package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import io,zipfile,json,py_compile,tempfile,pathlib,hashlib,subprocess
+          p=pathlib.Path('KafePin-Pro-Update-v3.1.50.zip')
+          assert p.exists() and p.stat().st_size > 100000
+          z=zipfile.ZipFile(p); assert z.testzip() is None
+          u=json.loads(z.read('update.json').decode('utf-8-sig'))
+          assert u['version']=='3.1.50'
+          assert u['channel']=='test'
+          assert u['baseVersion']=='3.1.29'
+          assert u['cumulative'] is True
+          yz=zipfile.ZipFile(io.BytesIO(z.read('pro-components/yazici-pro.zip'))); assert yz.testzip() is None
+          required={'web_service.py','revenue.py','web/app.js','config.py','print_image.ps1','yazici-pro-version.json'}
+          assert required <= set(yz.namelist())
+          tmp=pathlib.Path(tempfile.mkdtemp())
+          for n in ['web_service.py','revenue.py','config.py','pdf_engine.py']:
+              q=tmp/pathlib.Path(n).name; q.write_bytes(yz.read(n)); py_compile.compile(str(q),doraise=True)
+          q=tmp/'app.js'; q.write_bytes(yz.read('web/app.js'))
+          r=subprocess.run(['node','--check',str(q)],capture_output=True,text=True); assert r.returncode==0,r.stderr
+          js=q.read_text(encoding='utf-8-sig')
+          for s in ['WHATSAPP / HIZLI ÇIKTI','SON YAZDIRMALAR','YAZICI GELİRİ','Ücretsiz yazdır']:
+              assert s in js
+          print('VERIFY_OK',p.stat().st_size,hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+      - name: Commit package only to TEST branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'KafePin Test Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- KafePin-Pro-Update-v3.1.50.zip KafePin-Pro-Update-v3.1.50.sha256.txt latest-test.branch.json
+          git commit -m 'test: build cumulative v3.1.50 Yazici PRO' || exit 0
+          git push origin HEAD:test/v3.1.50-yazici-gelir
