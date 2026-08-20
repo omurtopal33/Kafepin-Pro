@@ -34,6 +34,7 @@ function param(xml,n){ return tag(xml,`Param${n}`); }
 function isExcludedPrinter(name){ const x=String(name||"").toLowerCase(); return EXCLUDED_PRINTERS.some(v=>x.includes(v)); }
 function run(file,args,opts={}){ return cp.spawnSync(file,args,{encoding:"utf8",windowsHide:true,maxBuffer:8*1024*1024,...opts}); }
 function readEvents(limit=200){
+  if(process.env.KAFEPIN_YAZICI_TEST_MODE==="1") return [];
   const q="*[System[(EventID=307)]]";
   const r=run("wevtutil.exe",["qe",EVENT_LOG,`/q:${q}`,"/f:xml","/rd:true",`/c:${limit}`]);
   if(r.status!==0) throw new Error((r.stderr||r.stdout||"PrintService event log okunamadı").trim());
