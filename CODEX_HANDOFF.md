@@ -5,10 +5,51 @@ Bu dosya Codex / yeni sohbet / yeni geliştirici için güncel devam noktasıdı
 ## Güncel sürüm durumu
 
 - **v3.1.45 = kilitli FINAL STABLE referans sürüm.** Yerinde değiştirilmez.
-- **v3.1.44 = v3.1.45'e temel olan sahada/testte doğrulanmış EveryCafe oturum-otoritesi sürümü.**
-- Bundan sonraki geliştirmeler **v3.1.46+** olarak devam eder.
-- Yeni kafe kurulum modeli: **v3.1.29 STABLE taban → doğrudan en güncel kümülatif STABLE UPDATE**.
+- **v3.1.46 = güncel TEST / saha doğrulama adayı.** v3.1.45 çekirdeğini koruyup EveryCafe çark-hazır masa bildirimi ekler.
+- GitHub'da `KafePin-Pro-Update-v3.1.46.zip` mevcuttur ve `latest.json` şu anda test için v3.1.46'yı gösterir.
+- v3.1.46 saha testi tamamlanıp kullanıcı ayrıca onaylamadan FINAL STABLE sayılmaz; güvenli referans v3.1.45'tir.
+- Yeni kafe kurulum modeli: **v3.1.29 STABLE taban → doğrudan en güncel onaylı kümülatif UPDATE**.
 - Ara sürümler tek tek kurulmaz.
+
+## v3.1.46 — EveryCafe çark-hazır masa bildirimi
+
+Kullanıcı tarafından gerçek MASA-20 üzerinde EveryCafe Messenger mesaj gönderimi başarıyla doğrulandı. KafePin entegrasyonu bu sahada doğrulanmış mesaj yolunu kullanır.
+
+Davranış kuralları:
+
+1. Yeni müşteri KafePin çark sayfasını hiç açmadıysa sayaç **başlamaz** ve bildirim gönderilmez.
+2. İlk gerçek çark sayfası açılışında sabit `45:00` başlar; anında spin veya mesaj yoktur.
+3. Sayfa/pencere kapansa bile EveryCafe müşteri oturumu açık kaldığı sürece gerçek zaman ilerler.
+4. 45 dakika dolunca yalnız ilgili EveryCafe masasına bir kez **“🎁 Çark hakkınız hazır! Çarkınızı çevirebilirsiniz.”** mesajı gönderilir.
+5. Başarılı spin sonrası yeni 45 dakika başlar; yeni döngü dolunca yine yalnız bir kez mesaj gider.
+6. EveryCafe oturumu kapanınca eski müşterinin sayaç/runtime/bildirim-gönderildi durumu KafePin tarafında temizlenir.
+7. Yeni müşteri eski müşteriden süre, hazır bildirim veya spin hakkı devralmaz; kendi sayfasını ilk açana kadar sayaç başlamaz.
+8. Aynı hazır döngü için mesaj spam yapılmaz.
+9. Mesaj anında EveryCafe Client geçici olarak uygun değilse mesaj gönderilmiş sayılmaz; uygun olduğunda yeniden denenebilir.
+10. Başarılı gönderim Canlı Sistem Günlüğü'ne örneğin `🎁 Çark bildirimi gönderildi • Masa 20 • 192.168.1.120` olarak yazılır. Anlamlı gönderim hataları da spam yapmadan loglanır.
+
+Teknik mesaj yolu:
+
+- EveryCafe DB'ye mesaj INSERT/UPDATE yapılmaz.
+- Hedef masa IP'si / gerekli EveryCafe kaynak bilgileri yalnız `sqlite3.OPEN_READONLY` ile okunur.
+- Gerçek ecmdata incelemesinde MASA-20 hedefi `192.168.1.120` ve EveryCafe Client Messenger hedef portu `45456` olarak doğrulandı.
+- Kullanıcının manuel PowerShell testi gerçek MASA-20'de başarılı oldu.
+- UDP gönderiminde ayrı teslim/okundu ACK'i olmadığı için Canlı Sistem Günlüğündeki “gönderildi” kaydı işletim sisteminin paketi hedef IP/porta başarıyla gönderime aldığını ifade eder; client ekranında okunma garantisi anlamına gelmez.
+
+## v3.1.46 saha testi
+
+Öncelikli saha kontrolü:
+
+1. Test masasının aktif EveryCafe müşteri oturumu olmalı.
+2. Müşteri çark sayfasını gerçekten açmalı; sayfa hiç açılmadıysa otomatik mesaj beklenmemeli.
+3. Normal testte 45 dakikanın dolması gözlenmeli; hızlı kontrollü testte yalnız mevcut Admin Acil Hazır mekanizması kullanılabilir ancak sayfa-açıldı koşulu korunmalıdır.
+4. Süre hazır olduğunda yalnız hedef masaya mesaj gelmeli.
+5. Canlı Sistem Günlüğü'nde doğru masa/IP ile tek gönderim kaydı görülmeli.
+6. Aynı döngüde ikinci/üçüncü tekrar mesajı gelmemeli.
+7. Spin sonrası yeni 45 dakika başlamalı ve yeni döngü dolunca yeni bir bildirim hakkı oluşmalı.
+8. EveryCafe oturumu kapatılıp yeni müşteri açıldığında eski bildirim/süre durumu taşınmamalı.
+9. Finans, 20:00 işletme günü, EveryCafe oturum otoritesi, yedek ve Monitor/Admin görünümü değişmemeli.
+10. Test sonucu başarılıysa ancak kullanıcı onayıyla v3.1.46 FINAL STABLE olarak kilitlenebilir.
 
 ## v3.1.45 FINAL STABLE özeti
 
@@ -18,8 +59,7 @@ Bu dosya Codex / yeni sohbet / yeni geliştirici için güncel devam noktasıdı
 - EveryCafe hesabı kapanınca ücretli/ücretsiz fark etmeden KafePin eski müşteriyi temizler ve masayı yeni müşteriye hazırlar; eski istemcinin geç ping/status/spin isteği eski session'ı diriltemez.
 - v3.1.43'teki finans tutarlılığı, 20:00 işletme günü, FULL ZIP yedek, sağlık raporu, anomali denetimi, Self-Test, veri kaynağı rozetleri ve aylık Telegram özeti korunur.
 - Yönetim panelindeki **KafePin Pro Sürüm Notları** ekranına v3.1.39–v3.1.45 arasındaki eksik ayrıntılı sürüm kartları eklendi.
-- Gelecekte statik sürüm kartı unutulsa bile gerçek update-status/latest notes bilgisi geldiğinde oluşturulan geçici sürüm kartı güncellenir; gerçek not varken “ayrıntılı not kaydı eklenmemiş” mesajı kalıcı kalmaz.
-- `server.js` ana işleyişi, Monitor/Admin tema-yapısı, finans formülleri, 20:00 sınırı ve 45 dakika çark mantığı bu düzeltme için değiştirilmedi.
+- Gelecekte statik sürüm kartı unutulsa bile gerçek update-status/latest notes bilgisi geldiğinde oluşturulan geçici sürüm kartı güncellenir.
 
 ## Çark 45 dakika yaşam döngüsü — kritik ve değişmez
 
@@ -45,7 +85,7 @@ Sabit çark maliyetleri:
 
 - EveryCafe veritabanına hiçbir koşulda yazma yoktur.
 - Tüm EveryCafe bağlantıları `sqlite3.OPEN_READONLY` olmalıdır.
-- KafePin kendi session/spin/audit/ayar/muhasebe kayıtlarını kendi DB'sinde tutar.
+- KafePin kendi session/spin/audit/ayar/muhasebe/bildirim durumlarını kendi DB'sinde tutar.
 - EveryCafe gelirinin bileşenleri aynı geliri ikinci kez genel ciroya eklememelidir.
 - EveryCafe Gerçek Gelir + KafePin Doğrudan = Genel Ciro.
 - Çark maliyeti yalnız maliyet/net sonuç hesabında dikkate alınır; genel ciroyu değiştirmez.
@@ -60,7 +100,7 @@ Sabit çark maliyetleri:
 ## Günlükler
 
 - **Sistem Sağlığı**: ilk sorun kontrol noktası.
-- **Canlı Sistem Günlüğü**: anlamlı operasyonel hareketlerin ana teknik geçmişi. Masa kapanışı, EveryCafe kapanış algısı, session/spin/runtime temizliği, yeni müşteriye hazırlık, admin işlemi, yedek, gün sonu, güncelleme, alarm/anomali gibi olaylar anlaşılır şekilde kaydedilir.
+- **Canlı Sistem Günlüğü**: anlamlı operasyonel hareketlerin ana teknik geçmişi. Masa kapanışı, EveryCafe kapanış algısı, session/spin/runtime temizliği, yeni müşteriye hazırlık, çark-hazır bildirim gönderimi, admin işlemi, yedek, gün sonu, güncelleme, alarm/anomali gibi olaylar anlaşılır şekilde kaydedilir.
 - Ping/heartbeat gibi yüksek frekanslı tekrarlar log spam yapmamalıdır; yalnız durum değişiklikleri anlamlı şekilde loglanır.
 - **Entegrasyon Günlüğü**: finans/EveryCafe audit ayrıntıları için ayrı tutulabilir; Sistem Günlüğü ile gereksiz tekrar oluşturulmaz.
 
@@ -81,9 +121,6 @@ Yeni bir istek geldiğinde:
 
 - Bazı client PC'lerde ara sıra `.NET ArgumentOutOfRangeException / Parametre adı: index` hatası görülüyor. Henüz ayrıntılı stack trace incelenmedi. Bir sonraki incelemede hata penceresindeki **Ayrıntılar** çıktısı alınmalı; kesin fonksiyon belirlenmeden tahmini kod değişikliği yapılmamalıdır.
 
-## Son kararlar
+## Codex için ilk görev
 
-- v3.1.45 FINAL STABLE kilitlidir; bundan sonra v3.1.46+ üzerinden devam edilir.
-- Entegrasyon Günlüğü ile Canlı Sistem Günlüğü gereksiz şekilde aynı kayıtlarla doldurulmaz.
-- Anlamlı operasyonel hareketlerin Canlı Sistem Günlüğü'nde izlenmesi ana kuraldır.
-- Yeni sürüm yalnız gerçek ihtiyaç/düzeltme varsa çıkarılır; sürüm notu ve paket testleri zorunludur.
+Önce `AGENTS.md`, `KAFEPIN_RULES.md` ve bu `CODEX_HANDOFF.md` dosyasını tamamen oku. Ardından GitHub'daki v3.1.46 paketini incele. **Kod değiştirme.** Kullanıcıya mevcut durumu, v3.1.46 saha test adımlarını ve gördüğün riskleri özetle. Kullanıcı onayı olmadan `server.js`, finans, spin, EveryCafe, 20:00 veya Monitor/Admin yapısına müdahale etme.
