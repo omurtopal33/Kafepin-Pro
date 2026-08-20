@@ -1,33 +1,31 @@
-# KafePin Pro Update Center
+# KafePin Pro Güncelleme Merkezi
 
-Bu depo KafePin Pro güncelleme paketleri içindir.
+## Kararlı sürüm
 
-## KİLİTLİ / STABLE DURUM
+- **v3.1.29:** Yeni Kafe kurulum temeli.
+- **v3.1.49:** Güncel **STABLE / KÜMÜLATİF** sürüm. v3.1.29’dan ara paket kurmadan doğrudan uygulanır.
+- Bundan sonraki yayınlar **TEST** güncellemesi olarak ilerler. Yeni test paketi `latest.json` üzerinden KafePin’e bildirilir.
 
-- **v3.1.29 = STABLE FULL BASE.** Yeni kafe kurulumu ve tüm kümülatif güncellemelerin güvenli tabanıdır.
-- **v3.1.45 = FINAL STABLE.** Sahada/testte doğrulanan v3.1.44 EveryCafe oturum-otoritesi davranışını, v3.1.43 güvenilirlik/20:00/yedek/sağlık altyapısını ve ayrıntılı Sürüm Notları düzeltmesini kapsayan kilitli referans sürümdür.
-- **v3.1.46 = güncel TEST / saha doğrulama adayı.** v3.1.45 çekirdeğini korur ve yalnız EveryCafe çark-hazır masa bildirimi entegrasyonunu ekler.
-- v3.1.46 kümülatiftir; v3.1.29 üzerine doğrudan kurulabilir. Ara sürümleri tek tek kurmak gerekmez.
-- v3.1.46 saha testi tamamlanıp ayrıca onaylanana kadar **FINAL STABLE referans v3.1.45** olarak kalır.
+## Yeni Kafe kurulumu
 
-## v3.1.46 çark-hazır bildirimi
+`KafePin-Pro-Yeni-Kafe-STABLE-v3.1.49.zip` içindeki mevcut Ana Sunucu ve Client EXE’leri kullanılır. Ana Sunucu kurulumu internet bağlantısıyla GitHub’daki v3.1.49 paketini tek adımda uygular. Ardından üç bağımsız bileşen ayrı ayrı sorulur:
 
-- Yeni müşteri KafePin çark sayfasını hiç açmadıysa sayaç başlamaz ve EveryCafe mesajı gönderilmez.
-- İlk gerçek sayfa açılışında sabit 45 dakika başlar; sayfa kapansa bile aktif EveryCafe oturumu boyunca gerçek zaman ilerler.
-- Süre dolunca yalnız ilgili masaya bir kez **“🎁 Çark hakkınız hazır! Çarkınızı çevirebilirsiniz.”** mesajı gönderilir.
-- Başarılı spin sonrası yeni 45 dakika başlar; yeni döngü dolunca yeniden yalnız bir kez bildirim gider.
-- EveryCafe oturumu kapanınca KafePin bildirim/sayaç durumu temizlenir; yeni müşteri eski müşteriden süre veya bildirim devralmaz.
-- Mesaj EveryCafe Client'ın sahada doğrulanan UDP Messenger kanalı üzerinden hedef masaya gönderilir; EveryCafe DB'ye mesaj kaydı yazılmaz.
-- Başarılı gönderim ve anlamlı gönderim hataları **Canlı Sistem Günlüğü**'ne spam yapmadan kaydedilir.
+- MP3 Bot PRO (`C:\KafePinMp3BotPRO`)
+- Yazıcı PRO (`C:\KafePin\KafePinYaziciPRO`)
+- Teknik Servis PRO (`C:\KafePinTeknikServisPRO`)
 
-## Güncelleme güvenliği
+Client EXE, client ping ve çark kurulum davranışı değişmez.
 
-- Kafe veritabanı, token, IP, Telegram bilgisi ve yedek kesinlikle yüklenmez.
-- `latest.json` şu anda saha testi için **v3.1.46** paketini bildirir.
-- EveryCafe veritabanı yalnız `sqlite3.OPEN_READONLY` ile salt okunur kullanılır; EveryCafe'ye hiçbir yazma yapılmaz.
-- Genel Ciro = EveryCafe gerçek gelir + KafePin doğrudan satış. Çark maliyeti genel cirodan düşülmez; ayrı maliyet olarak izlenir.
-- Çark yaşam döngüsü sabit 45 dakikadır: yeni müşteri çark sayfasını ilk kez açmadan sayaç başlamaz; ilk gerçek açılışta 45:00 başlar; pencere kapansa da gerçek zaman ilerler; spin sonrası yeniden 45:00 başlar.
-- İşletme günü sınırı 20:00'dir; 20:00 sonrası gelir yeni işletme gününe aittir. Devir geliri ikinci kez ciroya eklenmez.
-- `server.js` ana işleyişi ve Monitor/Admin tema-yapısı onaysız değiştirilmez; değişiklik önce konuşulur, kullanıcı onayından sonra hedefli uygulanır.
-- Her yeni sürümde ayrıntılı sürüm notu zorunludur ve Sürüm Notları ekranında görünürlüğü paket testinde doğrulanır.
-- v3.1.45 yerinde değiştirilmez; yeni çalışmalar yeni kümülatif sürüm numarasıyla devam eder.
+## Güvenlik ve etki alanı
+
+- KafePin çekirdeği; session, spin, Telegram, gün sonu ve EveryCafe davranışı korunur.
+- EveryCafe yalnız `sqlite3.OPEN_READONLY` ile okunur; EveryCafe’ye yazma yapılmaz.
+- Teknik Servis PRO, yalnız kullanıcı tahsil edilmiş bir kayıt kaydettiğinde mevcut loopback doğrudan satış uç noktasına Nakit/Kart kaydı gönderir. Satış kimliği saklanır; aynı servis için ikinci kayıt oluşmaz.
+- Kafe DB, tokenlar, IP ayarları, Telegram bilgileri ve yedekler güncelleme paketinde bulunmaz.
+
+## Paketler
+
+Depoda yalnız şu iki sürüm paketi tutulur:
+
+- `KafePin-Pro-Update-v3.1.29.zip`
+- `KafePin-Pro-Update-v3.1.49.zip`
