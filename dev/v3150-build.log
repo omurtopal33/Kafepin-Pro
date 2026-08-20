@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+  File "build_v3150_embedded.py", line 1
+    from pathlib import Path
+IndentationError: unexpected indent
+EXTRACTED_LINES 350
+Traceback (most recent call last):
+  File "<stdin>", line 10, in <module>
+  File "build_v3150_embedded.py", line 1
+    from pathlib import Path
+IndentationError: unexpected indent
+RETURN_CODE=1
