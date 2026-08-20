@@ -1,0 +1,7 @@
+{
+  "version": "3.1.51-candidate",
+  "build": "candidate1",
+  "baseVersion": "3.1.49",
+  "ui": "static-kafepin-theme",
+  "revenueService": "node-17893"
+}
