@@ -1,0 +1,71 @@
+name: Rerun KafePin v3.1.50 TEST builder
+
+on:
+  push:
+    branches:
+      - test/v3.1.50-yazici-gelir
+    paths:
+      - '.github/workflows/rerun-v3150-builder.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute embedded builder
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import textwrap
+          src=Path('.github/workflows/build-v3150-test.yml').read_text(encoding='utf-8')
+          marker="python3 - <<'PY'\n"
+          a=src.index(marker)+len(marker)
+          b=src.index("\n          PY\n\n      - name: Static checks",a)
+          code=textwrap.dedent(src[a:b])
+          exec(compile(code,'build_v3150_embedded.py','exec'),{})
+          PY
+      - name: Verify package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import io,zipfile,json,py_compile,tempfile,pathlib,hashlib,subprocess,shutil
+          p=pathlib.Path('KafePin-Pro-Update-v3.1.50.zip')
+          assert p.exists() and p.stat().st_size>100000
+          z=zipfile.ZipFile(p)
+          assert z.testzip() is None
+          u=json.loads(z.read('update.json').decode('utf-8-sig'))
+          assert u.get('version')=='3.1.50' and u.get('channel')=='test'
+          assert u.get('baseVersion')=='3.1.29' and u.get('cumulative') is True
+          yz=zipfile.ZipFile(io.BytesIO(z.read('pro-components/yazici-pro.zip')))
+          assert yz.testzip() is None
+          names=set(yz.namelist())
+          required={'web_service.py','revenue.py','web/app.js','config.py','print_image.ps1','yazici-pro-version.json'}
+          assert required <= names
+          tmp=pathlib.Path(tempfile.mkdtemp())
+          for n in ['web_service.py','revenue.py','config.py','pdf_engine.py']:
+              q=tmp/pathlib.Path(n).name;q.write_bytes(yz.read(n));py_compile.compile(str(q),doraise=True)
+          js=yz.read('web/app.js').decode('utf-8-sig')
+          for s in ['WHATSAPP / HIZLI ÇIKTI','SON YAZDIRMALAR','YAZICI GELİRİ','Ücretsiz yazdır']:
+              assert s in js,s
+          node=shutil.which('node')
+          if node:
+              q=tmp/'app.js';q.write_text(js,encoding='utf-8');r=subprocess.run([node,'--check',str(q)],capture_output=True,text=True);assert r.returncode==0,r.stderr
+          print('VERIFY_OK',p.stat().st_size,hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+      - name: Commit generated TEST package
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'KafePin Test Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- KafePin-Pro-Update-v3.1.50.zip KafePin-Pro-Update-v3.1.50.sha256.txt latest-test.branch.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test: package v3.1.50 Yazici PRO revenue'
+          git push origin HEAD:test/v3.1.50-yazici-gelir
