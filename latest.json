@@ -1,6 +1,6 @@
 {
   "version": "3.1.50",
-  "publishedAt": "2026-08-20T19:12:54+03:00",
+  "publishedAt": "2026-08-20T19:28:19+03:00",
   "notes": "v3.1.50 TEST / KÜMÜLATİF — Yazıcı PRO ana makine gelir takibi. v3.1.29 tabanından ara paket istemeden çalışır. Kurulum sırasında resmi v3.1.49 STABLE kümülatif paketi SHA256 ile doğrulanarak uygulanır; ardından Yazıcı PRO v3.1.50 TEST katmanı yüklenir. Yazıcı PRO içinde S/B, renkli, kimlik fotokopisi ve fotoğraf fiyatları; Nakit/Kart; Ücretsiz Yazdır; WhatsApp/Hızlı Çıktı için İndirilenler listesi ve başarılı baskı+finans kaydından sonra otomatik silme; ana makinedeki Word/Chrome/Adobe vb. fiziksel baskılar için Son Yazdırmalar/Event 307 kuyruğu bulunur. Ücretli kayıtlar yalnız KafePin Doğrudan Satış endpointine gider. EveryCafe ve masa/session finansına yazılmaz. v3.1.49 STABLE latest kanalı değiştirilmez.",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.50.zip",
   "sha256": "bb71e083cff49373f93534d2a3e5c6860b791636189a89ff22737f8b5ad8368b"
