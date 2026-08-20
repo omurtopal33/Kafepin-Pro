@@ -1,0 +1,3 @@
+KafePin Pro v3.1.51 candidate validation trigger.
+Base stable: 3.1.49
+Scope: Yazici PRO + Telegram duplicate/live-bottom fixes only.
