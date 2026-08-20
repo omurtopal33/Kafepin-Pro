@@ -55,11 +55,11 @@ with tempfile.TemporaryDirectory(prefix='kp3151_') as td:
 
     run(['node','--check',str(pkg/'server.js')])
     run(['node','--check',str(payload/'KafePin_YaziciGelir_Service.js')])
-    # Windows PowerShell parser: eski 3.1.50 denemelerinde görülen parser hatalarını build sırasında yakala.
     if sys.platform.startswith('win'):
         ps = shutil.which('powershell.exe') or shutil.which('powershell')
         if not ps: raise SystemExit('Windows PowerShell missing on runner')
-        cmd = f"$raw=Get-Content -LiteralPath '{str(pkg/'KafePin_Manager_Ensure.ps1').replace("'","''")}' -Raw; [void][scriptblock]::Create($raw); Write-Host POWERSHELL_PARSE_OK"
+        manager_path = str(pkg/'KafePin_Manager_Ensure.ps1').replace("'", "''")
+        cmd = "$raw=Get-Content -LiteralPath '{}' -Raw; [void][scriptblock]::Create($raw); Write-Host POWERSHELL_PARSE_OK".format(manager_path)
         run([ps,'-NoProfile','-ExecutionPolicy','Bypass','-Command',cmd])
     run(['node',str(HELPER/'telegram_logic_test.js'),str(pkg/'server.js')])
     run(['node',str(HELPER/'revenue_integration_test.js'),str(payload/'KafePin_YaziciGelir_Service.js')])
