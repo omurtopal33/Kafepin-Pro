@@ -1,18 +1,19 @@
-name: KafePin latest.json otomatik guncelle
+name: KafePin STABLE latest.json kilitle
+
+# Eski guvenli yayin duzeni:
+# - Aday guncelleme ZIP'leri repoya eklenebilir.
+# - ZIP push edilmesi latest.json'u ASLA otomatik degistirmez.
+# - Kullanici sahada dogrulayip "kitle" dedikten sonra bu workflow elle calistirilir.
+# - Böylece mevcut STABLE, aday paket test edilirken korunur.
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'KafePin-Pro-Update-v*.zip'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: kafepin-auto-latest
+  group: kafepin-stable-lock
   cancel-in-progress: false
 
 jobs:
@@ -25,7 +26,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: En yeni ZIP'ten latest.json olustur
+      - name: En yeni aday ZIP'ten STABLE latest.json olustur
         shell: bash
         run: |
           python3 - <<'PY'
@@ -57,7 +58,7 @@ jobs:
           sha256 = hashlib.sha256(zip_path.read_bytes()).hexdigest()
           published = datetime.now(ZoneInfo('Europe/Istanbul')).isoformat(timespec='seconds')
 
-          notes = f'KafePin Pro v{version} yayinlandi.'
+          notes = f'KafePin Pro v{version} STABLE olarak kilitlendi.'
           try:
               with zipfile.ZipFile(zip_path) as zf:
                   update = json.loads(zf.read('update.json').decode('utf-8-sig'))
@@ -80,10 +81,9 @@ jobs:
               encoding='utf-8'
           )
 
-          print(f'En yeni surum : v{version}')
+          print(f'STABLE surum  : v{version}')
           print(f'ZIP           : {zip_path.name}')
           print(f'SHA-256       : {sha256}')
-          print(f'Not           : {notes[:160]}')
           PY
 
       - name: latest.json degistiyse GitHub'a yaz
@@ -97,5 +97,5 @@ jobs:
           git config user.name 'KafePin Update Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add latest.json
-          git commit -m 'KafePin: latest.json otomatik guncelle'
+          git commit -m 'KafePin: STABLE surumu kilitle'
           git push
