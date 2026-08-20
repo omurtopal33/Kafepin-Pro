@@ -1,0 +1,410 @@
+name: Build KafePin v3.1.50 TEST
+
+on:
+  push:
+    branches:
+      - test/v3.1.50-yazici-gelir
+    paths:
+      - '.github/workflows/build-v3150-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+actions:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build cumulative v3.1.50 TEST
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import io, json, re, shutil, hashlib, zipfile
+
+          src = Path('KafePin-Pro-Update-v3.1.49.zip')
+          out = Path('KafePin-Pro-Update-v3.1.50.zip')
+          work = Path('.build-v3150')
+          if work.exists(): shutil.rmtree(work)
+          work.mkdir()
+
+          with zipfile.ZipFile(src) as z:
+              z.extractall(work/'root')
+
+          root = work/'root'
+          nested = root/'pro-components'/'yazici-pro.zip'
+          yaz = work/'yazici'
+          with zipfile.ZipFile(nested) as z:
+              z.extractall(yaz)
+
+          # ---- config.py: Yazici PRO icinden fiyat / odeme / silme ayarlari ----
+          p = yaz/'config.py'
+          t = p.read_text(encoding='utf-8-sig')
+          old = '    "identity_layout": "side_by_side",\n'
+          new = old + '''    "price_bw": 5.0,\n    "price_color": 10.0,\n    "price_identity": 5.0,\n    "price_photo": 10.0,\n    "payment_method": "CASH",\n    "delete_download_after_print": True,\n'''
+          if '"price_bw"' not in t:
+              if old not in t: raise SystemExit('config.py anchor missing')
+              t=t.replace(old,new,1)
+          p.write_text(t,encoding='utf-8')
+
+          # ---- requirements: PDF/DOCX hizli ciktiyi sayfa sayfa render etmek icin ----
+          p=yaz/'requirements.txt'
+          req=p.read_text(encoding='utf-8-sig')
+          if 'PyMuPDF' not in req:
+              req=req.rstrip()+"\nPyMuPDF>=1.24,<2\n"
+          p.write_text(req,encoding='utf-8')
+
+          # ---- fiziksel baskilara benzersiz job adi ver; watcher cift kayit yapmasin ----
+          p=yaz/'print_image.ps1'
+          ps=p.read_text(encoding='utf-8-sig')
+          ps=ps.replace('  [int]$Copies = 1\n)', '  [int]$Copies = 1,\n  [string]$JobName = "KafePin Yazici PRO"\n)')
+          ps=ps.replace('$document = New-Object System.Drawing.Printing.PrintDocument\n', '$document = New-Object System.Drawing.Printing.PrintDocument\n$document.DocumentName = $JobName\n')
+          p.write_text(ps,encoding='utf-8')
+
+          # ---- revenue.py: KafePin dogrudan satis + Downloads + Event 307 kuyrugu ----
+          revenue = r'''from __future__ import annotations
+
+import json
+import subprocess
+import threading
+import time
+import uuid
+import urllib.request
+from pathlib import Path
+
+from config import DATA_DIR
+
+STATE_PATH = DATA_DIR / "revenue-state.json"
+KAFEPIN_DIRECT_URL = "http://127.0.0.1:3000/admin/product-sales/add-custom-direct"
+PRINT_LOG = "Microsoft-Windows-PrintService/Operational"
+
+
+def _load_state():
+    try:
+        data=json.loads(STATE_PATH.read_text(encoding="utf-8"))
+        if isinstance(data,dict): return data
+    except Exception: pass
+    return {"last_record_id":0,"jobs":{},"sales":{}}
+
+
+def _save_state(state):
+    DATA_DIR.mkdir(parents=True,exist_ok=True)
+    tmp=STATE_PATH.with_suffix('.tmp')
+    tmp.write_text(json.dumps(state,ensure_ascii=False,indent=2),encoding='utf-8')
+    tmp.replace(STATE_PATH)
+
+
+def post_direct_sale(name, unit_price, quantity, payment_method, sale_id):
+    state=_load_state()
+    if state.get('sales',{}).get(sale_id,{}).get('status')=='sold':
+        return state['sales'][sale_id]
+    payload=json.dumps({
+        'name':str(name), 'unitPrice':float(unit_price), 'quantity':int(quantity),
+        'paymentMethod':'CARD' if str(payment_method).upper()=='CARD' else 'CASH'
+    },ensure_ascii=False).encode('utf-8')
+    req=urllib.request.Request(KAFEPIN_DIRECT_URL,data=payload,headers={'Content-Type':'application/json'},method='POST')
+    with urllib.request.urlopen(req,timeout=6) as r:
+        result=json.loads(r.read().decode('utf-8','replace') or '{}')
+    if not result.get('ok'):
+        raise RuntimeError(result.get('error') or 'KafePin doğrudan satış kabul etmedi.')
+    state=_load_state(); state.setdefault('sales',{})[sale_id]={
+        'status':'sold','time':time.time(),'name':name,'quantity':quantity,'unit_price':unit_price,
+        'payment_method':payment_method,'total':result.get('total')
+    }; _save_state(state)
+    return state['sales'][sale_id]
+
+
+def list_downloads():
+    folder=Path.home()/'Downloads'
+    exts={'.pdf','.jpg','.jpeg','.png','.bmp','.tif','.tiff','.webp','.doc','.docx'}
+    rows=[]
+    if not folder.exists(): return rows
+    for p in folder.iterdir():
+        try:
+            if not p.is_file() or p.suffix.lower() not in exts: continue
+            pages=None
+            if p.suffix.lower()=='.pdf':
+                try:
+                    from pypdf import PdfReader
+                    pages=len(PdfReader(str(p),strict=False).pages)
+                except Exception: pass
+            elif p.suffix.lower() in {'.jpg','.jpeg','.png','.bmp','.tif','.tiff','.webp'}: pages=1
+            rows.append({'name':p.name,'size':p.stat().st_size,'mtime':p.stat().st_mtime,'pages':pages})
+        except Exception: pass
+    rows.sort(key=lambda x:x['mtime'],reverse=True)
+    return rows[:100]
+
+
+def resolve_download(name):
+    folder=(Path.home()/'Downloads').resolve()
+    p=(folder/str(name)).resolve()
+    if p.parent != folder or not p.is_file(): raise ValueError('İndirilenler dosyası bulunamadı.')
+    return p
+
+
+def read_print_events(after_record_id=0):
+    # Event 307 XML: Param2 belge, Param5 yazici, Param8 toplam sayfa.
+    script=r'''$ErrorActionPreference='SilentlyContinue'; $events=Get-WinEvent -FilterHashtable @{LogName='Microsoft-Windows-PrintService/Operational';Id=307} -MaxEvents 80; $out=@(); foreach($e in $events){ if($e.RecordId -le '''+str(int(after_record_id))+r'''){continue}; try{$x=[xml]$e.ToXml();$d=$x.Event.UserData.DocumentPrinted;$out += [pscustomobject]@{record_id=[int64]$e.RecordId;time=$e.TimeCreated.ToString('o');document=[string]$d.Param2;printer=[string]$d.Param5;pages=[int]$d.Param8}}catch{}}; $out | Sort-Object record_id | ConvertTo-Json -Compress'''
+    cp=subprocess.run(['powershell.exe','-NoProfile','-Command',script],capture_output=True,text=True,encoding='utf-8',errors='replace',creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),timeout=12)
+    if cp.returncode!=0 or not cp.stdout.strip(): return []
+    try: data=json.loads(cp.stdout)
+    except Exception: return []
+    if isinstance(data,dict): data=[data]
+    return data if isinstance(data,list) else []
+
+
+class PrintRevenueQueue:
+    def __init__(self):
+        self.lock=threading.RLock(); self.stop=False
+        threading.Thread(target=self._loop,daemon=True,name='KafePinPrintRevenue').start()
+
+    def _loop(self):
+        while not self.stop:
+            try: self.poll()
+            except Exception: pass
+            time.sleep(4)
+
+    def poll(self):
+        with self.lock:
+            state=_load_state(); last=int(state.get('last_record_id') or 0)
+            events=read_print_events(last)
+            for e in events:
+                rid=str(e.get('record_id') or '')
+                if not rid: continue
+                state['last_record_id']=max(int(state.get('last_record_id') or 0),int(rid))
+                doc=str(e.get('document') or '')
+                # KafePin Yazici PRO kendi baskisini dogrudan kaydeder; watcher cift yazmaz.
+                if doc.startswith('KafePinYaziciPRO|'):
+                    continue
+                state.setdefault('jobs',{}).setdefault(rid,{
+                    'record_id':int(rid),'time':e.get('time'),'document':doc,
+                    'printer':str(e.get('printer') or ''),'pages':max(1,int(e.get('pages') or 1)),
+                    'status':'pending'
+                })
+            # Son 300 is tutulsun.
+            jobs=state.get('jobs',{})
+            if len(jobs)>300:
+                keys=sorted(jobs,key=lambda k:int(k))[-300:]
+                state['jobs']={k:jobs[k] for k in keys}
+            _save_state(state)
+
+    def list_jobs(self):
+        self.poll(); state=_load_state()
+        rows=list(state.get('jobs',{}).values())
+        rows.sort(key=lambda x:int(x.get('record_id') or 0),reverse=True)
+        return rows[:100]
+
+    def close_job(self, record_id, service_type, prices, payment_method, free=False):
+        with self.lock:
+            state=_load_state(); key=str(record_id); job=state.get('jobs',{}).get(key)
+            if not job: raise ValueError('Yazdırma işi bulunamadı.')
+            if job.get('status')!='pending': return job
+            pages=max(1,int(job.get('pages') or 1))
+            labels={'bw':'Yazıcı Geliri - S/B Çıktı','color':'Yazıcı Geliri - Renkli Çıktı','identity':'Yazıcı Geliri - Kimlik Fotokopisi','photo':'Yazıcı Geliri - Fotoğraf Çıktısı'}
+            price_keys={'bw':'price_bw','color':'price_color','identity':'price_identity','photo':'price_photo'}
+            typ=service_type if service_type in labels else 'bw'
+            if free:
+                job.update({'status':'free','service_type':typ,'closed_at':time.time(),'total':0})
+                _save_state(state); return job
+            unit=float(prices.get(price_keys[typ]) or 0)
+            if unit<=0: raise ValueError('Bu çıktı türü için geçerli fiyat gir.')
+            sale_id='print-event-'+key
+            sale=post_direct_sale(labels[typ],unit,pages,payment_method,sale_id)
+            state=_load_state(); job=state.setdefault('jobs',{}).get(key,job)
+            job.update({'status':'sold','service_type':typ,'closed_at':time.time(),'unit_price':unit,'total':unit*pages,'payment_method':payment_method,'sale_id':sale_id})
+            state['jobs'][key]=job; _save_state(state); return job
+
+
+queue=PrintRevenueQueue()
+'''
+          (yaz/'revenue.py').write_text(revenue,encoding='utf-8')
+
+          # ---- web_service.py minimal patch ----
+          p=yaz/'web_service.py'; t=p.read_text(encoding='utf-8-sig')
+          t=t.replace('from config import APP_DIR, APP_NAME, documents_dir, load_config, save_config', 'from config import APP_DIR, APP_NAME, DATA_DIR, documents_dir, load_config, save_config')
+          t=t.replace('from pdf_engine import SUPPORTED_EXTENSIONS, merge_to_pdf', 'from pdf_engine import SUPPORTED_EXTENSIONS, merge_to_pdf, source_as_pdf\nfrom revenue import list_downloads, resolve_download, post_direct_sale, queue as revenue_queue')
+          t=t.replace('APP_VERSION = "3.1.48-cumulative"','APP_VERSION = "3.1.50-test"')
+          old_keys='for key in ("printer", "scanner_id", "dpi", "color_mode", "identity_layout"):'
+          new_keys='for key in ("printer", "scanner_id", "dpi", "color_mode", "identity_layout", "price_bw", "price_color", "price_identity", "price_photo", "payment_method", "delete_download_after_print"):'
+          t=t.replace(old_keys,new_keys)
+          old='''        for image in print_images:\n            _run_powershell(PS_PRINT, "-ImagePath", str(image), "-PrinterName", printer, "-Copies", str(copies), timeout=90)\n        with self.lock:\n            page_note = f" ({len(print_images)} sayfa)" if len(print_images) > 1 else ""\n            self.status = "Yazdırma Windows kuyruğuna gönderildi" + page_note + ". Geçici görüntüler Kaydet/TEMİZLE ile silinir."\n            return self.state()\n'''
+          new='''        free = bool(data.get("free"))\n        payment = "CARD" if str(data.get("payment_method") or self.cfg.get("payment_method") or "CASH").upper() == "CARD" else "CASH"\n        service_type = str(data.get("service_type") or ("identity" if mode == "identity" else "photo" if mode == "photos" else "bw"))\n        prices = dict(self.cfg)\n        price_keys = {"bw":"price_bw","color":"price_color","identity":"price_identity","photo":"price_photo"}\n        labels = {"bw":"Yazıcı Geliri - S/B Çıktı","color":"Yazıcı Geliri - Renkli Çıktı","identity":"Yazıcı Geliri - Kimlik Fotokopisi","photo":"Yazıcı Geliri - Fotoğraf Çıktısı"}\n        if service_type not in labels: service_type = "bw"\n        job_id = uuid.uuid4().hex\n        for index, image in enumerate(print_images, start=1):\n            job_name = f"KafePinYaziciPRO|{job_id}|{service_type}|{index}"\n            _run_powershell(PS_PRINT, "-ImagePath", str(image), "-PrinterName", printer, "-Copies", str(copies), "-JobName", job_name, timeout=90)\n        quantity = len(print_images) * copies\n        if not free:\n            unit = float(prices.get(price_keys[service_type]) or 0)\n            if unit <= 0: raise ValueError("Bu çıktı türü için Yazıcı Geliri sekmesinden fiyat gir.")\n            post_direct_sale(labels[service_type], unit, quantity, payment, "yazici-pro-" + job_id)\n        with self.lock:\n            page_note = f" ({quantity} sayfa)" if quantity > 1 else ""\n            self.status = ("Ücretsiz yazdırıldı" if free else "Yazdırıldı ve KafePin Doğrudan Satış'a eklendi") + page_note + "."\n            return {**self.state(), "revenue": {"free": free, "quantity": quantity, "service_type": service_type}}\n'''
+          if old not in t: raise SystemExit('print_document anchor missing')
+          t=t.replace(old,new,1)
+          routes=r'''
+
+@app.get("/api/revenue/queue")
+def revenue_queue_list():
+    return jsonify({"ok": True, "jobs": revenue_queue.list_jobs()})
+
+@app.post("/api/revenue/queue/<record_id>/close")
+def revenue_queue_close(record_id: str):
+    try:
+        data=request.get_json(silent=True) or {}
+        cfg=core.config()
+        job=revenue_queue.close_job(record_id,str(data.get("service_type") or "bw"),cfg,str(data.get("payment_method") or cfg.get("payment_method") or "CASH"),bool(data.get("free")))
+        return jsonify({"ok":True,"job":job})
+    except Exception as exc:
+        return jsonify({"ok":False,"error":str(exc)}),400
+
+@app.get("/api/downloads")
+def downloads_list():
+    return jsonify({"ok":True,"files":list_downloads()})
+
+@app.post("/api/quick/print")
+def quick_print():
+    try:
+        data=request.get_json(silent=True) or {}
+        source=resolve_download(str(data.get("name") or ""))
+        printer=str(data.get("printer") or core.cfg.get("printer") or "").strip()
+        if not printer: raise ValueError("Önce yazıcı seç.")
+        copies=max(1,min(99,int(data.get("copies") or 1)))
+        typ=str(data.get("service_type") or "bw")
+        if typ not in {"bw","color","identity","photo"}: typ="bw"
+        free=bool(data.get("free"))
+        payment="CARD" if str(data.get("payment_method") or core.cfg.get("payment_method") or "CASH").upper()=="CARD" else "CASH"
+        folder=TEMP_ROOT/("quick_"+uuid.uuid4().hex); folder.mkdir(parents=True,exist_ok=False)
+        pdf=source_as_pdf(source,folder,PS_DOCX_TO_PDF)
+        import fitz
+        doc=fitz.open(str(pdf)); pages=[]
+        for i,page in enumerate(doc):
+            target=folder/f"page_{i+1:03d}.png"; pix=page.get_pixmap(matrix=fitz.Matrix(1.7,1.7),alpha=False); pix.save(str(target)); pages.append(target)
+        doc.close()
+        if not pages: raise ValueError("Dosyada yazdırılabilir sayfa bulunamadı.")
+        job_id=uuid.uuid4().hex
+        for i,image in enumerate(pages,1):
+            _run_powershell(PS_PRINT,"-ImagePath",str(image),"-PrinterName",printer,"-Copies",str(copies),"-JobName",f"KafePinYaziciPRO|{job_id}|{typ}|{i}",timeout=90)
+        quantity=len(pages)*copies
+        if not free:
+            key={"bw":"price_bw","color":"price_color","identity":"price_identity","photo":"price_photo"}[typ]
+            label={"bw":"Yazıcı Geliri - S/B Çıktı","color":"Yazıcı Geliri - Renkli Çıktı","identity":"Yazıcı Geliri - Kimlik Fotokopisi","photo":"Yazıcı Geliri - Fotoğraf Çıktısı"}[typ]
+            unit=float(core.cfg.get(key) or 0)
+            if unit<=0: raise ValueError("Yazıcı Geliri sekmesinden fiyat gir.")
+            post_direct_sale(label,unit,quantity,payment,"quick-"+job_id)
+        if bool(core.cfg.get("delete_download_after_print",True)):
+            source.unlink(missing_ok=False)
+        shutil.rmtree(folder,ignore_errors=True)
+        core.status=("Ücretsiz hızlı çıktı tamamlandı" if free else "Hızlı çıktı tamamlandı ve satışa eklendi")+f" — {quantity} sayfa"
+        return jsonify({"ok":True,"quantity":quantity,"deleted":not source.exists(),"status":core.status})
+    except Exception as exc:
+        return jsonify({"ok":False,"error":str(exc)}),400
+'''
+          anchor='\n\nif __name__ == "__main__":'
+          if anchor not in t: raise SystemExit('route anchor missing')
+          t=t.replace(anchor,routes+anchor,1)
+          p.write_text(t,encoding='utf-8')
+
+          # ---- UI: sekmeler / fiyat / WhatsApp-Downloads / kuyruk / ucretsiz ----
+          p=yaz/'web'/'app.js'; js=p.read_text(encoding='utf-8-sig')
+          addon=r'''
+setTimeout(()=>{const nav=document.querySelector('.tabs'),main=document.querySelector('main'),actions=document.querySelector('.actions .action-grid');if(!nav||!main||document.querySelector('#revenueTab'))return;
+const mkTab=(id,text)=>{const b=document.createElement('button');b.id=id;b.className='tab';b.textContent=text;nav.insertBefore(b,nav.querySelector('.spacer'));return b};
+const quickTab=mkTab('quickTab','📲 WHATSAPP / HIZLI ÇIKTI'),queueTab=mkTab('queueTab','🧾 SON YAZDIRMALAR'),revenueTab=mkTab('revenueTab','💰 YAZICI GELİRİ');
+const box=(id,html)=>{const s=document.createElement('section');s.id=id;s.className='mode';s.innerHTML=html;main.insertBefore(s,document.querySelector('.preview-card'));return s};
+const quick=box('quickMode','<div class="card"><h2>WhatsApp / Hızlı Çıktı</h2><p class="note">WhatsApp’tan inen dosyalar İndirilenler’den otomatik listelenir. Dosyaya tıkla, türü/ödemeyi seç ve yazdır.</p><div id="downloadList" class="count">İndirilenler okunuyor…</div><div class="device-grid"><label>Tür<select id="quickType"><option value="bw">S/B Çıktı</option><option value="color">Renkli Çıktı</option><option value="identity">Kimlik Fotokopisi</option><option value="photo">Fotoğraf Çıktısı</option></select></label><label>Ödeme<select id="quickPay"><option value="CASH">Nakit</option><option value="CARD">Kart</option></select></label><label><input id="quickFree" type="checkbox"> Ücretsiz yazdır</label><label>Kopya<input id="quickCopies" type="number" min="1" max="99" value="1"></label></div><button id="quickPrint" class="btn big accent" disabled>SEÇİLİ DOSYAYI YAZDIR</button><p class="note">Başarılı yazdırma sonrası dosya İndirilenler’den otomatik silinir. Hata olursa silinmez.</p></div>');
+const queue=box('queueMode','<div class="card"><h2>Son Yazdırmalar / Kuyruk Takibi</h2><p class="note">Word, Chrome, Adobe ve diğer programlardan ana makinede fiziksel yazıcıya tamamlanan işler burada görünür.</p><button id="queueRefresh" class="btn">↻ YENİLE</button><div id="queueList" class="count">Henüz okunmadı</div></div>');
+const revenue=box('revenueMode','<div class="card"><h2>Yazıcı Geliri Ayarları</h2><div class="device-grid"><label>S/B sayfa fiyatı<input id="priceBw" type="number" min="0" step="0.5"></label><label>Renkli sayfa fiyatı<input id="priceColor" type="number" min="0" step="0.5"></label><label>Kimlik fotokopi fiyatı<input id="priceIdentity" type="number" min="0" step="0.5"></label><label>Fotoğraf sayfa fiyatı<input id="pricePhoto" type="number" min="0" step="0.5"></label><label>Varsayılan ödeme<select id="revenuePay"><option value="CASH">Nakit</option><option value="CARD">Kart</option></select></label><label><input id="deleteDownloads" type="checkbox"> Hızlı çıktı sonrası İndirilenler’den sil</label></div><button id="saveRevenue" class="btn big accent">AYARLARI KAYDET</button><p class="note">Gelir yalnız KafePin Doğrudan Satış’a gider. EveryCafe ve masa hesabına yazılmaz.</p></div>');
+const show=s=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.mode').forEach(x=>x.classList.remove('visible'));s.classList.add('visible')};
+let selected='';async function loadCfg(){const d=await api('/api/state');const c=d.config||{};priceBw.value=c.price_bw??5;priceColor.value=c.price_color??10;priceIdentity.value=c.price_identity??5;pricePhoto.value=c.price_photo??10;revenuePay.value=c.payment_method||'CASH';quickPay.value=c.payment_method||'CASH';deleteDownloads.checked=c.delete_download_after_print!==false}
+async function loadDownloads(){const d=await api('/api/downloads');const el=document.querySelector('#downloadList');el.innerHTML=(d.files||[]).length?(d.files||[]).map(f=>`<button class="btn" data-file="${encodeURIComponent(f.name)}" style="display:block;width:100%;margin:5px 0;text-align:left">${f.name}${f.pages?' • '+f.pages+' sayfa':''}</button>`).join(''):'İndirilenler’de yazdırılabilir dosya yok.';el.querySelectorAll('[data-file]').forEach(b=>b.onclick=()=>{selected=decodeURIComponent(b.dataset.file);el.querySelectorAll('button').forEach(x=>x.classList.remove('accent'));b.classList.add('accent');quickPrint.disabled=false;status('Seçildi: '+selected)})}
+async function loadQueue(){const d=await api('/api/revenue/queue');const el=document.querySelector('#queueList'),jobs=(d.jobs||[]).filter(j=>j.status==='pending');el.innerHTML=jobs.length?jobs.map(j=>`<div style="padding:10px;border:1px solid #344;margin:7px 0;border-radius:8px"><b>${j.pages} sayfa • ${j.printer||'Yazıcı'}</b><div class="note">${j.document||'Belge'}</div><button class="btn q" data-id="${j.record_id}" data-t="bw">S/B ÜCRETLİ</button> <button class="btn q" data-id="${j.record_id}" data-t="color">RENKLİ</button> <button class="btn q" data-id="${j.record_id}" data-t="identity">KİMLİK</button> <button class="btn qfree" data-id="${j.record_id}">ÜCRETSİZ</button></div>`).join(''):'Bekleyen yazdırma işi yok.';el.querySelectorAll('.q').forEach(b=>b.onclick=async()=>{await post('/api/revenue/queue/'+b.dataset.id+'/close',{service_type:b.dataset.t,payment_method:revenuePay.value});await loadQueue();status('Yazıcı Geliri KafePin Doğrudan Satış’a eklendi.')});el.querySelectorAll('.qfree').forEach(b=>b.onclick=async()=>{await post('/api/revenue/queue/'+b.dataset.id+'/close',{free:true,service_type:'bw'});await loadQueue();status('Yazdırma ücretsiz olarak kapatıldı.')})}
+quickTab.onclick=async()=>{show(quick);quickTab.classList.add('active');await loadCfg();await loadDownloads()};queueTab.onclick=async()=>{show(queue);queueTab.classList.add('active');await loadCfg();await loadQueue()};revenueTab.onclick=async()=>{show(revenue);revenueTab.classList.add('active');await loadCfg()};queueRefresh.onclick=()=>loadQueue().catch(e=>status(e.message,true));
+saveRevenue.onclick=async()=>{const c={price_bw:+priceBw.value,price_color:+priceColor.value,price_identity:+priceIdentity.value,price_photo:+pricePhoto.value,payment_method:revenuePay.value,delete_download_after_print:deleteDownloads.checked};await post('/api/config',c);quickPay.value=revenuePay.value;status('Yazıcı Geliri ayarları kaydedildi.')};
+quickPrint.onclick=async()=>{if(!selected)return;const d=await post('/api/quick/print',{name:selected,printer:document.querySelector('#printer').value,copies:+quickCopies.value||1,service_type:quickType.value,payment_method:quickPay.value,free:quickFree.checked});selected='';quickPrint.disabled=true;await loadDownloads();status(d.status||'Hızlı çıktı tamamlandı.')};
+if(actions&&!document.querySelector('#printFree')){const lab=document.createElement('label');lab.innerHTML='<input id="printFree" type="checkbox"> Bu çıktı ÜCRETSİZ';actions.insertBefore(lab,document.querySelector('#printBtn'));const typ=document.createElement('select');typ.id='printServiceType';typ.innerHTML='<option value="bw">S/B Çıktı</option><option value="color">Renkli Çıktı</option><option value="photo">Fotoğraf Çıktısı</option>';actions.insertBefore(typ,document.querySelector('#printBtn'));const old=document.querySelector('#printBtn').onclick;document.querySelector('#printBtn').onclick=()=>safe(document.querySelector('#printBtn'),async()=>{await saveConfig();const active=document.querySelector('.tab.active')?.dataset.mode;const m=active==='identity'?'identity':active==='normal'?'normal':mode;const st=m==='identity'?'identity':typ.value;renderState(await post('/api/document/print',{mode:m,...cfg(),copies:+document.querySelector('#copies').value||1,layout:cfg().identity_layout,service_type:st,payment_method:revenuePay.value||'CASH',free:document.querySelector('#printFree').checked}))})}
+loadCfg().catch(()=>{})},500);
+'''
+          js += '\n'+addon+'\n'
+          p.write_text(js,encoding='utf-8')
+
+          # Version metadata
+          vp=yaz/'yazici-pro-version.json'; vd=json.loads(vp.read_text(encoding='utf-8-sig')); vd.update({'version':'3.1.50-test','displayVersion':'v3.1.50 TEST','releaseChannel':'test'}); vd['features']=list(vd.get('features') or [])+['Yazıcı Geliri: KafePin Doğrudan Satış entegrasyonu','WhatsApp / Hızlı Çıktı: İndirilenler listesi ve baskı sonrası otomatik silme','Son Yazdırmalar: Windows PrintService Event 307 kuyruk takibi','S/B, renkli, kimlik, fotoğraf fiyatları ve Ücretsiz Yazdır']; vp.write_text(json.dumps(vd,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          # nested zip yeniden olustur
+          with zipfile.ZipFile(nested,'w',zipfile.ZIP_DEFLATED) as z:
+              for f in yaz.rglob('*'):
+                  if f.is_file(): z.write(f,f.relative_to(yaz).as_posix())
+
+          # Mevcut kafede kurulu Yazici PRO'yu update sonrasinda yukselt.
+          dp=root/'KafePin_Desktop_App_Setup.ps1'; dt=dp.read_text(encoding='utf-8-sig')
+          marker="  # Yeni kafe kurulumunda v3.1.49 ile gelen bağımsız PRO bileşenleri yalnız\n"
+          upgrade=r'''  # v3.1.50 TEST: mevcut kurulu Yazici PRO varsa yeni bileşen ZIP'i ile yükselt.
+  $printerTarget = Join-Path $InstallRoot 'KafePinYaziciPRO'
+  $printerZip = Join-Path $InstallRoot 'pro-components\yazici-pro.zip'
+  if ((Test-Path -LiteralPath $printerTarget) -and (Test-Path -LiteralPath $printerZip)) {
+    try {
+      Write-KafePinLog 'Yazici PRO v3.1.50 TEST yukseltmesi basliyor.'
+      try {
+        Get-CimInstance Win32_Process -Filter "Name='pythonw.exe'" -ErrorAction SilentlyContinue | Where-Object { [string]$_.CommandLine -like ('*' + $printerTarget + '*web_service.py*') } | ForEach-Object { Stop-Process -Id ([int]$_.ProcessId) -Force -ErrorAction SilentlyContinue }
+      } catch {}
+      $pt = Join-Path $env:TEMP ('KafePin-YaziciPRO-Update-' + [guid]::NewGuid().ToString('N'))
+      New-Item -ItemType Directory -Force -Path $pt | Out-Null
+      Expand-Archive -LiteralPath $printerZip -DestinationPath $pt -Force
+      Get-ChildItem -LiteralPath $pt -Force | ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $printerTarget -Recurse -Force }
+      Remove-Item -LiteralPath $pt -Recurse -Force -ErrorAction SilentlyContinue
+      try { & wevtutil.exe sl 'Microsoft-Windows-PrintService/Operational' /e:true | Out-Null } catch { Write-KafePinLog ('PrintService Operational acilamadi: ' + $_.Exception.Message) }
+      Invoke-SilentCmd 'cmd.exe' '/c KURULUM.cmd /silent' $printerTarget
+      Start-PrinterService $printerTarget
+      Write-KafePinLog 'Yazici PRO v3.1.50 TEST yukseltildi ve baslatildi.'
+    } catch {
+      Write-KafePinLog ('Yazici PRO v3.1.50 TEST yukseltme hatasi: ' + $_.Exception.Message)
+    }
+  }
+
+'''
+          if 'v3.1.50 TEST yukseltmesi' not in dt:
+              if marker not in dt: raise SystemExit('desktop setup marker missing')
+              dt=dt.replace(marker,upgrade+marker,1)
+          dp.write_text(dt,encoding='utf-8')
+
+          # update.json v3.1.50 TEST
+          up=root/'update.json'; ud=json.loads(up.read_text(encoding='utf-8-sig')); ud.update({'version':'3.1.50','channel':'test','baseVersion':'3.1.29','cumulative':True}); ud['notes']='v3.1.50 TEST — Yazıcı PRO Gelir Takibi: Yazıcı PRO içinden S/B, renkli, kimlik ve fotoğraf fiyatları; Nakit/Kart; Ücretsiz Yazdır; WhatsApp/Hızlı Çıktı için İndirilenler listesi ve başarılı baskı sonrası otomatik silme; ana makinedeki Word/Chrome/Adobe vb. tamamlanmış fiziksel baskılar için Son Yazdırmalar/Event 307 kuyruğu; yalnız KafePin Doğrudan Satış entegrasyonu. EveryCafe ve masa/session finansına yazılmaz. v3.1.49 çekirdeği korunur.'; up.write_text(json.dumps(ud,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+
+          # Ana paket yeniden zip
+          with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
+              for f in root.rglob('*'):
+                  if f.is_file(): z.write(f,f.relative_to(root).as_posix())
+          sha=hashlib.sha256(out.read_bytes()).hexdigest()
+          Path('KafePin-Pro-Update-v3.1.50.sha256.txt').write_text(f'{sha}  {out.name}\n',encoding='utf-8')
+          latest={'channel':'test','stableVersion':'3.1.49','version':'3.1.50','available':True,'baseVersion':'3.1.29','cumulative':True,'notes':ud['notes'],'downloadUrl':'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/test/v3.1.50-yazici-gelir/KafePin-Pro-Update-v3.1.50.zip','sha256':sha}
+          Path('latest-test.branch.json').write_text(json.dumps(latest,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+          print('BUILT',out,out.stat().st_size,sha)
+          PY
+
+      - name: Static checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import io,zipfile,json,py_compile,tempfile,pathlib
+          z=zipfile.ZipFile('KafePin-Pro-Update-v3.1.50.zip')
+          u=json.loads(z.read('update.json').decode('utf-8-sig'))
+          assert u['version']=='3.1.50' and u['channel']=='test'
+          yz=zipfile.ZipFile(io.BytesIO(z.read('pro-components/yazici-pro.zip')))
+          names=set(yz.namelist())
+          for n in ['web_service.py','revenue.py','web/app.js','config.py','print_image.ps1','yazici-pro-version.json']:
+              assert n in names,n
+          tmp=pathlib.Path(tempfile.mkdtemp())
+          for n in ['web_service.py','revenue.py','config.py','pdf_engine.py']:
+              p=tmp/pathlib.Path(n).name;p.write_bytes(yz.read(n));py_compile.compile(str(p),doraise=True)
+          js=yz.read('web/app.js').decode('utf-8-sig')
+          for s in ['WHATSAPP / HIZLI ÇIKTI','SON YAZDIRMALAR','YAZICI GELİRİ','Ücretsiz yazdır']:
+              assert s in js,s
+          print('STATIC_OK')
+          PY
+
+      - name: Commit TEST package to TEST branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'KafePin Test Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- KafePin-Pro-Update-v3.1.50.zip KafePin-Pro-Update-v3.1.50.sha256.txt latest-test.branch.json
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test: package v3.1.50 Yazici PRO revenue'
+          git push origin HEAD:test/v3.1.50-yazici-gelir
