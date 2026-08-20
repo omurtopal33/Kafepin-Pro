@@ -1,0 +1,11 @@
+{
+  "channel": "candidate",
+  "stableVersion": "3.1.49",
+  "version": "3.1.51",
+  "available": true,
+  "baseVersion": "3.1.49",
+  "cumulative": false,
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.51.zip",
+  "sha256": "231a0d8f58955ae8648c69d70560cf19fd2a523d5ed344d0e8d32a874996bf61",
+  "notes": "v3.1.51 ADAY: v3.1.49 STABLE üzerine Yazıcı PRO + Telegram tekilleştirme. Kullanıcı sahada onaylayıp kitle demeden STABLE değildir."
+}
