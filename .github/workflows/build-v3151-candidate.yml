@@ -7,18 +7,22 @@ on:
       - 'dev/v3151-candidate/**'
       - '.github/workflows/build-v3151-candidate.yml'
       - 'candidate-trigger-v3151.txt'
+      - 'KafePin-Pro-Update-v3.1.51.zip'
+      - 'latest-candidate.json'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate-candidate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
       - name: Checkout candidate branch
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.ref }}
           fetch-depth: 1
 
       - name: Setup Python
@@ -78,3 +82,17 @@ jobs:
             KafePin-Pro-Update-v3.1.51.sha256.txt
             V3.1.51-CANDIDATE-TEST-REPORT.md
             latest-candidate.json
+
+      - name: Commit tested candidate to candidate branch
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- 'KafePin-Pro-Update-v3.1.51.zip' 'KafePin-Pro-Update-v3.1.51.sha256.txt' 'V3.1.51-CANDIDATE-TEST-REPORT.md' 'latest-candidate.json'
+          $names = @(git diff --cached --name-only)
+          $allowed = @('KafePin-Pro-Update-v3.1.51.zip','KafePin-Pro-Update-v3.1.51.sha256.txt','V3.1.51-CANDIDATE-TEST-REPORT.md','latest-candidate.json')
+          foreach ($n in $names) { if ($allowed -notcontains $n) { throw ('Unexpected candidate output: ' + $n) } }
+          if ($names.Count -eq 0) { Write-Host 'Candidate outputs already identical'; exit 0 }
+          if ($names.Count -lt 4) { throw 'Candidate output set incomplete' }
+          git commit -m 'candidate: attach Windows-tested v3.1.51 build'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
