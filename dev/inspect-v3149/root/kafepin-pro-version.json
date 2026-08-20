@@ -1,0 +1,8 @@
+{
+  "version": "3.1.49",
+  "channel": "stable",
+  "mode": "panel-direct-updater",
+  "releasedAt": "2026-08-20T12:00:00+03:00",
+  "baseVersion": "3.1.29",
+  "type": "cumulative-stable"
+}

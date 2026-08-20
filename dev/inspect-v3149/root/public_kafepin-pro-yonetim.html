@@ -1,0 +1,1358 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>KafePin Pro Yönetim Merkezi</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:28px;background:radial-gradient(circle at top right,#173d55,#0b1019 48%,#090d14);color:#f3f7ff;font-family:Segoe UI,Arial,sans-serif}h1{margin:0;color:#62f0b3;font-size:29px}.sub{margin:7px 0 22px;color:#a7bed5}.status{padding:15px 17px;border:1px solid #2e586c;border-radius:12px;background:#101d2a;color:#bde6ff;margin-bottom:20px;font-weight:700}.update-alert{display:none;margin:-8px 0 20px;padding:16px 18px;border:2px solid #ff4965;border-radius:12px;background:#551321;color:#fff;font-weight:900;font-size:18px;box-shadow:0 0 18px #d51b3c88;animation:updatepulse 1.2s ease-in-out infinite}.update-alert.show{display:block}@keyframes updatepulse{50%{box-shadow:0 0 30px #ff204dcc}}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.card{min-height:142px;padding:18px;border:1px solid #2d4662;border-radius:14px;background:#111a27}.card h2{margin:0 0 9px;font-size:18px}.value{color:#63efb3;font-weight:800;font-size:26px}.muted{color:#a2b2c6;font-size:13px;line-height:1.45}button{margin-top:14px;cursor:pointer;padding:10px 14px;border-radius:8px;border:1px solid #4b6b8c;background:#17283a;color:#fff;font-weight:800;font-size:14px}button:hover{background:#22445f}button:disabled{opacity:.52;cursor:not-allowed;filter:saturate(.55)}button:disabled:hover{background:inherit}.green{border-color:#278a5b;background:#16452f}.orange{border-color:#b97822;background:#49300e}.red{border-color:#b83b50;background:#4b1821}.logs{margin-top:22px;padding:18px;border:1px solid #2d4662;border-radius:14px;background:#101721}.logs h2{margin:0 0 12px;font-size:19px}.log{padding:9px 0;border-top:1px solid #233246;color:#d6e4f2}.log:first-of-type{border-top:0}.time{display:inline-block;min-width:88px;color:#73d9ff;font-variant-numeric:tabular-nums}select{width:100%;margin-top:12px;padding:9px;border-radius:7px;background:#101d2a;color:#fff;border:1px solid #4b6b8c}.release-overlay{display:none;position:fixed;inset:0;z-index:99998;background:rgba(4,10,18,.86);align-items:center;justify-content:center;padding:24px}.release-overlay.show{display:flex}.release-modal{width:min(780px,96vw);max-height:86vh;overflow:auto;background:#101a27;border:1px solid #3d6683;border-radius:16px;padding:20px;box-shadow:0 24px 80px #000c}.release-head{display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:-20px;background:#101a27;padding:4px 0 12px;z-index:2}.release-head h2{margin:0;color:#68efb6}.release-close{margin:0;background:#26384a}.release-item{border:1px solid #2b4259;border-radius:12px;background:#0e1722;padding:14px 16px;margin:10px 0}.release-item.current{border-color:#2f9d70;box-shadow:0 0 0 1px #2f9d7044}.release-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:900;color:#71e7b7;font-size:17px}.release-badge{font-size:11px;border-radius:999px;padding:4px 8px;background:#1c5c42;color:#cffff0}.release-item ul{margin:10px 0 0;padding-left:20px;color:#d8e6f4}.release-item li{margin:6px 0;line-height:1.45}.release-small{font-size:12px;color:#9eb5c9;margin-top:4px}
+  .tg-modal{width:min(720px,96vw)}.tg-step{border:1px solid #2b4259;border-radius:12px;background:#0e1722;padding:16px;margin-top:12px}.tg-step-badge{display:inline-block;border-radius:999px;padding:5px 9px;background:#173b52;color:#8ee4ff;font-size:12px;font-weight:900}.tg-help{margin:12px 0;padding:12px;border-left:3px solid #4aa7d1;background:#102334;color:#cfe8f7;line-height:1.55;border-radius:7px}.tg-input{width:100%;margin-top:8px;padding:12px;border-radius:8px;background:#0a1420;color:#fff;border:1px solid #496983;font-family:Consolas,monospace;font-size:14px}.tg-actions{display:flex;gap:9px;flex-wrap:wrap}.tg-success{padding:14px;border:1px solid #2f9d70;border-radius:10px;background:#123629;color:#d8fff0;font-weight:800;line-height:1.5}.tg-wait{margin-top:12px;color:#8ee4ff;font-weight:800}.tg-card-ready{color:#63efb3}.tg-card-off{color:#ffca68}
+  </style>
+</head>
+<body>
+  <h1>⚙ KafePin Pro Yönetim Merkezi</h1>
+  <div class="sub"><span id="pageVersionLabel">Sürüm okunuyor...</span> • Stabil tek sürüm • Yeni kafe ortak kurulum altyapısı + güvenli EveryCafe ilk aktarım.</div>
+  <div id="status" class="status">Durum kontrol ediliyor...</div>
+  <div id="updateAlert" class="update-alert"></div>
+  <section class="grid">
+    <article class="card"><h2>🟢 Sunucu</h2><div id="serverState" class="value">Kontrol...</div><div id="serverDetail" class="muted">Windows Sistem Yöneticisi kontrol ediliyor.</div><button class="green" id="startBtn">▶ Başlat</button> <button class="red" id="stopBtn">■ Durdur</button> <button class="orange" id="restartBtn">↻ Yeniden Başlat</button></article>
+    <article class="card"><h2>🩺 Sistem Sağlığı</h2><div id="healthState" class="value" style="font-size:20px">Kontrol...</div><div id="healthDetail" class="muted">DB, gün sonu, yedek, finalize, EveryCafe ve disk kontrol ediliyor.</div><button id="healthCheckBtn">↻ Şimdi Kontrol Et</button><button class="orange" id="rolloverRepairBtn" style="display:none">🌙 Dünün Gün Sonunu Şimdi Al</button></article>
+    <article class="card"><h2>📄 DB Yedeği</h2><div class="value">Hazır</div><div class="muted">Sadece database.db anlık yedeği.</div><button class="green" id="dbBackupBtn">💾 DB Yedek Al</button> <button id="dbFolderBtn">📁 DB Klasörü</button></article>
+    <article class="card"><h2>💾 FULL ZIP Yedek</h2><div id="backupState" class="value">-</div><div id="backupDetail" class="muted">KafePin program dosyaları + doğrulanmış database.db anlık görüntüsü. EveryCafe yedeklenmez.</div><button class="green" id="backupBtn">💾 Tam Yedek Al</button> <button id="fullFolderBtn">📁 FULL ZIP Klasörü</button></article>
+    <article class="card"><h2>📁 Klasörler</h2><div class="value" style="font-size:19px">KafePin ve Yedek</div><div class="muted">Program veya yedek klasörünü Explorer ile açar.</div><button id="appFolderBtn">📁 KafePin Klasörü</button> <button id="backupFolderBtn">📁 Yedek Klasörü</button></article>
+    <article class="card"><h2>↺ FULL ZIP Geri Yükle</h2><div class="muted">Önce doğrulanmış emniyet DB yedeği alınır. KafePin verileri geri döner; kurulu program sürümü ve masaüstü uygulaması korunur.</div><select id="restoreSelect"><option>Yedekler yükleniyor...</option></select><button class="orange" id="restoreBtn">↺ Seçili Yedeği Geri Yükle</button></article>
+    <article class="card"><h2>⬆ Sistem Güncelleme</h2><div id="updateState" class="value" style="font-size:20px">Kontrol ediliyor...</div><div id="updateDetail" class="muted">Açılışta yeni sürüm otomatik kontrol edilir.</div><button id="updateCheckBtn">Güncellemeleri Kontrol Et</button> <button class="green" id="updateApplyBtn" disabled>Güncelle ve Yükle</button></article>
+    <article class="card" id="telegramCard"><h2>📲 Telegram Bildirimleri</h2><div id="telegramState" class="value" style="font-size:20px">Kontrol ediliyor...</div><div id="telegramDetail" class="muted">Telegram ayarları sunucudan okunuyor.</div><div class="tg-actions"><button class="green" id="telegramSetupBtn">📲 Telegram'ı Kur</button><button id="telegramTestBtn" style="display:none">📨 Test Mesajı</button></div></article>
+    <article class="card"><h2>🔄 EveryCafe Senkron</h2><div class="value" style="font-size:20px">Manuel</div><div class="muted">Ürün, kategori ve fiyatları yalnız sen istediğinde EveryCafe'den aynalar.</div><button id="everyCafeSyncBtn">🔄 Senkron Ekranını Aç</button></article>
+    <article class="card"><h2>🗂️ EveryCafe Geçmiş Aktarım</h2><div class="value" style="font-size:20px">Ön Kontrol</div><div class="muted">Takvim günüyle geçmiş gelirleri önce karşılaştırır; onaydan önce kayıt yazmaz.</div><button id="everyCafeHistoryBtn">🗂️ Geçmiş Aktarımı Aç</button></article>
+    <article class="card"><h2>🔎 Entegrasyon Günlüğü</h2><div class="value" style="font-size:20px">EveryCafe ↔ KafePin</div><div class="muted">Masa açılışı, başlangıç saati, ürün, taşıma, kapanış, geçmiş aktarım ve hataları gösterir.</div><button id="everyCafeIntegrationBtn">🔎 Günlüğü Aç</button></article>
+    <article class="card"><h2>🗑️ İptal / Ücretsiz / Silinenler</h2><div class="value" style="font-size:20px">EveryCafe Audit</div><div class="muted">Ücretsiz kapanışları ve EveryCafe’de sonradan silinen ücretli kayıtları gösterir. KafePin’den kaldırma yalnız onayla yapılır.</div><button class="orange" id="everyCafeReconcileBtn">🗑️ Silinenler Sayfasını Aç</button></article>
+    <article class="card"><h2>📝 Sürüm Notları</h2><div id="releaseVersionLabel" class="value" style="font-size:20px">Sürüm okunuyor...</div><div class="muted">v3.1.29 yeni kafe STABLE tabanı ve sonraki kümülatif yamaların ayrıntılı sürüm notlarını gösterir.</div><button id="releaseNotesBtn">📝 Sürüm Notlarını Aç</button></article>
+  </section>
+  <div id="releaseNotesOverlay" class="release-overlay">
+    <div class="release-modal">
+      <div class="release-head">
+        <div>
+          <h2>📝 KafePin Pro Sürüm Notları</h2>
+          <div class="release-small">v3.1.29 YENİ KAFE STABLE • sonraki güncellemeler kümülatif hazırlanır</div>
+        </div>
+        <button id="releaseNotesClose" class="release-close">✕ Kapat</button>
+      </div>
+
+      <div class="release-item" data-version="3.1.47">
+        <div class="release-title"><span>v3.1.47 — Tek Sefer Gün Sonu Sağlık Raporu</span></div>
+        <ul>
+          <li><b>Tarih:</b> 20.08.2026</li>
+          <li><b>Düzeltme:</b> Telegram gün sonu sağlık raporunun aynı kapanan iş günü için iki kez gönderilebildiği eşzamanlı tetikleme yarışı giderildi.</li>
+          <li><b>Kök neden:</b> 20:08 cron ile 5 dakikalık catch-up kontrolü aynı ana denk geldiğinde iki çağrı da kalıcı “gönderildi” anahtarı yazılmadan önce gönderime başlayabiliyordu.</li>
+          <li><b>Yeni koruma:</b> Aynı kapanan iş günü için ilk çağrı <code>in-flight</code> kilidi alır. İkinci cron/catch-up çağrısı <code>already-running</code> ile Telegram göndermeden çıkar.</li>
+          <li><b>Hata halinde yeniden deneme:</b> Telegram gönderimi başarısız olursa kilit <code>finally</code> ile açılır; sonraki catch-up turu raporu tekrar deneyebilir. Başarılı gönderimde mevcut kalıcı günlük anahtar da korunur.</li>
+          <li><b>Değişmeyenler:</b> 20:00 gün devri, FULL ZIP yedek, finans, EveryCafe oturum otoritesi, 45 dakika çark yaşam döngüsü, v3.1.46 masa bildirimi ve Monitor/Admin tema-yerleşimi değiştirilmedi.</li>
+          <li><b>EveryCafe güvenliği:</b> EveryCafe veritabanı yalnız <code>sqlite3.OPEN_READONLY</code> ile okunur; EveryCafe'ye yazma yapılmaz.</li>
+          <li><b>Test:</b> <code>server.js</code> syntax kontrolü geçti; aynı <code>closedKey</code> için kilit, <code>return await</code> ve <code>finally</code> serbest bırakma akışı doğrulandı. 20:08 cron ve catch-up mekanizması korunmuştur.</li>
+          <li><b>Önceki FINAL STABLE:</b> v3.1.45. v3.1.46 çark bildirimi kümülatif olarak korunur; v3.1.29 STABLE tabanı üzerine doğrudan uygulanabilir.</li>
+          <li><b>Bilinen sınır:</b> Aynı veritabanını kullanan iki ayrı KafePin <code>server.js</code> sürecinin eşzamanlı çalışması desteklenmez; Server Manager tek sunucu süreci sağlamalıdır.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.46">
+        <div class="release-title"><span>v3.1.46 — EveryCafe Çark Hazır Bildirimi</span></div>
+        <ul>
+          <li><b>Tarih:</b> 20.08.2026</li>
+          <li><b>Yeni:</b> Müşteri KafePin çark sayfasını gerçekten açtıktan sonra başlayan 45 dakika dolunca yalnız ilgili EveryCafe masasına <b>“🎁 Çark hakkınız hazır! Çarkınızı çevirebilirsiniz.”</b> mesajı gönderilir.</li>
+          <li><b>Eski davranıştan farkı:</b> v3.1.45'te çark hazır olduğunda EveryCafe Client'a otomatik masa mesajı yoktu; v3.1.46 yalnız bu bildirimi ekler.</li>
+          <li><b>Sayfa açılmadan bildirim yok:</b> Ping, EveryCafe açık oturumu veya Admin Acil Hazır tek başına “sayfa açıldı” kaydı oluşturmaz. Çark sayfası hiç açılmadıysa otomatik mesaj gönderilmez.</li>
+          <li><b>Oturum boyunca devam:</b> Sayfa sonradan kapansa bile 45 dakika gerçek zamanda ilerler. Başarılı spin sonrası yeni 45 dakika başlar ve yeni döngü dolunca yeniden yalnız bir kez bildirim gönderilir.</li>
+          <li><b>Client restart koruması:</b> 45 dakika dolduğu anda EveryCafe Client geçici olarak çalışmıyorsa oturum/timer kapanmaz; mesaj “gönderildi” sayılmaz ve Client tekrar çalışan duruma geldiğinde yeniden denenir.</li>
+          <li><b>Oturum kapanışında sıfırlama:</b> EveryCafe müşteri oturumu kapandığında sayfa-açıldı ve gönderildi kayıtları KafePin DB'den temizlenir; yeni müşteri eski süre/bildirim durumunu devralmaz.</li>
+          <li><b>EveryCafe Messenger:</b> Sahada doğrulanan EveryCafe Client UDP Messenger kanalı kullanılır. Hedef IP, ServerGuid, ServerName ve Comm1Port EveryCafe kaynağından yalnız <code>sqlite3.OPEN_READONLY</code> ile okunur; <b>Messages tablosu dahil EveryCafe DB'ye hiçbir yazma yapılmaz.</b></li>
+          <li><b>Canlı Sistem Günlüğü:</b> Başarılı gönderimde <code>🎁 Çark bildirimi gönderildi • Masa X • IP</code> kaydı görünür. Hedef/UDP gönderim hataları da spam yapmadan uyarı olarak kaydedilir.</li>
+          <li><b>Finans / 20:00 / tema:</b> Ciro, ödeme, çark maliyeti, EveryCafe oturum otoritesi, 20:00 işletme günü ve Monitor/Admin tema-yerleşimi değiştirilmedi.</li>
+          <li><b>Doğrulama:</b> Gerçek MASA-20 üzerinde EveryCafe Messenger UDP paketi başarıyla gösterildi. Paket testlerinde Messenger hedef sorgusu gerçek <code>ecmdata.ecm</code> üzerinde MASA-20 → <code>192.168.1.120:45456</code> eşleşmesini verdi; EveryCafe açılışlarının tamamı <code>sqlite3.OPEN_READONLY</code> olarak doğrulandı.</li>
+          <li><b>Önceki FINAL STABLE:</b> v3.1.45. Paket kümülatiftir ve v3.1.29 STABLE tabanı üzerine ara sürümler kurulmadan doğrudan uygulanabilir.</li>
+          <li><b>Bilinen sınır:</b> UDP protokolünde ayrı teslim/okundu ACK'i kullanılmadığı için Canlı Sistem Günlüğündeki “gönderildi” kaydı paketin işletim sistemi tarafından hedef IP/porta başarıyla gönderime alınmasını ifade eder. Tam otomatik 45-dakika tetikleme akışı v3.1.46 kurulduktan sonra sahada ayrıca gözlemlenecektir.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.45">
+        <div class="release-title"><span>v3.1.45 — FINAL STABLE • Sürüm Notları Tamamlama</span></div>
+        <ul>
+          <li><b>FINAL STABLE:</b> Sahada/testte kullanılan v3.1.44 EveryCafe oturum-otoritesi davranışı aynen korunarak v3.1.45 kilitli stabil sürüm olarak hazırlanmıştır.</li>
+          <li><b>Sürüm Notları tamamlandı:</b> v3.1.39–v3.1.45 arasındaki eksik ayrıntılı sürüm kartları bu ekrana eklendi.</li>
+          <li><b>Gelecek sürüm güvenliği:</b> Statik sürüm kartı yanlışlıkla unutulsa bile güncelleme merkezinden gelen gerçek <code>notes</code> bilgisi geçici kartı sonradan günceller; “ayrıntılı not eklenmemiş” uyarısı gerçek not varken kalıcı kalmaz.</li>
+          <li><b>Ana işleyiş korunuyor:</b> <code>server.js</code> oturum/finans/20:00/çark mantığı, EveryCafe masa otoritesi, 45 dakika yaşam döngüsü ve Monitor/Admin tema-yerleşimi değiştirilmedi.</li>
+          <li><b>EveryCafe güvenliği:</b> EveryCafe veritabanı yalnız <code>sqlite3.OPEN_READONLY</code> ile okunur; EveryCafe'ye yazma yapılmaz.</li>
+          <li><b>Kümülatif:</b> v3.1.29 STABLE tabanı üzerine ara sürümler kurulmadan doğrudan uygulanabilir.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.44">
+        <div class="release-title"><span>v3.1.44 — Kümülatif EveryCafe Oturum Otoritesi</span></div>
+        <ul>
+          <li><b>Tek otorite EveryCafe:</b> Entegrasyon açıkken müşterinin açık/kapalı durumu EveryCafe <code>Sessions.IsActive</code> kaynağından belirlenir; ping yalnız PC bağlantı bilgisidir.</li>
+          <li><b>Restart/ping kesintisi müşteriyi kapatmaz:</b> EveryCafe oturumu açık kaldığı sürece aynı KafePin session ve çark durumu korunur.</li>
+          <li><b>Kapanışta hızlı temizlik:</b> EveryCafe hesabı ücretli veya ücretsiz kapanınca en geç salt-okunur senkron turunda eski session/runtime/çark/ücretsiz durum temizlenir ve masa yeni müşteriye hazırlanır.</li>
+          <li><b>Eski istemci geri diriltemez:</b> Kapanmış müşteriden gelen geç ping/status/spin isteği aktif EveryCafe eşleşmesi yoksa yeni session veya 45 dakika sayacı başlatamaz.</li>
+          <li><b>Finans kaynağı değişmez:</b> Kesin tahsilat/ücretsiz kapanış gerçek EveryCafe kaynağından salt-okunur doğrulanır; tahmin edilmez.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.43">
+        <div class="release-title"><span>v3.1.43 — Kümülatif Güvenilirlik / Tam Denetim</span></div>
+        <ul>
+          <li><b>Finans tutarlılığı:</b> EveryCafe gerçek kaynak + KafePin doğrudan satış + yerel muhasebe bağımsız çapraz kontrol edilir; kalıcı farklar audit geçmişine alınır.</li>
+          <li><b>Anomali denetimi:</b> şüpheli oturumlar, negatif satışlar ve benzeri durumlar Sistem Sağlığına bağlandı; geçici senkron farkı 10 dakika kalıcı olmadan Telegram alarmı olmaz.</li>
+          <li><b>20:00 sonrası otomasyon:</b> gün devri sonrası FULL ZIP yedek ve 20:08 sağlık raporu çalışır; kaçırılan cron açılışta catch-up ile tamamlanır.</li>
+          <li><b>Sistem Sağlığı:</b> Finans Tutarlılığı, 20:00 Gün Devri, Otomatik Yedek, Anomali Denetimi ve güvenli Self-Test eklendi.</li>
+          <li><b>Aylık özet:</b> Her ayın 1'i 20:15'te önceki ayın işletme özeti Telegram'a gönderilir.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.42">
+        <div class="release-title"><span>v3.1.42 — Kümülatif 20:00 İşletme Günü Düzeltmesi</span></div>
+        <ul>
+          <li><b>20:00–20:00 kaynak günü:</b> Telegram canlı durum ve EveryCafe “Bugün” kaynağı artık KafePin işletme günü sınırını kullanır.</li>
+          <li><b>Eski gün taşınmaz:</b> 20:00'dan sonra önceki takvim gününün EveryCafe geliri yeni güne yanlışlıkla eklenmez.</li>
+          <li><b>Devir:</b> 20:00 sınırını geçen masa yalnız 20:00 sonrası bölümüyle yeni güne yansır ve <code>20:00 Devir Geliri</code> ayrı gösterilir; ikinci kez ciroya eklenmez.</li>
+          <li><b>Genel Ciro:</b> EveryCafe gerçek gelir + KafePin doğrudan satış kuralı aynen korunur; çark maliyeti cirodan düşülmez.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.41">
+        <div class="release-title"><span>v3.1.41 — Tüm Zamanlar Çark Maliyeti</span></div>
+        <ul>
+          <li><b>İstatistikler → Çark Özeti:</b> “Bugünkü çark maliyeti” satırının altına “Tüm zamanlar çark maliyeti” eklendi.</li>
+          <li><b>Gerçek veri:</b> Yeni/tahmini formül kullanılmaz; mevcut gerçek <code>spinMaliyeti / spinCostTotal</code> toplamı gösterilir.</li>
+          <li><b>Finans yapısı korunur:</b> Toplam çark net kârı ve diğer EveryCafe/KafePin finans hesapları değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.40">
+        <div class="release-title"><span>v3.1.40 — Gerçek Gelir / Kart Tutarlılığı</span></div>
+        <ul>
+          <li><b>Satış ekranı sadeleştirildi:</b> Soldaki tekrar eden satış listesi kaldırıldı; satış kayıtları yalnız sağdaki Son Satışlar alanında tutuldu.</li>
+          <li><b>Finans kartları denetlendi:</b> Ana kartlar EveryCafe gerçek salt-okunur kaynak, KafePin doğrudan satış, muhasebe ve tek çark maliyeti kaynağına bağlandı.</li>
+          <li><b>EveryCafe Gerçek Gelir:</b> Dashboard, Ürün/Hizmet ve Telegram alanlarında kaynak adı/netliği aynı gerçek veri mantığıyla hizalandı.</li>
+          <li><b>Ciro kuralı:</b> Genel Ciro = EveryCafe gerçek gelir + KafePin doğrudan satış; çark maliyeti ayrı maliyet olarak kalır.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.39">
+        <div class="release-title"><span>v3.1.39 — Sabit 45 Dakika Çark + Gerçek Ciro</span></div>
+        <ul>
+          <li><b>45 dakika yaşam döngüsü:</b> Yeni müşteri çark sayfasını ilk kez açmadan sayaç başlamaz; ilk gerçek açılışta 45:00 başlar. Pencere sonradan kapansa da gerçek zaman ilerler ve başarılı spin sonrası yeniden 45:00 başlar.</li>
+          <li><b>5 hak korunur:</b> Mevcut aktif müşteri/session bazlı maksimum 5 spin kuralı devam eder; yalnız Admin Acil Hazır beklemeyi atlayabilir.</li>
+          <li><b>Hediye süre bağımsız:</b> EveryCafe ücretsiz/hediye süreleri çark sayacını değiştirmez; Test Mode ve kısa/değişken spin süresi yoktur.</li>
+          <li><b>Sabit maliyetler:</b> Normal 30=25 ₺, Normal 60=50 ₺, VIP 30=35 ₺, VIP 60=70 ₺; içecek/atıştırmalık/anahtarlık=20 ₺. Hafta içi/hafta sonu ayrımı yoktur.</li>
+          <li><b>Gerçek ciro:</b> Genel Ciro EveryCafe gerçek salt-okunur gelir + yalnız KafePin Doğrudan Satış'tır; çark maliyeti Genel Ciro'dan düşülmez.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.38">
+        <div class="release-title"><span>v3.1.38 — Kümülatif EveryCafe İptal / Ücretsiz / Silinenler Audit Sistemi</span></div>
+        <ul>
+          <li><b>Ayrı sayfa:</b> EveryCafe ana ekranını kalabalıklaştırmadan <code>İptal / Ücretsiz / Silinenler</code> ekranı eklendi.</li>
+          <li><b>Ücretsiz Kapat:</b> ödeme, ürün, session history ve finalize geliri otomatik temizlenmeye devam eder; olay ve ürün özeti audit geçmişinde kalır.</li>
+          <li><b>Kaynakta sonradan silinen ücretli kayıt:</b> normal masa, Doğrudan Satış, üye geliri ve Bilet/Diğer kaynak kimliğiyle izlenir. KafePin geliri körlemesine düşürmez; <b>KafePin’den de kaldır</b> onayı bekler.</li>
+          <li><b>Ürünler birlikte kaldırılır:</b> normal masanın bağlı EveryCafe ürünleri, Doğrudan Satış ürünleri ve bağımsız Bilet/Diğer satış satırı ödeme ile birlikte void edilir; yeni aktif masa etkilenmez.</li>
+          <li><b>Audit korunur:</b> KafePin’den kaldırılmış kayıt silinmez; ne zaman, ne kadar ve hangi ürünlerle kaldırıldığı sayfada ve Entegrasyon Günlüğü’nde kalır.</li>
+          <li><b>Otomatik silme yok:</b> ücretli kaynak silinmesi önce kırmızı bekleyen kayıt üretir. Kasa/POS ancak kullanıcı onayından sonra düzeltilir.</li>
+          <li><b>Kümülatif:</b> v3.1.37 80 TL kaynak ciro senkronu, 100/500 cursor, SessionType=26, bilet/çıktı gelirleri, OrderID ürün denetimi ve önceki tüm güvenlikler korunur.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.37">
+        <div class="release-title"><span>v3.1.37 — Kümülatif EveryCafe Kaynak Ciro + Kasa Hareketi Tam Senkronu</span></div>
+        <ul>
+          <li><b>Kaynak ciro artık kaynak gerçeği:</b> EveryCafe günlük toplamı entegrasyonun açıldığı saatten değil Europe/Istanbul takvim gününün 00:00–24:00 aralığından okunur. Kaynak 80 ₺ / KafePin 55 ₺ ise <b>-25 ₺ eksik aktarım</b> gösterilir.</li>
+          <li><b>Restart/güncelleme sonrası otomatik tamamlama:</b> 24 saatlik güvenli geri tarama artık <code>startAt</code> sınırında kesilmez. Aynı gün daha önce oluşmuş ancak aktarılmamış kayıtlar kaynak ID dedup ile yeniden görülür.</li>
+          <li><b>Expense = Kasa Hareketleri:</b> Gerçek EveryCafe şemasında <code>Type=1</code> pozitif Nakit/Kart hareketleri gelir, <code>Type=0</code> gider/iade tarafıdır. Yalnız Type=1 gelirler aktarılır; giderler alınmaz.</li>
+          <li><b>Bilet adı/TicketID zorunluluğu kaldırıldı:</b> Bilet, çıktı/baskı ve benzeri bağımsız EveryCafe gelirleri açıklama veya TicketID formatı değişse de gelir olarak yakalanır.</li>
+          <li><b>Bilet / Diğer Gelir kartı:</b> Bilet, E-Pin, Teknik Servis, Çıktı/Baskı ve diğer pozitif kasa gelirleri <code>EVERYCAFE_OTHER</code> altında doğru Nakit/Kart yöntemiyle görünür.</li>
+          <li><b>Geriye dönük çift kayıt koruması:</b> v3.1.36'nın <code>TICKET_EXPENSE:&lt;ExpenseID&gt;</code> kimliği korunur; daha önce alınmış bilet yeniden yazılmaz.</li>
+          <li><b>Kümülatif:</b> 100/500 cursor düzeltmeleri, SessionType=26 Doğrudan Satış, kapalı oturum kurtarma, OrderID ürün denetimi, günlük/aylık/tüm zamanlar karşılaştırması ve önceki tüm güvenlikler korunur.</li>
+          <li><b>Güvenli kapsam:</b> EveryCafe salt-okunur kalır. <b>Gider entegrasyonu yoktur.</b> Muhasebe, kasa/POS/banka, çark, Telegram, Client ve ücret hesaplamaları değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.36">
+        <div class="release-title"><span>v3.1.36 — Kümülatif EveryCafe Gerçek Bilet / Kasa Hareketi Senkronu</span></div>
+        <div class="release-detail">Gerçek ecmdata.ecm şemasına göre masa açmadan satılan biletler Expense/Kasa Hareketleri kaynağından salt-okunur alınır; yalnız TicketID + bilet satış açıklaması + pozitif tutar eşleşen gelirler aktarılır, normal giderler alınmaz. Bilet/Diğer Gelir ayrı gösterilir; günlük kaynak ciro ve aktarım farkı bilet dahil gerçek EveryCafe toplamını kullanır. Doğrudan Satış ürün OrderID kontrolü DIRECT_ORDER kimliğiyle düzeltildi.</div>
+      </div>
+      <div class="release-item" data-version="3.1.35">
+        <div class="release-title"><span>v3.1.35 — Kümülatif EveryCafe Günlük Kaynak Doğrulama + Bilet / Ürün Düzeltmesi</span></div>
+        <ul>
+          <li><b>Masa açmadan Bilet Satışı:</b> EveryCafe bilet akışı artık <code>TicketID / TicketSetID / TicketOrder / TicketOrderAmount</code> alanlarıyla ve aynı SessionID'ye bağlı gerçek <code>Payments</code> tahsilatıyla birlikte tanınır.</li>
+          <li><b>Tek gelir, çift kayıt yok:</b> bilet/diğer oturuma bağlı Payment varsa tutar ve Nakit/Kart bilgisi Payment kaydından alınır; Session satırı ayrıca gelir yazmaz. Payment yoksa pozitif <code>TicketOrderAmount</code> güvenli geri dönüş olarak kullanılır.</li>
+          <li><b>Bağlı Payment filtresi düzeltildi:</b> normal masa ve <code>SessionType=26</code> Doğrudan Satış'ın teknik Payment satırları yine atlanır; ancak bilet/diğer oturumlara bağlı gerçek Payment artık yanlışlıkla elenmez.</li>
+          <li><b>Bugünkü EveryCafe rakamı gerçek kaynaktan:</b> EveryCafe panelindeki Bugünkü Genel Ciro, Nakit, Kart, Doğrudan Satış ve Bilet/Diğer kartları KafePin'e aktarılmış yerel toplamdan değil salt-okunur EveryCafe kaynağından hesaplanır.</li>
+          <li><b>80 / 55 testi:</b> EveryCafe kaynak gelir 80 ₺, KafePin aktarımı 55 ₺ ise ekran artık “Uyumlu” demez; <b>Aktarım Uyumu -25,00 ₺</b> gösterir.</li>
+          <li><b>Günlük aktarım denetimi:</b> EveryCafe ödeme kontrolü 20:00 kafe günü başlangıcından veya entegrasyon bugün daha geç açıldıysa açılış anından itibaren kaynak ↔ KafePin toplamını karşılaştırır.</li>
+          <li><b>Gerçek ürün denetimi:</b> EveryCafe <code>OrderID</code> satırları KafePin'deki <code>ORDER:&lt;id&gt;</code> kayıtlarıyla tek tek kontrol edilir; eksik ürün, yanlış adet, birim fiyat veya toplam ayrı uyarı üretir.</li>
+          <li><b>Ürün / Satış Kontrolü kartı:</b> seçilen günde EveryCafe ürün toplamı/adedi ile KafePin'e aktarılan EveryCafe ürün toplamı/adedi karşılaştırılır ve fark doğrudan gösterilir.</li>
+          <li><b>Satış Geçmişi kapsamı:</b> günlük/aylık/tüm zamanlar EveryCafe kaynak karşılaştırması bilet/diğer gelirleri de kapsar; satırlar Doğrudan Satış, Bilet/Diğer ve Üye Geliri olarak doğru etiketlenir.</li>
+          <li><b>Gün sonu aynı kaynak motorunu kullanır:</b> masa + ürün + doğrudan satış + üye + bilet/diğer gelirleri tek birleşik kaynak özetiyle doğrulanır.</li>
+          <li><b>Güvenli kapsam:</b> EveryCafe yalnız salt-okunur açılır; gider entegrasyonu yapılmaz. Muhasebe formülleri, kasa/POS/banka, çark, Telegram, Kafe Client ve masa ücret sistemi değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.34">
+        <div class="release-title"><span>v3.1.34 — Kümülatif EveryCafe Tam Entegrasyon</span></div>
+        <ul>
+          <li><b>Sabit kayıt sınırları kaldırıldı:</b> canlı masa kapanışları ve üye tahsilatları artık ilk 100 / 500 kayıt penceresine bağlı değildir. Kaynak sayfalı okunur ve ilerleme kalıcı cursor ile tutulur.</li>
+          <li><b>Güvenli yeniden tarama:</b> son 24 saat kaynak ID ile yeniden kontrol edilir; aynı SessionID / HistoryID / PaymentID ikinci kez gelir yazmaz.</li>
+          <li><b>Doğrudan Satış adı serbest:</b> EveryCafe resmi <code>SessionType=26</code> kullanılır. Yeni kafede “Doğrudan Satış” masasının adı değiştirilmiş olsa bile doğru tür olarak tanınır.</li>
+          <li><b>Bilet / E-Pin / Teknik Servis:</b> masaya bağlı olmayan gerçek EveryCafe <code>Payments</code> gelirleri ve masa olmayan ücretli oturumlar canlı olarak <b>EveryCafe Bilet / Diğer Gelir</b> şeklinde KafePin'e aktarılır.</li>
+          <li><b>Çift gelir koruması:</b> bir Session'a bağlı teknik Payment satırı ayrıca gelir sayılmaz. Bağımsız Payment için kaynak PaymentID, oturum için SessionID esas alınır.</li>
+          <li><b>KafePin kapalıyken kaçan masa:</b> KafePin kapalıyken EveryCafe'de açılıp kapanmış ücretli masa, çakışan yerel tahsilat yoksa gerçek başlangıç/bitiş ve SessionID ile güvenli kurtarılır. Çakışma varsa otomatik kayıt yapılmaz ve manuel kontrol bırakılır.</li>
+          <li><b>Yeni müşteri korunur:</b> eski kapanış aktarılırken aynı masa yeniden açılmışsa yeni aktif EveryCafe oturumunun tip, süre, hediye ve monitör durumu silinmez.</li>
+          <li><b>Doğrudan satış ayrıntı koruması:</b> ürün ayrıntısı ödeme toplamından düşükse fark ayrı kaynak kalemiyle korunur; ürün toplamı ödeme toplamını aşarsa aktarım güvenlik için durur.</li>
+          <li><b>Denetim genişletildi:</b> ödeme kontrolü ve gün sonu EveryCafe karşılaştırması masa + doğrudan satış + üye + bilet/diğer gelirleri birlikte denetler.</li>
+          <li><b>Salt-okunur entegrasyon:</b> EveryCafe veritabanına hiçbir veri yazılmaz. <b>Gider entegrasyonu kapsam dışıdır.</b> Muhasebe formülleri, ücret tarifesi, çark, Telegram ve Kafe Client davranışı değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.33">
+        <div class="release-title"><span>v3.1.33 — Kümülatif Gider Kaydı Tutar / Açıklama Düzenleme</span></div>
+        <ul>
+          <li><b>Gider DÜZENLE iyileştirildi:</b> Kasa & Muhasebe → Son Bakiye ve Gider Kayıtları bölümünde bir giderin <b>DÜZENLE</b> düğmesine basınca artık ayrı ve anlaşılır bir düzenleme penceresi açılır.</li>
+          <li><b>Tutar düzenleme:</b> yanlış girilmiş gider tutarı doğrudan değiştirilebilir; 0 veya negatif tutar kaydedilemez.</li>
+          <li><b>Açıklama düzenleme:</b> gider açıklaması aynı pencereden değiştirilebilir veya temizlenebilir.</li>
+          <li><b>Güvenli kapsam:</b> hızlı gider düzenleme penceresi kategori ve ödeme hesabını değiştirmez; mevcut kategori ile Nakit Kasa / Ana Banka / POS Bankası / Kişisel Kart hesabı korunur.</li>
+          <li><b>Anında yansıma:</b> kaydetmeden önce eski ve yeni tutar onayı gösterilir; kayıt güncellenince Muhasebe, Anlık Finans, Dashboard ve canlı kayıtlar yenilenir.</li>
+          <li><b>Çekirdek hesaplama korunur:</b> mevcut <code>/admin/accounting/update</code> doğrulaması kullanılır. Tahmini Nakit Kasa, POS, banka, Toplam Varlık, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client mantıkları değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.32">
+        <div class="release-title"><span>v3.1.32 — Kümülatif Kasa Farkı Gider Kontrol Uyarısı</span></div>
+        <ul>
+          <li><b>Daha net yönlendirme:</b> Kasa Kontrol / Fark Bul yardımcısı farka uygun kayıt bulamazsa artık belirgin biçimde <b>“önce GİDER GİRİŞLERİNİ kontrol et”</b> uyarısı gösterir.</li>
+          <li><b>Olası nedenler:</b> kasadan nakit ödenmiş fakat sisteme girilmemiş gider, yanlış tutarlı gider veya yanlış hesap seçilmiş gider ihtimallerini özellikle hatırlatır.</li>
+          <li><b>Doğrudan yol tarifi:</b> kullanıcıyı <b>Kasa & Muhasebe → Son Bakiye ve Gider Kayıtları</b> bölümüne yönlendirir; ardından bugünkü nakit hareketlerini kontrol etmesini söyler.</li>
+          <li><b>Salt-okunur güvenlik:</b> yalnız bilgilendirme metni değişti; sistem hiçbir ödeme, gider, virman veya muhasebe kaydını otomatik düzeltmez.</li>
+          <li><b>Hesaplama korunur:</b> Tahmini Nakit Kasa, POS, banka, Toplam Varlık, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client davranışları değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.31">
+        <div class="release-title"><span>v3.1.31 — Kümülatif Kasa Kontrol / Fark Bul</span></div>
+        <ul>
+          <li><b>Yeni Kasa Kontrolü:</b> Anlık Finans ekranına fiziksel kasada sayılan nakdi girip sistemdeki <b>Tahmini Nakit Kasa</b> ile anında karşılaştırma eklendi.</li>
+          <li><b>Açık/Fazla sonucu:</b> sistem beklenen kasa, fiziksel sayım ve aradaki farkı ayrı kartlarda gösterir; fark negatifse Kasa Açığı, pozitifse Kasa Fazlası olarak açıkça işaretler.</li>
+          <li><b>Fark Bul yardımcısı:</b> son 7 gündeki kayıtlı nakit hareketleri arasında farka tam uyan veya yakın tek işlemleri ve aynı farkı oluşturan iki işlem kombinasyonlarını araştırır.</li>
+          <li><b>Bugünkü nakit hareketleri:</b> masa tahsilatı, KafePin/EveryCafe doğrudan nakit satış, nakit gider, bakiye hareketi ve Nakit Kasa virmanları tek listede gösterilir.</li>
+          <li><b>Salt-okunur güvenlik:</b> Kasa Kontrol hiçbir tahsilat, gider, virman veya muhasebe kaydını otomatik değiştirmez; adaylar yalnız araştırma kolaylığı içindir.</li>
+          <li><b>Hesaplama korunur:</b> mevcut Tahmini Nakit Kasa, POS, banka, gider, komisyon ve Toplam Varlık formülleri değiştirilmedi. Yalnız yeni salt-okunur <code>/admin/cash-check/candidates</code> endpoint'i eklendi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.30">
+        <div class="release-title"><span>v3.1.30 — Kümülatif Anlık Finans Durumu</span></div>
+        <ul>
+          <li><b>Yeni üst sekme:</b> ana admin panelinde KAFE & ÇARK, EVERYCAFE, <b>ANLIK FİNANS</b> ve KASA & MUHASEBE yan yana erişilebilir hale getirildi.</li>
+          <li><b>Tek bakışta mevcut bakiyeler:</b> Tahmini Nakit Kasa, Ana Banka, POS Bankası, Bankaya Geçecek Kart, Şahsi Kart Borcu ve Toplam Varlık aynı ekranda gösterilir.</li>
+          <li><b>Kafe günü özeti:</b> 20:00–20:00 için Nakit, Kart, Ciro, Gider, Kart Komisyonu ve Net Sonuç kartları eklendi.</li>
+          <li><b>Salt-okunur yapı:</b> yeni ekran yalnız mevcut <code>/admin/accounting/summary</code> verisini gösterir; muhasebe kayıtlarına veya hesaplama formüllerine müdahale etmez.</li>
+          <li><b>Hızlı kullanım:</b> son güncelleme zamanı, manuel Yenile ve Muhasebeye Git düğmeleri eklendi; dar ekranlarda dört ana sekme uyumlu şekilde düzenlenir.</li>
+          <li><b>Kapsam kilitli:</b> server.js, muhasebe DB/formülleri, kasa/POS hesapları, EveryCafe, Telegram, masa/ücret/çark ve Kafe Client davranışı değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.29">
+        <div class="release-title"><span>v3.1.29 — Kümülatif Stabilite ve Yarış Durumu Koruması</span></div>
+        <ul>
+          <li><b>Finalize hatası artık kaybolmaz:</b> SQLite/transaction hatası oluşursa masa kapanışı başarılı sayılmaz; hata üst akışa taşınır ve ödeme/temizlik zinciri yanlışlıkla devam etmez.</li>
+          <li><b>Finalize kilidi erken bırakılmaz:</b> 7–8 saniyeyi aşan işlemde yalnız uyarı verilir; SQLite gerçek sonucunu vermeden masa kuyruğu ve finalize kilidi serbest bırakılmaz.</li>
+          <li><b>EveryCafe transaction başlangıcı korunur:</b> ücretsiz kapanış, gerçek oturum aktarımı ve admin void-import işlemleri <code>BEGIN IMMEDIATE</code> gerçekten başarılı olmadan veri değiştirmeye başlamaz.</li>
+          <li><b>EveryCafe aktif senkron single-flight:</b> 5 saniyelik canlı kontrol önceki tarama bitmeden yeniden başlamaz; yavaş DB/disk anında gereksiz üst üste binme engellenir.</li>
+          <li><b>Yerel ZIP seçici single-flight:</b> aynı anda iki yönetim penceresinden ZIP seçme isteği DesktopBridge <code>request.json/result.json</code> dosyalarını çakıştıramaz.</li>
+          <li><b>Kapsam kilitli:</b> masa ücret tarifesi, çark, Telegram, muhasebe, gün sonu gelir hesabı, EveryCafe kaynak mantığı, admin tasarımı ve Kafe Client davranışı değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.28">
+        <div class="release-title"><span>v3.1.28 — Yerel ZIP Seçici Gerçek Masaüstünde</span></div>
+        <ul>
+          <li><b>Bilgisayardan ZIP Seç ve Kur düzeltildi:</b> Windows dosya seçici artık SYSTEM/Session 0 içinde değil, v3.1.27 masaüstü köprüsüyle aktif kullanıcının gerçek interaktif oturumunda açılır.</li>
+          <li><b>Varsayılan konum İndirilenler:</b> dialog Windows'un gerçek Downloads/Known Folder yolundan başlar; klasör taşınmış olsa bile kullanıcı profilinden otomatik çözülür.</li>
+          <li><b>ZIP başka yerdeyse serbest seçim:</b> kullanıcı dosya seçiciden masaüstü, başka disk veya istediği klasöre geçebilir; sabit kullanıcı adı veya sabit sürücü yolu yoktur.</li>
+          <li><b>Güncelleme motoru korunur:</b> seçilen ZIP sonrasında mevcut emniyet yedeği + doğrulama + kurulum/restart akışı aynen devam eder.</li>
+          <li><b>Kapsam kilitli:</b> v3.1.27 klasör/Explorer köprüsü, temiz restart günlüğü, hızlı yedek/restore, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesapları değiştirilmedi.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.27">
+        <div class="release-title"><span>v3.1.27 — Explorer Gerçek Masaüstü Köprüsü</span></div>
+        <ul>
+          <li><b>Kök neden düzeltildi:</b> KafePin server/Manager SYSTEM oturumunda çalıştığı için Windows, Session 0 içinden kullanıcı Explorer penceresinin foreground yapılmasını engelleyebiliyordu.</li>
+          <li><b>Explorer artık gerçek kullanıcı oturumunda açılır:</b> klasör isteği <code>KafePin Pro Desktop Action</code> göreviyle aktif kullanıcının <code>TASK_LOGON_INTERACTIVE_TOKEN</code> masaüstünde çalışır.</li>
+          <li><b>Öne getirme doğrulanır:</b> hedef Explorer HWND'si restore edilir, foreground'a alınır ve gerçek foreground penceresi olduğu doğrulanmadan başarı dönmez.</li>
+          <li><b>Kendi kendini hazırlar:</b> masaüstü görevi yoksa veya eski kullanıcıya bağlı kaldıysa ilk tıklamada otomatik yeniden kaydedilir; kullanıcı parolası istenmez.</li>
+          <li><b>Kümülatif ve düşük risk:</b> v3.1.26 temiz restart günlüğü, v3.1.23 hızlı yedek/geri yükleme + gün sonu düzeltmesi, v3.1.22 hız optimizasyonları ve v3.1.21 Server Manager stabilitesi aynen korunur.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.26">
+        <div class="release-title"><span>v3.1.26 — Gerçek Temiz Restart Günlüğü</span></div>
+        <ul>
+          <li><b>Restart günlüğü sunucu tarafında da sıfırlanır:</b> Yönetim Merkezi'nde Yeniden Başlat onayından sonra, Server Manager restart komutu verilmeden önce mevcut Node'un <code>liveLogs</code> belleği temizlenir.</li>
+          <li><b>Eski satırlar geri gelemez:</b> arayüz yalnız eski <code>startedAt</code> değişene kadar bekler; yeni Node farklı başlangıç kimliğiyle açıldığında yalnız yeni oturum kayıtlarını gösterir.</li>
+          <li><b>Restart güvenliği korunur:</b> <code>/restart-async</code> handoff yolu aynen kullanılır; <code>signal is aborted without reason</code> düzeltmesi korunur.</li>
+          <li><b>Diğer alanlar korunur:</b> v3.1.25 Explorer foreground düzeltmesi, v3.1.23 hızlı yedek/geri yükleme ve gün sonu düzeltmesi, v3.1.22 hız optimizasyonları aynen devam eder.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.25">
+        <div class="release-title"><span>v3.1.25 — Sade Güncelleme Kartı + Temiz Restart + Explorer Stabilitesi</span></div>
+        <ul>
+          <li><b>Güncelleme kartı sade:</b> yeni sürüm bulunduğunda uzun sürüm notları karta basılmaz; yalnız yeni/mevcut sürüm özeti ve işlem düğmeleri görünür.</li>
+          <li><b>Restart hatası düzeltildi:</b> Yönetim Merkezi Yeniden Başlat artık Server Manager'ın <code>/restart-async</code> handoff yolunu kullanır; Node kapanırken tarayıcı isteği yarıda kesilmediği için <code>signal is aborted without reason</code> uyarısı oluşmaz.</li>
+          <li><b>Canlı Sistem Günlüğü gerçekten temiz başlar:</b> restart öncesi eski <code>startedAt</code> kimliği tutulur; yeni Node farklı boot kimliğiyle gelene kadar eski günlük tekrar gösterilmez.</li>
+          <li><b>Explorer davranışı v3.1.21 STABLE yoluna döndü:</b> DB, FULL ZIP, KafePin ve Yedek klasörü düğmeleri Explorer GUI sürecini beklemeden doğrudan Windows'a teslim eder; sahte zaman aşımı / “öne getirme doğrulanamadı” uyarısı kaldırıldı.</li>
+          <li><b>Kapsam kilitli:</b> v3.1.23 hızlı yedek/geri yükleme ve gün sonu düzeltmesi, Admin bildirimleri, DB, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesapları korunur.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.24">
+        <div class="release-title"><span>v3.1.24 — Explorer Klasör Pencereleri Öne Getirme</span></div>
+        <ul>
+          <li><b>Tüm klasör düğmeleri tek noktadan düzeltildi:</b> DB Klasörü, FULL ZIP Klasörü, KafePin Klasörü ve Yedek Klasörü aynı güvenli Explorer odak motorunu kullanır.</li>
+          <li><b>Zaten açık klasör yeniden çoğaltılmaz:</b> hedef klasör Explorer'da açıksa mevcut pencere bulunur, restore edilir ve doğrudan öne getirilir.</li>
+          <li><b>Kapalı klasör açılıp öne gelir:</b> hedef açık değilse Explorer başlatılır; pencere oluşunca Windows foreground doğrulaması yapılır.</li>
+          <li><b>Güvenli fallback korunur:</b> Windows odak doğrulaması çalışmazsa klasör yine açılır ve Yönetim Merkezi bunun yalnız odak kısmının doğrulanamadığını açıkça gösterir.</li>
+          <li><b>Kapsam kilitli:</b> v3.1.23 hızlı yedek/geri yükleme, gün sonu düzeltmesi, DB, Server Manager, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesapları değiştirilmedi.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.23">
+        <div class="release-title"><span>v3.1.23 — Hızlı Yedek / Geri Yükleme + Gün Sonu Düzeltme</span></div>
+        <ul>
+          <li><b>FULL ZIP doğrulaması hızlandı:</b> yeni yedeklerde 70+ MB arşivin tamamı tekrar açılmaz; yalnız <code>database.db</code> hedefli çıkarılır ve SQLite <code>quick_check</code> + KafePin tablo yapısı doğrulanır. Eski/alışılmadık yedeklerde tam tarama fallback'i aynen korunur.</li>
+          <li><b>Tekrarlı DB kontrolleri azaltıldı:</b> doğrulanmış snapshot stage'e kopyalandıktan sonra aynı DB ikinci/üçüncü kez gereksiz <code>quick_check</code> ile taranmaz; son ZIP içinden çıkan DB yine güçlü doğrulamadan geçer.</li>
+          <li><b>Geri yükleme hazırlığı hızlandı:</b> restore yalnız veriyi değiştirdiği için restore öncesi yeniden FULL ZIP üretmek yerine kalıcı doğrulanmış <code>database_pre_restore_*.db</code> emniyet yedeği alınır. Restore Worker'ın SHA-256 kontrollü otomatik rollback yolu değişmeden korunur.</li>
+          <li><b>Eksik gün sonu tek tık:</b> Sistem Sağlığı gün sonu gecikmesini tespit ederse <b>Dünün Gün Sonunu Şimdi Al</b> düğmesi çıkar; yalnız eksik 20:00 sınırı yeniden hesaplanır, bugünün açık masalarına dokunulmaz.</li>
+          <li><b>Bildirim GİT davranışı:</b> Kritik Sistem Sağlığı bildiriminin sebebi gün sonuysa <b>GİT</b> doğrudan düzeltme kutusuna iner.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.22">
+        <div class="release-title"><span>v3.1.22 — Hız + Kararlılık Optimizasyonu</span></div>
+        <ul>
+          <li><b>Yönetim Merkezi daha hafif:</b> bağımsız durum kontrolleri artık ardışık değil paralel çalışır; boşta gereksiz güncelleme-ilerleme sorgusu yapılmaz ve görünmeyen pencerede arka plan sorguları azaltılır.</li>
+          <li><b>Güncelleme durumu daha doğru:</b> hedef sürüm yeni Node üzerinde çalışmaya başladığı anda düğme ve durum alanı <b>✓ vX kuruldu</b> olarak gösterilir; 10 saniyelik güvenlik doğrulaması arka planda sürerken yanlış biçimde “Güncelleniyor...” yazmaz.</li>
+          <li><b>Admin aktif panel yenilemesi:</b> Kafe & Çark, EveryCafe ve Kasa & Muhasebe artık yalnız görünür panelin gerekli verilerini sık yeniler. Acil bildirimler ayrı ve kontrollü aralıkla korunur.</li>
+          <li><b>Server Manager hızlı PID yolu:</b> sağlıklı normal çalışma sırasında önce güvenilir <code>server.pid</code> + <code>Get-Process</code> kullanılır; ağır CIM / port 3000 taraması yalnız PID eksik veya şüpheliyse fallback olarak devreye girer.</li>
+          <li><b>STABLE kapsam:</b> DB, FULL ZIP yedek, DB yedek, geri yükleme motoru, EveryCafe, Telegram, muhasebe hesapları, masa/çark ve gelir hesap motorları değiştirilmedi.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.18">
+        <div class="release-title"><span>v3.1.18 — Güncelleme Kontrolü + Temiz Restart Günlüğü + Sunucu Düğmeleri</span></div>
+        <ul>
+          <li><b>Güncelleme kontrolü 429/503/568 koruması:</b> her görünürlük/açılışta benzersiz GitHub isteği üretme kaldırıldı; başarılı sonuç 5 dakika kullanılır, eşzamanlı kontroller tek istekte birleşir ve geçici ağ hatasında son doğrulanmış sonuç korunur.</li>
+          <li><b>Canlı Sistem Günlüğü restart oturumu:</b> günlük yanıtı server başlangıç kimliği taşır; gerçek Node restart sonrası arayüz eski oturum satırlarını tutmaz ve yeni server günlüğünü temiz oturum olarak gösterir.</li>
+          <li><b>Başlat / Durdur / Yeniden Başlat:</b> Server Manager çağrıları zaman aşımı, taze token doğrulaması ve güvenli tek-tekrar kuralıyla sağlamlaştırıldı; POST restart/stop komutları belirsiz ağ hatasında ikinci kez gönderilmez.</li>
+          <li><b>Kapsam kilitli:</b> DB, yedek alma/geri yükleme, EveryCafe, Telegram, muhasebe, masa/çark, gelir hesapları ve v3.1.16 güncelleme kurulum kilidi mantığı değiştirilmedi.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.17">
+        <div class="release-title"><span>v3.1.17 — Hızlı Git Bildirimleri + Yerel Sürüm Etiketi</span></div>
+        <ul>
+          <li><b>Tek bildirim yeri:</b> Hızlı Git satırında Bakım Modu bağlantısının hemen yanında tek <b>🔔 Bildirimler</b> düğmesi bulunur.</li>
+          <li><b>Yalnız 5 acil bildirim:</b> Kasa/Gelir Uyuşmazlığı, Bekleyen Ödeme, Kart Banka Yatırımı Doğrulama, EveryCafe Entegrasyon Sorunu ve Kritik Sistem Sağlığı. Bildirim varsa düğme kırmızı yanıp söner ve sayı gösterir.</li>
+          <li><b>Sürüm etiketi takılmaz:</b> Yönetim Merkezi kurulu sürümü önce yerel <code>/api/health</code> üzerinden okur. Uzak güncelleme kontrolü başarısız olsa bile “Sürüm okunuyor...” yazısında kalmaz.</li>
+          <li><b>Kapsam kesin:</b> v3.1.16 server.js, DB/yedek/geri yükleme, restart, EveryCafe, Telegram, muhasebe, masa/çark ve gelir hesapları değiştirilmedi.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.16">
+        <div class="release-title"><span>v3.1.16 — Güncelleme Butonu Sunucu Tarafı Kalıcı Kilit</span></div>
+        <ul>
+          <li><b>Güncelleme kilidi artık WebView/localStorage'a bağlı değil:</b> güncelleme başlarken hedef sürüm Windows ProgramData altında kalıcı kilit dosyasına yazılır.</li>
+          <li><b>Program 2-3 kez kapanıp açılsa da düğme pasif kalır:</b> /admin/pro/update-status kurulum kilidi varken uzak sürüm kontrolüne geçmez; Güncelle ve Yükle hiçbir ara açılışta tekrar aktif edilmez.</li>
+          <li><b>Gerçek tamamlanma doğrulaması:</b> hedef sürüm diskte olmalı, güncellemeyi başlatan eski Node süreci değişmiş olmalı ve yeni server en az 10 saniye kararlı çalışmalıdır. Ancak bundan sonra kurulum kilidi kaldırılır.</li>
+          <li><b>Normal durumda pasif:</b> kurulum bittikten sonra düğme yine pasiftir; yalnız daha yeni bir sürüm gerçekten bulunduğunda aktif olur.</li>
+          <li><b>Kesintili kurulum güvenliği:</b> server hedef sürüm yazılmadan yeniden başlarsa eski kilit hata olarak temizlenir ve gerçek güncelleme yeniden denenebilir.</li>
+          <li><b>Kümülatif:</b> temiz <b>v3.1.2 ANA STABLE</b> üzerine doğrudan kurulabilir; v3.1.15 ve önceki gerekli düzeltmelerin son doğru halleri korunur. Bu sürümde işlevsel değişiklik yalnız güncelleme kilidi akışındadır.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.15">
+        <div class="release-title"><span>v3.1.15 — Güncelleme Yeniden Başlatma Kilidi + Kart Yatırımı Küçültme</span></div>
+        <ul>
+          <li><b>Kart Banka Yatırımı Doğrulama küçültülebilir:</b> Kasa & Muhasebe içindeki bu bölüm artık varsayılan küçük gelir; AÇ / KÜÇÜLT ile yönetilir ve kullanıcının son tercihi tarayıcıda hatırlanır.</li>
+          <li><b>Güncelle ve Yükle yalnız güncelleme varsa aktif:</b> düğme normal durumda pasif kalır; yalnız uzak sürüm kontrolü gerçekten daha yeni bir sürüm bulduğunda aktif olur.</li>
+          <li><b>Yeniden başlatmada kilit kaybolmaz:</b> güncelleme başlayınca kurulmakta olan sürüm bilgisi tarayıcıda saklanır. Program güncelleme sırasında kapanıp geri açılsa bile aynı sürüm için düğme tekrar aktif olmaz.</li>
+          <li><b>Sunucu ilerlemesi de kilidi doğrular:</b> yeniden açılışta önce yerel güncelleme ilerlemesi okunur; çalışan kurulum varsa düğme Güncelleniyor durumunda pasif tutulur. Kurulum tamamlandığı doğrulandıktan sonra sürüm durumu yeniden kontrol edilir.</li>
+          <li><b>Kümülatif:</b> temiz <b>v3.1.2 ANA STABLE</b> üzerine doğrudan kurulabilir; v3.1.14 ve önceki gerekli düzeltmelerin son doğru halleri korunur. server.js ve mevcut gelir / EveryCafe / Telegram / masa / çark hesapları değiştirilmedi.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.14">
+        <div class="release-title"><span>v3.1.14 — Güncelleme Tek-Tıklama Kilidi + Muhasebe Liste Küçültme</span></div>
+        <ul>
+          <li><b>Güncelle ve Yükle tek tıklama koruması:</b> güncelleme başlar başlamaz düğme pasifleşir ve <b>Güncelleniyor...</b> durumuna geçer; arka plandaki otomatik sürüm kontrolü işlem sürerken düğmeyi yeniden aktif edemez.</li>
+          <li><b>İşlem bitince normale döner:</b> güncelleme başarıyla tamamlandığında veya hata verdiğinde kilit kaldırılır; düğme güncel sürüm durumuna göre yeniden ayarlanır.</li>
+          <li><b>Son Bakiye ve Gider Kayıtları küçültülebilir:</b> Kasa & Muhasebe bölümündeki uzun kayıt listesi varsayılan küçük gelir; AÇ / KÜÇÜLT ile yönetilir ve son tercih tarayıcıda hatırlanır.</li>
+          <li><b>Kümülatif:</b> temiz <b>v3.1.2 ANA STABLE</b> üzerine doğrudan kurulabilir; v3.1.13 ve önceki gerekli düzeltmelerin son doğru halleri korunur.</li>
+          <li><b>Kapsam dışına dokunulmadı:</b> server.js, EveryCafe hesapları, Telegram, gelir/muhasebe hesaplamaları, masa/çark sistemi ve mevcut yerleşimler değiştirilmedi.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.13">
+        <div class="release-title"><span>v3.1.13 — Kasa Alt Bölümleri Küçültülebilir Hale Getirildi</span></div>
+        <ul>
+          <li><b>Yalnız Kasa & Ödemeler ekranı:</b> <b>Son Ödemeler / Düzeltme</b> ve <b>7 Günlük Ürün–Kasa Karşılaştırması</b> alt bölümlerine AÇ / KÜÇÜLT kontrolü eklendi.</li>
+          <li><b>Varsayılan küçük görünüm:</b> bu iki uzun tablo ilk kullanımda kapalı gelir; ihtiyaç olduğunda tek tuşla açılır.</li>
+          <li><b>Son tercih hatırlanır:</b> kullanıcı bir bölümü açık veya küçük bıraktığında tarayıcı bu seçimi saklar ve sonraki açılışta aynı görünümü kullanır.</li>
+          <li><b>Kümülatif:</b> temiz <b>v3.1.2 ANA STABLE</b> üzerine doğrudan kurulabilir; v3.1.12 ve önceki gerekli düzeltmelerin son doğru halleri pakette korunur.</li>
+          <li><b>Kapsam dışına dokunulmadı:</b> ödeme hesapları, muhasebe, EveryCafe, Telegram, masa/çark sistemi, gelir hesapları ve mevcut yerleşimler değiştirilmedi.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.12">
+        <div class="release-title"><span>v3.1.12 — EveryCafe Ekranı Sadeleştirildi + Kümülatif Güncelleme</span></div>
+        <ul>
+          <li><b>EveryCafe'de muhasebe tekrarı kaldırıldı:</b> KafePin'deki Muhasebe / Son Bakiye ve Gider Kayıtları alanı EveryCafe sekmesinde artık gösterilmez; KafePin tarafındaki mevcut kayıtlar ve hesaplar aynen korunur.</li>
+          <li><b>Sistem Günlüğü tek yerde:</b> Admin ekranındaki Canlı Sistem Günlüğü kaldırıldı; günlük yalnız <b>Yönetim Merkezi</b> içinde tutulup görüntülenir.</li>
+          <li><b>Veri silinmez:</b> gider, bakiye, muhasebe ve sistem günlüğü veritabanı kayıtları silinmez; yalnız gereksiz çift görünüm kaldırılır.</li>
+          <li><b>Kümülatif paket:</b> temiz <b>v3.1.2 ANA STABLE</b> kurulumunun üzerine doğrudan v3.1.12 kurulabilir. v3.1.3–v3.1.11 arasında kalması gereken Telegram, EveryCafe, Dün satış özeti, gün sonu kesin gelir, v3.1.2 ürün/satış yerleşimi, Bugünkü Gelir ve Ürün / Satış Kontrolü düzeltmeleri son doğru halleriyle birlikte gelir.</li>
+          <li><b>Eski yapı korunur:</b> masa, çark, EveryCafe aktarım hesapları, Telegram, gelir formülleri, muhasebe kayıtları ve ürün/satış düzeninde bu talep dışında değişiklik yapılmadı.</li>
+        </ul>
+      </div>
+
+
+      <div class="release-item" data-version="3.1.11">
+        <div class="release-title"><span>v3.1.11 — Satış Geçmişine Ürün / Satış Kontrolü Eklendi</span></div>
+        <ul>
+          <li><b>Yalnız boş alan dolduruldu:</b> Satış Geçmişi bölümündeki Aktarım Kontrolü kartının karşısına <b>📦 Ürün / Satış Kontrolü</b> kartı eklendi.</li>
+          <li><b>Seçili güne bağlıdır:</b> kart, tarih alanında seçilen günün mevcut satış kayıtlarından işlem/adet, ürün-hizmet cirosu, KafePin doğrudan satış, en çok satılan ürün/hizmet ve son satış saatini özetler.</li>
+          <li><b>Yeni hesap motoru eklenmedi:</b> yalnız mevcut <code>/admin/product-sales/list</code> verileri tarayıcıda özetlenir; sunucu, veritabanı ve gelir formülleri değiştirilmedi.</li>
+          <li><b>Mevcut düzen korunur:</b> v3.1.2 sağ-sol yerleşimi, Bugünkü Gelir kartı, Son Satışlar, EveryCafe, Telegram, muhasebe ve masa sistemi aynen bırakıldı.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.10">
+        <div class="release-title"><span>v3.1.10 — Ürün/Satış Sağ Paneli Son Kart Etiketi Geri Getirildi</span></div>
+        <ul>
+          <li><b>Yalnız son mor kart düzeltildi:</b> Ürün/Satış sağ panelindeki <b>Toplam Gelir</b> etiketi tekrar <b>Bugünkü Gelir</b> olarak gösterilir.</li>
+          <li><b>Hesap değişmedi:</b> kart aynı bugünkü birleşik gelir tutarını (<code>grandRevenue</code>) göstermeye devam eder; yalnız görünen başlık geri getirildi.</li>
+          <li><b>v3.1.2 yerleşimi korunur:</b> sağ panel, Son Satışlar, sol Satış Geçmişi, kart sırası ve ölçüler değiştirilmedi.</li>
+          <li><b>Kapsam dışına dokunulmadı:</b> server.js, Telegram, EveryCafe, muhasebe, masa sistemi ve v3.1.8 gelir düzeltmesi bu yamada değiştirilmez.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.9">
+        <div class="release-title"><span>v3.1.9 — Ürün/Satış Yerleşimi v3.1.2’ye Birebir Döndürüldü</span></div>
+        <ul>
+          <li><b>Sağ panel geri geldi:</b> Ürün/Satış bölümündeki gelir özeti ve <b>Son Satışlar</b> tekrar v3.1.2’deki gibi sağ sütunda gösterilir.</li>
+          <li><b>Sol taraf korunur:</b> ürün satışı, kategori/ürün seçimi ve Satış Geçmişi v3.1.2’deki sol ana alandaki yerleşimine döndürüldü.</li>
+          <li><b>v3.1.7 geniş/neon düzeni geri alındı:</b> yalnız bu bölümün yanlış yerleşim değişiklikleri kaldırıldı; v3.1.2’nin iki sütunlu oranı ve panel ölçüleri geri getirildi.</li>
+          <li><b>Sonraki özellikler korunur:</b> KafePin Masasız Doğrudan Satışlar kartındaki <b>Bugün / Dün / Bu Ay / Tüm Zamanlar</b> görünümü ile Telegram güvenlik ayarları aynen kalır.</li>
+          <li><b>Sunucuya dokunulmadı:</b> pakette <code>server.js</code> yoktur; v3.1.8 gün sonu kesin gelir satırı, EveryCafe, muhasebe ve masa hesaplamaları değiştirilmez.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.8">
+        <div class="release-title"><span>v3.1.8 — Gün Sonu Kesin Gelir Satırı Ayrıntılandırıldı</span></div>
+        <ul>
+          <li><b>Yalnız canlı günlük mesajı düzeltildi:</b> “Son gün sonu raporu kesin gelirlerle düzeltildi” satırı artık geliri kaynaklarına ayırır.</li>
+          <li><b>EveryCafe ve KafePin ayrı görünür:</b> satırda <b>EveryCafe Entegrasyonu + KafePin Doğrudan Satış = Toplam</b> biçimi kullanılır.</li>
+          <li><b>Gerçek kayıtlar kullanılır:</b> değerler aynı gün sonu hesaplamasındaki <code>everyCafeGenelGelir</code>, <code>kafePinDirectGeliri</code> ve <code>genelGelir</code> alanlarından gelir; sabit rakam yazılmaz.</li>
+          <li><b>Hesaplama değiştirilmedi:</b> satış, EveryCafe, Telegram, muhasebe, masa oturumları ve v3.1.2 taban düzeninde başka değişiklik yoktur.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.7">
+        <div class="release-title"><span>v3.1.7 — v3.1.2 Ürün/Satış Düzeni Geri Yüklendi</span></div>
+        <ul>
+          <li><b>Yalnız Ürün/Satış görünümü düzeltildi:</b> v3.1.4 sırasında tam <code>admin.html</code> dosyasının değiştirilmesiyle bozulan bölüm, v3.1.2'de onaylanan yerleşime geri döndürüldü.</li>
+          <li><b>Ürün/Satış alanı tekrar geniş:</b> ürün seçimi ve satış kontrolleri tam genişlikte kullanılır.</li>
+          <li><b>Son Satışlar tekrar tam genişlikte:</b> son satış listesi dar sağ sütuna sıkışmaz; satış/iptal işlevleri aynen korunur.</li>
+          <li><b>Gelir kartları tekrar düzenli:</b> Oturum Geliri, Açık Masa Bilgisayar, KafePin Doğrudan Satış, Ürün Geliri, EveryCafe Doğrudan Satış ve Toplam Gelir iki sütunda neon çerçeveli olarak ayrılır.</li>
+          <li><b>v3.1.4 “Dün” özeti korunur:</b> KafePin Masasız Doğrudan Satışlar kartındaki <b>Bugün / Dün / Bu Ay / Tüm Zamanlar</b> görünümü değiştirilmedi.</li>
+          <li><b>Sunucuya dokunulmadı:</b> bu pakette <code>server.js</code> yoktur. v3.1.6 Telegram kilidi, EveryCafe, muhasebe, masa oturumları ve hesaplamalar aynen kalır.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.6">
+        <div class="release-title"><span>v3.1.6 — Telegram Ayar Güvenliği</span></div>
+        <ul>
+          <li><b>Yanlışlıkla kapatma engellendi:</b> Yönetim Merkezi'ndeki <b>Telegram'ı Kapat</b> ve <b>Telegram'ı Aç</b> kontrolleri kaldırıldı. Telegram kurulduktan sonra bildirimler açık kalır.</li>
+          <li><b>Hesap değiştirme kaldırıldı:</b> Telegram bağlıyken <b>Hesabı Değiştir</b> seçeneği artık gösterilmez; kurulum sihirbazı yalnız Telegram hiç kurulu değilse açılabilir.</li>
+          <li><b>Sunucu tarafında da kilit:</b> yalnız butonlar gizlenmedi; bağlı Telegram hesabını panel üzerinden kapatma veya yeniden kurma girişimleri sunucu tarafından reddedilir.</li>
+          <li><b>Eski kapalı ayar kendini düzeltir:</b> token ve Chat ID mevcut olduğu halde eski bir ayarda Telegram kapalı kalmışsa KafePin tekrar etkinleştirir ve <code>.env</code> içine kalıcı olarak yazar.</li>
+          <li><b>Test mesajı korunur:</b> bağlantının çalıştığını kontrol etmek için <b>Test Mesajı</b> düğmesi kullanılmaya devam eder.</li>
+          <li><b>Diğer sistemler değişmedi:</b> satış, muhasebe, EveryCafe, masa oturumları ve Telegram rapor içerikleri bu yamada değiştirilmemiştir.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.5">
+        <div class="release-title"><span>v3.1.5 — Sürüm Notu Düzeltmesi</span></div>
+        <ul>
+          <li><b>v3.1.4 sürüm notu tamamlandı:</b> “KafePin Masasız Doğrudan Satışlar” kartına eklenen <b>Dün</b> alanının açıklaması Sürüm Notları ekranına eklendi.</li>
+          <li><b>İşlevsel değişiklik yok:</b> Telegram, satış, muhasebe, EveryCafe ve diğer çalışma mantıkları v3.1.4 ile aynıdır.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.4">
+        <div class="release-title"><span>v3.1.4 — Masasız Doğrudan Satışlarda Dün</span></div>
+        <ul>
+          <li><b>“Dün” özeti eklendi:</b> Yönetim panelindeki <b>KafePin Masasız Doğrudan Satışlar</b> kartı artık dünkü doğrudan satış toplamını da gösterir.</li>
+          <li><b>Yeni görünüm:</b> kart sıralaması <b>Bugün / Dün / Bu Ay / Tüm Zamanlar</b> şeklindedir.</li>
+          <li><b>Gerçek kayıttan hesaplanır:</b> Dün değeri, KafePin'in mevcut gün sınırına göre bir önceki güne ait geçerli masasız doğrudan satış kayıtlarından hesaplanır; EveryCafe doğrudan/üye kayıtları bu değere karıştırılmaz.</li>
+          <li><b>Diğer hesaplamalar korunur:</b> mevcut Bugün, Bu Ay ve Tüm Zamanlar değerlerinin çalışma mantığı değiştirilmemiştir.</li>
+        </ul>
+      </div>
+
+      <div class="release-item" data-version="3.1.3">
+        <div class="release-title"><span>v3.1.3 — Telegram Kolay Kurulum</span></div>
+        <ul>
+          <li><b>Mevcut Telegram otomatik tanınır:</b> sunucuda token ve Chat ID zaten kayıtlıysa yeniden kurulum istemez; Yönetim Merkezi doğrudan “Bağlı” gösterir.</li>
+          <li><b>Sihirbazlı yeni kurulum:</b> müşteri yalnız BotFather tokenını yapıştırır ve kendi botunda START'a basar; Chat ID KafePin tarafından otomatik bulunur.</li>
+          <li><b>Kalıcı sunucu ayarı:</b> doğrulanan Telegram bilgileri KafePin sunucusundaki <code>.env</code> dosyasına yazılır ve aynı anda çalışan sisteme uygulanır.</li>
+          <li><b>Yeniden başlatma gerektirmez:</b> bağlantı tamamlanınca Telegram raporları ve bildirimleri anında çalışmaya başlar.</li>
+          <li><b>Test ve aç/kapat:</b> Yönetim Merkezi'nden test mesajı gönderilebilir; Telegram ayarları silinmeden bildirimler kapatılıp tekrar açılabilir.</li>
+        </ul>
+      </div>
+      <div class="release-item" data-version="3.1.2">
+        <div class="release-title"><span>v3.1.2 • ANA STABLE SÜRÜM</span><span class="release-badge">ANA STABİL BAZ</span></div>
+        <div class="release-desc" style="margin-top:10px;color:#cfe1f2;line-height:1.55">
+          <b>v3.1.2, KafePin Pro'nun ana stabil tabanıdır.</b> v3.0.x–v3.1.1 döneminde kalıcı hale gelen özellikler bu sürümde tek baz altında birleştirilmiştir.
+          Yeni kafe kurulumları doğrudan v3.1.2 ile başlar; bundan sonraki sürümler bu tabanın üzerine kontrollü yama olarak eklenir.
+        </div>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🖥️ Sunucu, Yönetim Merkezi ve Masaüstü Uygulaması</h3>
+        <ul>
+          <li><b>Tek sunucu yönetimi:</b> KafePin Node sunucusu Windows <b>Server Manager</b> tarafından gözetilir; başlat, durdur ve yeniden başlat işlemleri Yönetim Merkezi'nden yapılabilir.</li>
+          <li><b>İkinci Node yarışı engellendi:</b> masaüstü uygulaması, güncelleme veya restore sırasında kendi başına ikinci bir KafePin server süreci açmaz.</li>
+          <li><b>Gerçek durum /api/health'tir:</b> health yanıtı sağlıklıysa panel sunucuyu <b>Çalışıyor</b> gösterir; eski/stale Manager durumu çalışan sunucuyu yanlışlıkla “Durduruldu” gösteremez.</li>
+          <li><b>KafePin Pro masaüstü kabuğu:</b> Yönetim Merkezi, Admin ve Monitör kendi KafePin Pro penceresi içinde açılır; WebView2 tabanlıdır.</li>
+          <li><b>Kısayol güvenliği:</b> masaüstü ve Başlat menüsündeki mevcut KafePin Pro kısayolları korunur; güncellemede gereksiz kısayol çoğaltılmaz.</li>
+          <li><b>Onarım yolu:</b> sunucu açılamazsa masaüstündeki onarım akışı Server Manager/config/control portunu yeniden doğrulayabilir; bekleme ekranı sonsuza kadar kilitli kalmaz.</li>
+          <li><b>Cache koruması:</b> Yönetim, Admin, Monitör ve diğer yerel ekranlar no-cache/cache-bust mantığıyla taze yüklenir; eski HTML'nin yeni sürüm etiketiyle görünmesi engellenir.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">💾 DB Yedeği, FULL ZIP ve Geri Yükleme</h3>
+        <ul>
+          <li><b>FULL ZIP yalnız KafePin'dir:</b> KafePin program dosyaları ve doğrulanmış KafePin <code>database.db</code> snapshot'ı yedeklenir. <b>EveryCafe yedeği alınmaz</b>; EveryCafe kendi yedek sistemini kullanır.</li>
+          <li><b>Canlı DB doğrudan ZIP'e alınmaz:</b> SQLite backup mekanizmasıyla tutarlı snapshot üretilir, staging alanına yazılır ve arşiv bu doğrulanmış kopyadan oluşturulur.</li>
+          <li><b>Yedek gerçekten test edilir:</b> yeni FULL ZIP içinde yalnız <code>database.db</code> hedefli çıkarılır; SQLite başlığı, <code>PRAGMA quick_check</code> ve KafePin tablo yapısı doğrulanmadan başarılı sayılmaz. Eski yedeklerde tam arşiv taraması fallback olarak korunur.</li>
+          <li><b>Eski yedek uyumluluğu:</b> veritabanı ZIP içinde alt klasörde veya farklı adla bulunuyorsa SQLite imzası ve KafePin tablo yapısı kullanılarak doğru DB seçilir; EveryCafe DB'si KafePin DB'si sanılmaz.</li>
+          <li><b>Dosya adı çakışmaz:</b> aynı saniyede birden fazla yedek alınırsa yeni dosya <code>_01</code>, <code>_02</code> gibi ayrı adla kaydedilir.</li>
+          <li><b>DB-only yedek de mevcut:</b> Yönetim Merkezi'nden yalnız <code>database.db</code> anlık yedeği ayrıca alınabilir.</li>
+          <li><b>Restore öncesi hızlı emniyet DB yedeği:</b> seçili FULL ZIP geri yüklenmeden önce mevcut canlı <code>database.db</code> doğrulanmış ve kalıcı <code>database_pre_restore_*.db</code> olarak saklanır; Restore Worker aynı kopyayı otomatik rollback için kullanır.</li>
+          <li><b>Kurulu program sürümü korunur:</b> restore, yedekteki eski program dosyalarına geri dönmez; yalnız KafePin verisi geri alınır. Kurulu v3.1.2 program/desktop/restore motoru korunur.</li>
+          <li><b>Bağımsız SYSTEM Restore Worker:</b> geri yükleme çalışan Node sürecinin altından yapılmaz; ayrı Windows SYSTEM görevi restore işleminin sahibi olur.</li>
+          <li><b>Doğru KafePin PID'si kapatılır:</b> worker kaynak PID, <code>server.pid</code> ve port 3000 sahibini doğrulayarak yalnız KafePin sunucu sürecini durdurur; ilgisiz Node/EveryCafe süreçleri hedeflenmez.</li>
+          <li><b>Atomik DB dönüşü + SHA-256:</b> geri getirilen <code>database.db</code> doğrulanır; kopya SHA-256 kontrolünden geçmeden işlem tamamlanmış sayılmaz.</li>
+          <li><b>Otomatik rollback:</b> restore sırasında doğrulama veya yeniden açılış başarısız olursa işlem öncesi emniyet DB'si geri konur.</li>
+          <li><b>5 ardışık health şartı:</b> sunucu yeniden açıldıktan sonra 5 başarılı health kontrolü görülmeden restore tamamlanmış sayılmaz.</li>
+          <li><b>Kesin başarı kaydı:</b> başarılı işlem Canlı Sistem Günlüğü'ne <code>Yedekten geri yükleme tamamlandı • sunucu stabil</code> olarak yazılır.</li>
+          <li><b>Explorer sessiz çalışır:</b> yedek alma işlemi Explorer açmaya bağlı değildir; klasör düğmeleri Explorer'ı ayrı açar ve Explorer timeout'u yedek işlemini bozmaz.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">⬆️ Otomatik Güncelleme Sistemi</h3>
+        <ul>
+          <li><b>v3.1.2 ana bazdır:</b> yeni kafe kurulumları bu sürümle başlar; daha sonraki 3.x STABLE paketler v3.1.2'nin üzerine güncellenir.</li>
+          <li><b>GitHub stable kanalı:</b> sistem <code>latest.json</code> üzerinden yeni sürümü görür; paket indirildikten sonra SHA-256 doğrulanır.</li>
+          <li><b>Emniyet yedeği olmadan kurulmaz:</b> normal online güncelleme öncesinde KafePin FULL ZIP güvenlik yedeği alınır ve paket doğrulanır.</li>
+          <li><b>Tek restart sahibi:</b> dosyalar kurulduktan sonra yeniden başlatma Server Manager'a teslim edilir; Node ve masaüstü uygulaması birbirinden bağımsız ikinci restart başlatmaz.</li>
+          <li><b>Handoff doğrulaması:</b> Manager control portu hazır değilse güncelleme güvenli biçimde durur; çalışan sunucu gereksiz yere kapatılmaz.</li>
+          <li><b>Yerel ZIP kurulumu:</b> gerektiğinde “Bilgisayardan ZIP Seç ve Kur” ile imzalı/doğrulanmış KafePin güncelleme ZIP'i elle seçilebilir.</li>
+          <li><b>Kontrol sıklığı:</b> yeni sürüm açılışta, panel tekrar öne geldiğinde, yaklaşık 120 saniyede bir ve manuel düğmeyle kontrol edilir; gereksiz sürekli GitHub sorgusu yapılmaz.</li>
+          <li><b>EveryCafe ve tarayıcı koruması:</b> güncelleme motoru Edge, Chrome veya EveryCafe süreçlerini genel şekilde zorla kapatmaz; yalnız doğrulanmış KafePin bileşenleri yönetilir.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🩺 Otomatik Sistem Sağlığı ve Günlük</h3>
+        <ul>
+          <li><b>Panel kapalıyken de sağlık kontrolü:</b> sistem yaklaşık 5 dakikada bir DB, gün sonu, FULL ZIP yedek durumu, finalize kuyruğu, disk alanı ve EveryCafe bağlantısını denetler.</li>
+          <li><b>Telegram sessiz alarm:</b> yalnız gerçek sorun oluştuğunda bildirim gönderir; aynı sorun için yaklaşık 6 saat tekrar mesaj yağdırmaz.</li>
+          <li><b>Elle kontrol:</b> Yönetim Merkezi'ndeki “Şimdi Kontrol Et” düğmesi health kontrolünü anında çalıştırır.</li>
+          <li><b>Canlı Sistem Günlüğü:</b> yedek, restore, güncelleme, health ve önemli sistem olayları Yönetim Merkezi'nde zaman damgasıyla izlenir.</li>
+          <li><b>Türkçe düzeltme günlüğü sessizdir:</b> ürün/kategori kontrolü her açılışta yapılabilir fakat gerçekten kayıt düzeltilmediyse “temizlendi/düzeltildi” mesajı yazılmaz.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🧾 Masa, Oturum, Ücret ve Gün Sonu</h3>
+        <ul>
+          <li><b>Kurulumdan gelen masa yapısı:</b> masa sayısı, LAN ağı, Masa-1 IP başlangıcı, VIP masa listesi ve Normal/VIP ücret tarifeleri config üzerinden okunur; eski kafelerde varsayılan davranış korunur.</li>
+          <li><b>Normal/VIP tarife:</b> açılış ücreti süresi, sonraki artış aralığı ve Normal/VIP artış tutarları yeni kafe kurulumunda belirlenebilir.</li>
+          <li><b>Gün geçişi koruması:</b> önceki günden açık kalmış oturum yeni güne sarkarsa eski oturum finalize edilip yeni gün oturumu güvenli biçimde başlatılır.</li>
+          <li><b>Offline/stale kapanış:</b> gerçekten bağlantısı kesilmiş veya stale kalan masalar kontrollü finalize edilir; bekleyen ödül varsa yanlış kapanış engellenir.</li>
+          <li><b>Temiz masa hazırlığı:</b> kapanan oturumdan sonra RAM/DB geçici masa durumu, ping bilgisi ve eski spin durumu temizlenerek masa yeni kullanıcıya hazırlanır.</li>
+          <li><b>19:59 gün sonu:</b> Europe/Istanbul saat dilimindeki gün sonu akışı açık oturumları finalize eder, gün sonu raporunu üretir ve geçici masa durumunu temizler.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🎡 Şans Çarkı ve Monitör</h3>
+        <ul>
+          <li><b>Çark politikası kurulumda seçilir:</b> yeni kafede çark Açık/Kapalı belirlenir. Çark kapalı seçilirse bekleme süresi, günlük limit ve büyük ödül hedefi soruları otomatik atlanır.</li>
+          <li><b>EveryCafe çarkı başlatamaz:</b> EveryCafe masa açılışı ve gerçek oturum başlangıcını sağlar; çark sayacını başlatmaz, sıfırlamaz veya değiştirmez.</li>
+          <li><b>Çark sayacı gerçek çark açılışıyla başlar:</b> ping veya EveryCafe oturumu tek başına spin hakkı oluşturmaz.</li>
+          <li><b>Masa taşıma hakkı korunur:</b> EveryCafe'de masa A'dan B'ye taşındığında kalan çark süresi, hazır/kullanılmamış hak ve ilgili ödül durumu hedef masaya taşınır.</li>
+          <li><b>Boş ödül tamamen sessiz:</b> “Şansına küs”, “Bir dahaki sefere”, “Tekrar dene :) / Tekrar dene”, “boş / bos” sonuçlarında ödül promosu, kazanma/bigwin sesi ve “Masa X ödül kazandı” anonsu çalışmaz.</li>
+          <li><b>Çevirme hakkı anonsu korunur:</b> “Masa X çevirme hakkınız gelmiştir” bilgilendirmesi boş ödül filtresinden etkilenmez.</li>
+          <li><b>Onaylı monitör tasarımı korunur:</b> siyah tema, 6 üst panel, masa kartları, sağ kazananlar alanı ve alt kayan yazı düzeni stabil baz olarak korunur.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🔄 EveryCafe Canlı Entegrasyonu</h3>
+        <ul>
+          <li><b>Kaynak salt okunur:</b> KafePin, EveryCafe verisini okur; EveryCafe veritabanına ürün/fiyat veya ciro geri yazmaz.</li>
+          <li><b>Manuel katalog aynası:</b> “EveryCafe Senkron → Şimdi Senkronla” çalıştırıldığında ürün adı, kategori ve satış fiyatı StockID/CategoryID üzerinden KafePin'e aynalanır.</li>
+          <li><b>Katı ayna davranışı:</b> EveryCafe'de olmayan eski kaynak ürünleri aktif KafePin katalogundan pasife alınır; geçmiş KafePin satışları silinmez.</li>
+          <li><b>Stok ve resim kapsam dışıdır:</b> katalog senkronu stok miktarı ve ürün görsellerini değiştirmez.</li>
+          <li><b>Doğrudan satış görünümü:</b> EveryCafe ürünleri KafePin Doğrudan Satış listesinde de görünür; KafePin'den satılan ürün KafePin doğrudan satış geliri olarak kalır ve EveryCafe cirosuna geri yazılmaz.</li>
+          <li><b>Gerçek oturum başlangıcı:</b> EveryCafe'nin gerçek başlangıç saati <code>sessions.start_time</code> alanına uygulanabilir; çarkın <code>masalar.start_time</code> alanına müdahale edilmez.</li>
+          <li><b>Masa hareketleri izlenir:</b> açılış, ürün değişiklikleri, masa taşıma, kapanış/tahsilat, doğrudan satış ve üye geliri entegrasyon günlüğünde kaydedilir.</li>
+          <li><b>Tek entegrasyon günlüğü:</b> “EveryCafe ne verdi → KafePin ne uyguladı → sonuç ne oldu” kalıcı ve filtrelenebilir biçimde izlenir; ikinci paralel kayıt sistemi oluşturulmaz.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🗂️ EveryCafe Geçmiş Kayıt Aktarımı</h3>
+        <ul>
+          <li><b>Tek seferlik güvenli aktarım:</b> yeni kafe/geçiş durumunda akış <b>Ön Kontrol → Önizleme → Tam Yedek → Aktar → Son Doğrulama</b> sırasını kullanır.</li>
+          <li><b>Takvim günü esas alınır:</b> geçmiş aktarım 00:00–23:59:59 Europe/Istanbul takvim gününü kullanır; gün sonu 20:00 gibi iş günü kaydırmaları geçmiş içe aktarmaya uygulanmaz.</li>
+          <li><b>Ücretsiz/test gelir değildir:</b> ücretsiz kapatılmış veya test oturumları ve bunlara bağlı ürünler ciroya eklenmez.</li>
+          <li><b>Silinmiş audit kayıtları gelir değildir:</b> EveryCafe audit geçmişinde silinmiş eski kayıtlar bilgi amaçlı gösterilebilir fakat ciroya ve aktarıma dahil edilmez.</li>
+          <li><b>Gelir türleri korunur:</b> masa/bilgisayar, masaya bağlı ürün-içecek, doğrudan satış, üye geliri ve bağımsız diğer gerçek kasa tahsilatları mümkün olduğunca kaynak ayrımıyla korunur.</li>
+          <li><b>Çift kayıt engeli:</b> SessionID/HistoryID eşleşmesi yanında gerekli olduğunda masa + kapanış günü + tutar + gelir türü gibi güvenli ID-dışı eşleşmeler de kullanılır; aynı gelir ikinci kez yazılmaz.</li>
+          <li><b>Muhasebe emniyet kilidi:</b> KafePin'deki mevcut karşılaştırılabilir toplam EveryCafe toplamını zaten karşılıyorsa kimliği eşleşmeyen satır otomatik gelir olarak eklenmez.</li>
+          <li><b>Çakışmada durur:</b> şüpheli/negatif kaynak satırı veya çift kayıt riski varsa otomatik aktarım devam etmez; kullanıcıya kontrol için bırakılır.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">💰 Muhasebe, Admin ve Telegram</h3>
+        <ul>
+          <li><b>Açık/kapanmış gelir ayrımı:</b> kapanmış PC/masa geliri, kapanmış masaya yazılan ürünler ve doğrudan satışlar ayrı; açık masalarda PC/süre ücreti ve masaya yazılan ürünler ayrı gösterilir.</li>
+          <li><b>Aktif Toplam Borç:</b> açık masanın PC/süre ücreti + açık masaya yazılan ürün toplamını birlikte gösterir.</li>
+          <li><b>Bugün Canlı Toplam:</b> kayıtlı/kapanmış gelir ile açık masa borcu birlikte kontrol satırında görülebilir.</li>
+          <li><b>Telegram Bekleyen hesabı:</b> henüz kapanmamış masaların canlı borcu da bekleyen tutara dahil edilir.</li>
+          <li><b>Telegram kırılımları:</b> aktif borç PC/Süre ve Masaya Yazılan Ürün olarak ayrılır; ürün/hizmet geliri KafePin doğrudan, EveryCafe doğrudan ve EveryCafe üye/bakiye kaynaklarıyla okunabilir.</li>
+          <li><b>Tahsil Edilen + Bekleyen kontrolü:</b> gün içinde oluşan toplamla karşılaştırma satırı bulunur; spin maliyeti yalnız gerçekten maliyet oluşmuşsa raporda gösterilir.</li>
+          <li><b>Tek satış listesi:</b> tekrar eden eski “Satış Geçmişi” listesi kaldırılmıştır; sağdaki “Son Satışlar” satış/iptal işlemleri için tek liste olarak kullanılır.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🇹🇷 Türkçe / UTF-8 Ürün ve Kategori Koruması</h3>
+        <ul>
+          <li><b>UTF-8 zorlaması:</b> HTML, CSS, JavaScript ve JSON yanıtlarında Türkçe karakterlerin bozulmaması için UTF-8 kullanımı sabitlenmiştir.</li>
+          <li><b>Bozuk kategori kopyaları onarılır:</b> Sıcak İçecekler, Soğuk İçecekler, Atıştırmalıklar gibi kategorilerin bozuk yinelenen kayıtları doğru Türkçe kayda birleştirilir.</li>
+          <li><b>Bozuk ürün adı kopyaları onarılır:</b> Türk Kahvesi, Çay, Soğuk Kahve gibi ürünlerde doğru/bozuk kopyalar aynı ürünü temsil ediyorsa tek kayda indirilir.</li>
+          <li><b>Fiyat ve geçmiş korunur:</b> gerçek güncel fiyat korunur; eski satış kayıtları doğru ürün/kategori kimliğine yeniden bağlanır.</li>
+          <li><b>Sahte varsayılan ürün yok:</b> KafePin açılışta otomatik örnek “Fiyat Gir” ürünleri üretmez; katalog kullanıcı veya EveryCafe manuel senkronuyla yönetilir.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">🏪 Yeni Kafe Kurulumu ve Disksiz Client</h3>
+        <ul>
+          <li><b>Yeni kafe tabanı doğrudan v3.1.2'dir:</b> ana sunucu kurucusu masa sayısı, sunucu LAN IP'si, Masa-1 IP başlangıcı, VIP masalar, Normal/VIP ücretler, süre/artış aralığı, çark politikası, EveryCafe ve yedek klasörünü hazırlar.</li>
+          <li><b>Çark kapalıysa gereksiz soru yok:</b> “Çark kullanılsın mı? = H” seçildiğinde bekleme süresi, günlük limit ve büyük ödül hedefi soruları atlanır; diğer kurulum soruları normal devam eder.</li>
+          <li><b>Ana sunucuya client ping kurulmaz:</b> server kurulumu yalnız KafePin sunucu/yönetim bileşenlerini kurar ve KafePin Pro kısayolunu hazırlar.</li>
+          <li><b>Client kurulumu disksiz yapıya uygundur:</b> SuperWKS yazma modunda bir master client'a bir kez kurulup imaja kaydedilebilir; tüm clientlar aynı imajdan kullanabilir.</li>
+          <li><b>Masa otomatik bulunur:</b> client kendi IP'sinden hangi masa olduğunu sunucudan belirler; her bilgisayarda ayrı masa numarası kurulumu gerekmez.</li>
+          <li><b>Ping her durumda kurulur:</b> client ping sistemi Windows açılışında çalışır ve bağlantı durumunu sunucuya gönderir.</li>
+          <li><b>Çark kısayolu koşulludur:</b> sunucuda çark açıksa client masaüstüne KafePin Şans Çarkı kısayolu gelir; çark kapalıysa yalnız ping kurulur ve eski çark kısayolu varsa kaldırılır.</li>
+          <li><b>Client tekrar çark sormaz:</b> çark Açık/Kapalı politikası sunucudan okunur.</li>
+        </ul>
+
+        <h3 style="margin:18px 0 6px;color:#73d9ff">📌 Stabil Baz Kuralı</h3>
+        <ul>
+          <li><b>v3.1.2 ana referanstır:</b> restore, yedek, monitor, EveryCafe, muhasebe, çark ve client davranışlarının stabil tabanı bu sürümdür.</li>
+          <li><b>Eski sürüm kartları kaldırıldı:</b> v3.0.x, v3.1.0 ve v3.1.1 geliştirme geçmişi artık ayrı kartlar halinde gösterilmez; stabil hale gelen işlevler bu tek v3.1.2 kaydında toplanmıştır.</li>
+          <li><b>Gelecek sürümler yama notu ekler:</b> v3.1.3 ve sonrası çıktığında yalnız yeni/değişen maddeler yeni sürüm kartında yazılır; v3.1.2 ANA STABLE kartı altta temel kayıt olarak korunur.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div id="telegramSetupOverlay" class="release-overlay">
+    <div class="release-modal tg-modal">
+      <div class="release-head">
+        <div><h2>📲 Telegram Kurulumu</h2><div class="release-small">KafePin bilgileri kendisi kaydeder; Chat ID bulmanız gerekmez.</div></div>
+        <button id="telegramSetupClose" class="release-close" type="button">Kapat</button>
+      </div>
+      <div id="tgStep1" class="tg-step">
+        <span class="tg-step-badge">1 / 2 • Bot oluştur</span>
+        <div class="tg-help"><b>1.</b> “BotFather'ı Aç” düğmesine basın.<br><b>2.</b> Telegram'da <code>/newbot</code> yazın.<br><b>3.</b> Botunuza bir ad verin.<br><b>4.</b> Sonu <code>bot</code> ile biten bir kullanıcı adı belirleyin.<br><b>5.</b> BotFather'ın verdiği tokenı aşağıdaki kutuya yapıştırın.</div>
+        <div class="tg-actions"><button id="tgBotFatherBtn" type="button">🤖 BotFather'ı Aç</button></div>
+        <label for="tgTokenInput" style="display:block;margin-top:14px;font-weight:800">BotFather Tokenı</label>
+        <input id="tgTokenInput" class="tg-input" type="password" autocomplete="off" placeholder="1234567890:AA...">
+        <div class="tg-actions"><button id="tgVerifyTokenBtn" class="green" type="button">Tokenı Doğrula ve Devam Et</button></div>
+      </div>
+      <div id="tgStep2" class="tg-step" style="display:none">
+        <span class="tg-step-badge">2 / 2 • Hesabı bağla</span>
+        <div id="tgBotVerified" class="tg-help">Bot doğrulandı.</div>
+        <div class="tg-help"><b>Şimdi çok kolay:</b> aşağıdaki düğmeyle botunuzu açın ve Telegram'da <b>BAŞLAT / START</b> düğmesine bir kez basın. KafePin hesabınızı otomatik bulacak.</div>
+        <div class="tg-actions"><button id="tgOpenBotBtn" type="button">📲 Telegram Botumu Aç</button><button id="tgFindAccountBtn" class="green" type="button">✅ START'a Bastım — Hesabı Bul</button></div>
+        <div id="tgWait" class="tg-wait">Telegram hesabı bekleniyor...</div>
+      </div>
+      <div id="tgStep3" class="tg-step" style="display:none">
+        <span class="tg-step-badge">Tamamlandı</span>
+        <div id="tgSuccess" class="tg-success">✅ Telegram bağlantısı kuruldu.</div>
+        <div class="tg-actions"><button id="tgDoneBtn" class="green" type="button">Tamam</button></div>
+      </div>
+    </div>
+  </div>
+  <section class="logs"><h2>📜 Canlı Sistem Günlüğü</h2><div id="logs">Yükleniyor...</div></section>
+  <script>
+    const $=id=>document.getElementById(id),fmt=t=>t?new Date(t).toLocaleString('tr-TR'):'-';
+    const localUpdateBtn=document.createElement('button');
+    localUpdateBtn.id='localUpdateBtn';
+    localUpdateBtn.className='orange';
+    localUpdateBtn.textContent='Bilgisayardan ZIP Seç ve Kur';
+    $('updateApplyBtn').insertAdjacentElement('afterend',localUpdateBtn);
+
+    // Win11 uygulama penceresinde tarayici confirm/alert pencereleri
+    // gorunmeyebildigi icin tum onaylar sayfa ici modal ile yapilir.
+    const uiOverlay=document.createElement('div');
+    uiOverlay.id='uiOverlay';
+    uiOverlay.style.cssText='display:none;position:fixed;inset:0;z-index:99999;background:rgba(4,10,18,.82);align-items:center;justify-content:center;padding:24px';
+    uiOverlay.innerHTML=`<div style="width:min(520px,96vw);background:#111d2b;border:1px solid #3d6683;border-radius:14px;padding:20px;box-shadow:0 20px 70px #000b">
+      <div id="uiModalText" style="white-space:pre-line;line-height:1.55;font-weight:700;color:#f3f7ff"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px">
+        <button id="uiModalCancel" type="button">Vazgec</button>
+        <button id="uiModalOk" type="button" class="green">Devam Et</button>
+      </div>
+    </div>`;
+    document.body.appendChild(uiOverlay);
+
+    const uiNotice=document.createElement('div');
+    uiNotice.id='uiNotice';
+    uiNotice.style.cssText='display:none;position:fixed;right:18px;bottom:18px;z-index:100000;max-width:min(560px,90vw);padding:14px 16px;border-radius:10px;border:1px solid #3d6683;background:#102437;color:#fff;font-weight:700;white-space:pre-line;box-shadow:0 12px 35px #0009';
+    document.body.appendChild(uiNotice);
+
+    let noticeTimer=null;
+    function notifyUser(message,isError=false){
+      clearTimeout(noticeTimer);
+      uiNotice.textContent=String(message||'');
+      uiNotice.style.borderColor=isError?'#d94b5d':'#2f9d70';
+      uiNotice.style.background=isError?'#4a1720':'#123629';
+      uiNotice.style.display='block';
+      noticeTimer=setTimeout(()=>{uiNotice.style.display='none'},6500);
+    }
+
+    function askUser(message,okText='Devam Et'){
+      return new Promise(resolve=>{
+        $('uiModalText').textContent=String(message||'');
+        $('uiModalOk').textContent=okText;
+        uiOverlay.style.display='flex';
+        const finish=value=>{
+          uiOverlay.style.display='none';
+          $('uiModalOk').onclick=null;
+          $('uiModalCancel').onclick=null;
+          resolve(value);
+        };
+        $('uiModalOk').onclick=()=>finish(true);
+        $('uiModalCancel').onclick=()=>finish(false);
+      });
+    }
+    async function post(url,body){const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});return r.json()}
+    function markCurrentRelease(version,remoteNotes){
+      const current=String(version||'').replace(/^v/i,'').trim();
+      const modal=document.querySelector('.release-modal');
+      if(!modal||!current) return;
+
+      document.querySelectorAll('.release-item').forEach(item=>{
+        item.classList.remove('current');
+        item.querySelectorAll('.release-badge[data-current-badge="1"]').forEach(b=>b.remove());
+      });
+
+      let item=[...document.querySelectorAll('.release-item')].find(x=>
+        String(x.dataset.version||'').replace(/^v/i,'').trim()===current
+      );
+
+      // Kalıcı güvenlik: bir gelecek pakette ayrıntılı not kartı unutulursa
+      // ASLA eski kartın sürüm numarasını değiştirme. Kurulu sürüm için ayrı
+      // ve açıkça geçici bir kart üret. update-status gerçek notes bilgisini
+      // daha sonra getirirse ilk açılışta oluşan geçici "not yok" kartını güncelle.
+      const note=String(remoteNotes||'').trim();
+      const escapeReleaseText=value=>String(value||'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      if(!item){
+        item=document.createElement('div');
+        item.className='release-item';
+        item.dataset.version=current;
+        item.dataset.generatedRelease='1';
+        item.innerHTML=`<div class="release-title"><span>v${current}</span></div>
+          <ul><li>${note ? escapeReleaseText(note) : 'Bu sürüm için ayrıntılı not kaydı pakete eklenmemiş.'}</li></ul>`;
+        const first=document.querySelector('.release-item');
+        if(first) first.insertAdjacentElement('beforebegin',item);
+        else modal.appendChild(item);
+      }else if(note && item.dataset.generatedRelease==='1'){
+        const generatedTitle=item.querySelector('.release-title span');
+        if(generatedTitle) generatedTitle.textContent=`v${current}`;
+        const generatedList=item.querySelector('ul');
+        if(generatedList) generatedList.innerHTML=`<li>${escapeReleaseText(note)}</li>`;
+      }
+
+      item.classList.add('current');
+      const title=item.querySelector('.release-title');
+      if(title){
+        const badge=document.createElement('span');
+        badge.className='release-badge';
+        badge.dataset.currentBadge='1';
+        badge.textContent='Güncel / Stabil';
+        title.appendChild(badge);
+      }
+    }
+    $('everyCafeSyncBtn').onclick=()=>location.href='/everycafe-sync.html';
+    $('everyCafeHistoryBtn').onclick=()=>location.href='/everycafe-history.html';
+    let managerToken='',managerControlUrl='http://127.0.0.1:2999',managerInfoAt=0;
+    let localRunningVersion='';
+    let lastUpdateStatusAt=0;
+    let updateProgressTimer=null;
+    async function ensureManagerInfo(force=false){
+      if(!force&&managerToken&&Date.now()-managerInfoAt<300000)return true;
+      const r=await fetch('/admin/pro/manager-info',{cache:'no-store'}),d=await r.json();
+      if(!r.ok||!d.ok)throw new Error(d.error||'Windows Sistem Yöneticisi hazır değil');
+      managerToken=String(d.token||'');managerControlUrl=String(d.controlUrl||managerControlUrl).replace(/\/$/,'');managerInfoAt=Date.now();
+      if(!managerToken)throw new Error('Sistem yöneticisi anahtarı alınamadı');
+      return true;
+    }
+    async function managerCall(route,method='GET'){
+      const doRequest=async()=>{
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),6000);
+        let r;
+        try{
+          r=await fetch(managerControlUrl+route,{method,headers:{'X-KafePin-Manager-Token':managerToken},cache:'no-store',signal:controller.signal});
+        }finally{clearTimeout(timer)}
+        let d={};try{d=await r.json()}catch(_){throw new Error('Windows Sistem Yöneticisi yanıt vermedi')}
+        if(!r.ok||!d.ok){
+          const err=new Error(d.error||'Windows Sistem Yöneticisi işlemi başarısız');
+          err.status=r.status;throw err;
+        }
+        return d;
+      };
+      await ensureManagerInfo(false);
+      try{return await doRequest()}
+      catch(e){
+        // POST komutlarini belirsiz ag hatasinda ikinci kez gonderme; cift restart/stop yaratma.
+        // Yalniz token reddedildiyse komut manager tarafinda calismamistir ve tek guvenli tekrar yapilir.
+        if(Number(e&&e.status)===403){managerToken='';managerInfoAt=0;await ensureManagerInfo(true);return doRequest()}
+        // Salt durum sorgusu GET ise bir kez taze manager bilgisiyle tekrar denenebilir.
+        if(String(method).toUpperCase()==='GET'){managerToken='';managerInfoAt=0;await ensureManagerInfo(true);return doRequest()}
+        throw e;
+      }
+    }
+    async function loadServer(){
+      // STABLE STATUS: Gercek sunucu durumu icin /api/health tek otoritedir.
+      // Restore worker Node'u dogrudan yeniden actiginda Manager'in process listesi
+      // kisa sure eski kalabilir. Saglikli HTTP/DB sunucusunu asla Durduruldu gosterme.
+      let h=null;
+      try{
+        const hr=await fetch('/api/health?_panel='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache'}});
+        h=await hr.json();
+      }catch(_){ h=null; }
+
+      if(h&&h.ok&&h.db){
+        let m=null;
+        try{m=await managerCall('/status')}catch(_){m=null}
+        $('serverState').textContent='Çalışıyor';
+        $('serverDetail').textContent=m&&m.running
+          ? `Windows Sistem Yöneticisi aktif • PID ${m.pid||'-'}`
+          : `Sunucu sağlık kontrolü başarılı • Manager durumu eşitleniyor`;
+        $('startBtn').disabled=true;
+        $('stopBtn').disabled=!m||!!m.maintenance;
+        $('restartBtn').disabled=!m||!!m.maintenance;
+        $('status').textContent='● Sistem hazır • Sunucu çalışıyor • Veritabanı bağlı';
+        return;
+      }
+
+      try{
+        const m=await managerCall('/status');
+        const running=!!m.running;
+        $('serverState').textContent=running?'Çalışıyor':'Durduruldu';
+        $('serverDetail').textContent=running?`Windows Sistem Yöneticisi aktif • PID ${m.pid||'-'}`:(m.maintenance?'Bakım/güncelleme modu':m.manualStopped?'Panelden durduruldu':'Sunucu bekliyor');
+        $('startBtn').disabled=running||!!m.maintenance;
+        $('stopBtn').disabled=!running||!!m.maintenance;
+        $('restartBtn').disabled=!!m.maintenance;
+        $('status').textContent=running?'● Sistem hazır • Windows yöneticisi aktif':'● Sunucu durduruldu • Başlat düğmesi kullanılabilir';
+      }catch(_){
+        $('serverState').textContent='Bağlantı yok';
+        $('serverDetail').textContent='Sunucu sağlık kontrolüne ulaşılamadı';
+        $('status').textContent='● Sunucuya bağlanılamadı';
+      }
+    }
+    let telegramBotUrl='';
+    let telegramPollTimer=null;
+    function stopTelegramPolling(){if(telegramPollTimer){clearInterval(telegramPollTimer);telegramPollTimer=null}}
+    function openTelegramWizard(){
+      stopTelegramPolling();telegramBotUrl='';$('tgTokenInput').value='';$('tgStep1').style.display='block';$('tgStep2').style.display='none';$('tgStep3').style.display='none';$('tgWait').textContent='Telegram hesabı bekleniyor...';$('telegramSetupOverlay').classList.add('show');
+    }
+    function closeTelegramWizard(){stopTelegramPolling();$('telegramSetupOverlay').classList.remove('show')}
+    async function loadTelegram(silent=true){
+      try{
+        const d=await fetch('/admin/telegram/status',{cache:'no-store'}).then(r=>r.json());
+        if(!d.ok)throw new Error(d.error||'Telegram durumu alınamadı');
+        const state=$('telegramState'),detail=$('telegramDetail');
+        if(d.ready){
+          state.textContent='🟢 Bağlı';state.className='value tg-card-ready';state.style.color='';
+          detail.textContent='Telegram sunucuda kayıtlı ve aktif'+(d.tokenMasked?' • Bot '+d.tokenMasked:'')+' • Güvenlik kilidi açık.';
+          $('telegramSetupBtn').style.display='none';$('telegramTestBtn').style.display='inline-block';
+        }else if(d.configured){
+          state.textContent='🟡 Kurulu • Etkinleştiriliyor';state.className='value tg-card-off';state.style.color='';
+          detail.textContent='Telegram bilgileri kayıtlı. KafePin bildirimleri güvenlik kilidiyle tekrar etkinleştiriyor.';
+          $('telegramSetupBtn').style.display='none';$('telegramTestBtn').style.display='none';
+        }else{
+          state.textContent='⚪ Kurulu Değil';state.className='value';state.style.color='#c2d1df';
+          detail.textContent='BotFather tokenı + START ile yaklaşık iki adımda kurulur. Chat ID gerekmez.';
+          $('telegramSetupBtn').style.display='inline-block';$('telegramSetupBtn').textContent="📲 Telegram'ı Kur";$('telegramTestBtn').style.display='none';
+        }
+        return d;
+      }catch(e){
+        $('telegramState').textContent='Kontrol yok';$('telegramDetail').textContent=e.message||'Telegram durumu alınamadı';
+        if(!silent)notifyUser(e.message||'Telegram durumu alınamadı.',true);
+        return null;
+      }
+    }
+    async function discoverTelegramAccount(showWaiting=true){
+      try{
+        if(showWaiting)$('tgWait').textContent='Telegram hesabı aranıyor...';
+        const d=await post('/admin/telegram/discover');
+        if(!d.ok)throw new Error(d.error||'Telegram hesabı bulunamadı');
+        if(!d.found){if(showWaiting)$('tgWait').textContent='Henüz START mesajı gelmedi. Botta BAŞLAT / START düğmesine basın; KafePin otomatik bekliyor.';return false}
+        stopTelegramPolling();$('tgStep2').style.display='none';$('tgStep3').style.display='block';$('tgSuccess').textContent='✅ '+(d.label||'Telegram hesabı')+(d.username?' • '+d.username:'')+' bağlandı. Ayarlar sunucuya kalıcı yazıldı.'+(d.messageSent?" Doğrulama mesajı Telegram'a gönderildi.":' '+(d.warning||'Doğrulama mesajı gönderilemedi; Test Mesajı düğmesiyle tekrar deneyin.'));await loadTelegram(true);return true;
+      }catch(e){
+        if(e&&/süresi doldu/i.test(String(e.message||''))){stopTelegramPolling();$('tgStep2').style.display='none';$('tgStep1').style.display='block'}
+        $('tgWait').textContent=e.message||'Telegram hesabı bulunamadı.';return false;
+      }
+    }
+    function startTelegramPolling(){stopTelegramPolling();telegramPollTimer=setInterval(()=>discoverTelegramAccount(false),2200)}
+
+    async function loadBackups(){try{const d=await fetch('/admin/pro/backups',{cache:'no-store'}).then(r=>r.json()),list=Array.isArray(d.list)?d.list:[];$('restoreSelect').innerHTML=list.length?list.map(x=>`<option value="${x.fileName}">${x.fileName} • ${fmt(x.time)}</option>`).join(''):'<option value="">Yedek bulunamadı</option>'}catch(_){$('restoreSelect').innerHTML='<option value="">Yedekler alınamadı</option>'}}
+    async function loadHealth(force=false){
+      const state=$('healthState'),detail=$('healthDetail');
+      try{
+        const d=await fetch('/admin/automatic-health'+(force?'?force=1':''),{cache:'no-store'}).then(r=>r.json());
+        if(!d.ok)throw new Error(d.error||'Sağlık kontrolü alınamadı');
+        const status=String(d.status||'unknown');
+        state.textContent=status==='healthy'?'Sağlıklı':status==='critical'?'Sorun':'Uyarı';
+        state.style.color=status==='healthy'?'#63efb3':status==='critical'?'#ff6f7d':'#ffca68';
+        const issues=Array.isArray(d.issues)?d.issues:[];
+        const rolloverIssue=issues.find(x=>String(x.code||'')==='rollover'&&x.repairAvailable);
+        const repairBtn=$('rolloverRepairBtn');
+        if(repairBtn){
+          repairBtn.style.display=rolloverIssue?'inline-block':'none';
+          repairBtn.textContent=rolloverIssue?`🌙 ${String(rolloverIssue.repairLabel||"Dünün Gün Sonunu Şimdi Al")}`:'🌙 Dünün Gün Sonunu Şimdi Al';
+          repairBtn.dataset.repairTs=rolloverIssue?String(rolloverIssue.repairTs||''):'';
+        }
+        if(issues.length){
+          const text=issues.slice(0,2).map(x=>String(x.detail||'Kontrol uyarısı')).join(' • ')+(issues.length>2?` • +${issues.length-2} uyarı`:'');
+          detail.textContent=text+(d.checkedAt?` • Son: ${fmt(d.checkedAt)}`:'');
+        }else{
+          detail.textContent='DB, gün sonu, yedek, finalize, EveryCafe ve disk normal'+(d.checkedAt?` • Son: ${fmt(d.checkedAt)}`:'');
+        }
+      }catch(e){
+        state.textContent='Kontrol yok';state.style.color='#ffca68';detail.textContent=e.message||'Sağlık kontrolüne ulaşılamadı';
+      }
+    }
+    let liveLogBootId='';
+    let liveLogRestartPending=false;
+    let liveLogRestartOldBootId='';
+    let liveLogRestartTimer=null;
+    let liveLogRestartDeadline=0;
+    function renderRestartLogWaiting(){
+      $('logs').innerHTML='<div class="muted">Sunucu yeniden başlatılıyor; yeni oturum günlüğü bekleniyor.</div>';
+    }
+    function clearRestartLogWait(){
+      liveLogRestartPending=false;
+      liveLogRestartOldBootId='';
+      liveLogRestartDeadline=0;
+      if(liveLogRestartTimer){clearTimeout(liveLogRestartTimer);liveLogRestartTimer=null}
+    }
+    function beginRestartLogWait(oldBoot){
+      if(liveLogRestartTimer){clearTimeout(liveLogRestartTimer);liveLogRestartTimer=null}
+      liveLogRestartPending=true;
+      liveLogRestartOldBootId=String(oldBoot||'');
+      liveLogRestartDeadline=Date.now()+25000;
+      renderRestartLogWaiting();
+    }
+    async function pollRestartLogUntilNewBoot(){
+      if(liveLogRestartTimer){clearTimeout(liveLogRestartTimer);liveLogRestartTimer=null}
+      const tick=async()=>{
+        await loadLiveSystemLog();
+        if(!liveLogRestartPending){
+          await Promise.allSettled([loadServer(),loadHealth(false),loadBackupCard()]);
+          return;
+        }
+        if(Date.now()>=liveLogRestartDeadline){
+          clearRestartLogWait();
+          $('logs').innerHTML='<div class="muted">Yeni sunucu oturumu 25 saniye içinde doğrulanamadı. Sistem durumu yeniden kontrol ediliyor.</div>';
+          await loadServer();
+          return;
+        }
+        liveLogRestartTimer=setTimeout(tick,650);
+      };
+      liveLogRestartTimer=setTimeout(tick,450);
+    }
+    async function loadBackupCard(){
+      try{
+        const b=await fetch('/admin/backup/status',{cache:'no-store'}).then(r=>r.json()),last=b.last;
+        $('backupState').textContent=b.running?'Alınıyor...':last&&last.ok?'Hazır':'Yedek bekliyor';
+        $('backupDetail').textContent=last&&last.ok?`${last.fileName||'Son yedek'} • ${fmt(last.time)}`:'KafePin program dosyaları + doğrulanmış database.db anlık görüntüsü. EveryCafe yedeklenmez.';
+      }catch(_){}
+    }
+    async function loadLiveSystemLog(){
+      try{
+        const d=await fetch('/admin/live-log?_boot='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache'}}).then(r=>r.json());
+        const boot=String(d&&d.startedAt||'');
+        const list=Array.isArray(d.list)?d.list.slice(0,12):[];
+
+        // v3.1.25 FINAL: Restart sırasında eski Node cevap vermeye devam etse bile
+        // eski boot günlüğünü tekrar ekrana basma. Yalnız startedAt gerçekten
+        // değiştiğinde yeni oturumu kabul et ve o Node'un bellek günlüğünü göster.
+        if(liveLogRestartPending){
+          const oldBoot=String(liveLogRestartOldBootId||liveLogBootId||'');
+          if(!boot||!oldBoot||boot===oldBoot){
+            renderRestartLogWaiting();
+            return false;
+          }
+          clearRestartLogWait();
+          liveLogBootId=boot;
+          $('logs').innerHTML=list.length?list.map(x=>`<div class="log"><span class="time">${new Date(x.time).toLocaleTimeString('tr-TR')}</span>${String(x.text||'')}</div>`).join(''):'<div class="muted">Yeni sunucu oturumu başladı • henüz sistem kaydı yok.</div>';
+          return true;
+        }
+
+        if(boot)liveLogBootId=boot;
+        $('logs').innerHTML=list.length?list.map(x=>`<div class="log"><span class="time">${new Date(x.time).toLocaleTimeString('tr-TR')}</span>${String(x.text||'')}</div>`).join(''):'<div class="muted">Henüz sistem kaydı yok.</div>';
+        return true;
+      }catch(_){
+        if(liveLogRestartPending)renderRestartLogWaiting();
+        else $('logs').innerHTML='<div class="muted">Sunucuya ulaşılamıyor; günlük bekleniyor.</div>';
+        return false;
+      }
+    }
+    async function load(){
+      // v3.1.22: bağımsız kontrolleri ardışık bekletme; en yavaş istek kadar sürede ekranı toparla.
+      await Promise.allSettled([
+        loadServer(),
+        loadHealth(false),
+        loadTelegram(true),
+        loadBackupCard(),
+        loadLiveSystemLog()
+      ]);
+    }
+    const UPDATE_INSTALL_LOCK_KEY='kafepin_update_install_lock_v2';
+    let updateInstallLocked=false;
+    let updateInstallTargetVersion='';
+    let availableUpdateVersion='';
+    try{
+      const savedLock=JSON.parse(localStorage.getItem(UPDATE_INSTALL_LOCK_KEY)||'{}');
+      if(savedLock&&savedLock.locked){
+        updateInstallLocked=true;
+        updateInstallTargetVersion=String(savedLock.targetVersion||'');
+      }
+    }catch(_e){}
+    function persistUpdateInstallLock(){
+      try{
+        if(updateInstallLocked){
+          localStorage.setItem(UPDATE_INSTALL_LOCK_KEY,JSON.stringify({locked:true,targetVersion:updateInstallTargetVersion,time:Date.now()}));
+        }else{
+          localStorage.removeItem(UPDATE_INSTALL_LOCK_KEY);
+        }
+      }catch(_e){}
+    }
+    function normalizeVersion(value){ return String(value||'').replace(/^v/i,'').trim(); }
+    function isTargetVersionRunning(){
+      const target=normalizeVersion(updateInstallTargetVersion);
+      const running=normalizeVersion(localRunningVersion);
+      return Boolean(target&&running&&target===running);
+    }
+    function stopUpdateProgressPolling(){
+      if(updateProgressTimer){ clearInterval(updateProgressTimer); updateProgressTimer=null; }
+    }
+    function startUpdateProgressPolling(){
+      if(updateProgressTimer) return;
+      updateProgressTimer=setInterval(()=>{ if(!document.hidden) loadUpdateProgress(); },1000);
+    }
+    function setUpdateInstallLocked(locked,targetVersion){
+      updateInstallLocked=Boolean(locked);
+      if(updateInstallLocked&&targetVersion!==undefined) updateInstallTargetVersion=String(targetVersion||'');
+      if(!updateInstallLocked) updateInstallTargetVersion='';
+      persistUpdateInstallLock();
+      const btn=$('updateApplyBtn');
+      if(!btn) return;
+      if(updateInstallLocked){
+        const installed=isTargetVersionRunning();
+        btn.disabled=true;
+        btn.textContent=installed?`✓ v${normalizeVersion(localRunningVersion)} Kuruldu`:'Güncelleniyor...';
+        btn.title=installed?'Yeni server çalışıyor; son güvenlik doğrulaması tamamlanıyor':'Güncelleme tamamlanana kadar tekrar tıklanamaz';
+        startUpdateProgressPolling();
+      }else{
+        stopUpdateProgressPolling();
+        btn.textContent='Güncelle ve Yükle';
+        btn.disabled=true;
+        btn.title='Yeni sürüm kontrolü bekleniyor';
+      }
+    }
+    function reconcileUpdateInstallLock(status){
+      if(!status) return;
+      if(status.installing){
+        setUpdateInstallLocked(true,status.installTargetVersion||status.latestVersion||updateInstallTargetVersion);
+        return;
+      }
+      // Kilidi yalnız sunucu açıkça "installing:false" dedikten sonra bırak.
+      // Tarayıcı/WebView belleği artık karar mercii değildir.
+      if(status.ok&&status.installing===false&&updateInstallLocked){
+        setUpdateInstallLocked(false);
+      }
+    }
+    function setUpdateButton(available,currentVersion){
+      const btn=$('updateApplyBtn');
+      btn.style.display='inline-block';
+      if(updateInstallLocked){
+        const installed=isTargetVersionRunning();
+        btn.textContent=installed?`✓ v${normalizeVersion(localRunningVersion)} Kuruldu`:'Güncelleniyor...';
+        btn.disabled=true;
+        btn.title=installed?'Yeni server çalışıyor; son güvenlik doğrulaması tamamlanıyor':'Güncelleme tamamlanana kadar tekrar tıklanamaz';
+        return;
+      }
+      btn.textContent='Güncelle ve Yükle';
+      btn.disabled=!available;
+      btn.title=available?'Yeni sürümü emniyet yedeği alarak kur':'Sistem güncel'+(currentVersion?' • v'+currentVersion:'');
+    }
+    async function loadLocalVersionLabels(){
+      try{
+        const r=await fetch('/api/health?_version='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache'}});
+        const d=await r.json();
+        const current=String(d&&d.version||'').replace(/^v/i,'').trim();
+        if(!r.ok||!d||!d.ok||!current)return '';
+        localRunningVersion=current;
+        const v='v'+current;
+        const pageLabel=$('pageVersionLabel'); if(pageLabel) pageLabel.textContent=v;
+        const cardLabel=$('releaseVersionLabel'); if(cardLabel) cardLabel.textContent=v;
+        markCurrentRelease(current,'');
+        return current;
+      }catch(_){ return ''; }
+    }
+
+    async function loadUpdate(force,audit){
+      try{
+        const query=force?('?force=1'+(audit?'&audit=1':'')):'';
+        const d=await fetch('/admin/pro/update-status'+query,{cache:'no-store'}).then(r=>r.json()),alertBox=$('updateAlert');
+        lastUpdateStatusAt=Date.now();
+        if(!d.ok){
+          $('updateState').textContent='Kontrol edilemedi';
+          $('updateDetail').textContent=d.error||'İnternet bağlantısını kontrol et.';
+          setUpdateButton(false,d.currentVersion||'');
+          alertBox.classList.remove('show');
+          return d;
+        }
+        reconcileUpdateInstallLock(d);
+        if(d.installing){
+          availableUpdateVersion='';
+          if(d.currentVersion) localRunningVersion=normalizeVersion(d.currentVersion);
+          setUpdateInstallLocked(true,d.installTargetVersion||d.latestVersion||updateInstallTargetVersion);
+          if(isTargetVersionRunning()){
+            $('updateState').textContent=`✓ v${normalizeVersion(localRunningVersion)} kuruldu`;
+            $('updateDetail').textContent='Yeni server çalışıyor • son güvenlik doğrulaması tamamlanıyor.';
+          }else{
+            $('updateState').textContent='Güncelleniyor...';
+            $('updateDetail').textContent=d.installMessage||'Kurulum tamamlanıp yeni server doğrulanana kadar düğme kilitli.';
+          }
+          alertBox.classList.remove('show');
+          return d;
+        }
+        if(d.currentVersion){
+          const v='v'+String(d.currentVersion);
+          const pageLabel=$('pageVersionLabel'); if(pageLabel) pageLabel.textContent=v;
+          const cardLabel=$('releaseVersionLabel'); if(cardLabel) cardLabel.textContent=v;
+          markCurrentRelease(d.currentVersion,d.notes);
+        }
+        if(d.degraded){
+          availableUpdateVersion='';
+          $('updateState').textContent='✓ Kurulu sürüm: v'+d.currentVersion;
+          $('updateDetail').textContent='Uzak güncelleme merkezi geçici olarak yanıt vermiyor. Çalışan sürüm doğrulandı; kontrollü arka plan denemesi daha sonra tekrar yapılacak.';
+          setUpdateButton(false,d.currentVersion);
+          alertBox.classList.remove('show');
+          return d;
+        }
+        if(d.available){
+          availableUpdateVersion=String(d.latestVersion||'');
+          $('updateState').textContent='Yeni sürüm hazır: v'+d.latestVersion;
+          $('updateDetail').textContent='Mevcut v'+d.currentVersion+' → v'+d.latestVersion+(d.stale?' • Son doğrulanmış sonuç':'');
+          setUpdateButton(true,d.currentVersion);
+          alertBox.textContent='⚠ GÜNCELLEME VAR — v'+d.latestVersion+' hazır. Güncelle ve Yükle düğmesine bas.';
+          alertBox.classList.add('show');
+          try{
+            const notifiedKey='kafepin_update_notified_version';
+            if(localStorage.getItem(notifiedKey)!==String(d.latestVersion)){
+              notifyUser('Yeni KafePin sürümü hazır: v'+d.latestVersion);
+              localStorage.setItem(notifiedKey,String(d.latestVersion));
+            }
+          }catch(_e){}
+        }else{
+          availableUpdateVersion='';
+          $('updateState').textContent=d.stale?'✓ Son doğrulanmış durum':'✓ Sistem güncel';
+          $('updateDetail').textContent='v'+d.currentVersion+' • Yeni sürüm yok.'+(d.stale?' • GitHub/CDN geçici hata verdi; doğrulanmış önbellek kullanılıyor.':'');
+          setUpdateButton(false,d.currentVersion);
+          alertBox.classList.remove('show');
+        }
+        return d;
+      }catch(_){
+        $('updateState').textContent='Kontrol edilemedi';
+        $('updateDetail').textContent='Güncelleme merkezine ulaşılamadı.';
+        setUpdateButton(false,'');
+        $('updateAlert').classList.remove('show');
+        return null;
+      }
+    }
+    async function openFolder(kind,label,silent=false){try{$('status').textContent=`● ${label} açılıyor...`;const d=await post('/admin/pro/open-folder',{kind});if(!d.ok||!d.verified)throw new Error(d.error||'Explorer penceresi doğrulanamadı');$('status').textContent=`● ${label} Explorer'da açıldı ve pencere doğrulandı.`;if(!silent)notifyUser(`${label} açıldı ve öne getirildi.`)}catch(e){$('status').textContent=`● ${label} açılamadı`;notifyUser(e.message||'Klasör açılamadı.',true)}}
+    $('telegramSetupBtn').onclick=openTelegramWizard;
+    $('telegramSetupClose').onclick=closeTelegramWizard;
+    $('tgDoneBtn').onclick=closeTelegramWizard;
+    $('telegramSetupOverlay').addEventListener('click',e=>{if(e.target===$('telegramSetupOverlay'))closeTelegramWizard()});
+    $('tgBotFatherBtn').onclick=()=>window.open('https://t.me/BotFather','_blank');
+    $('tgVerifyTokenBtn').onclick=async()=>{
+      const btn=$('tgVerifyTokenBtn'),token=$('tgTokenInput').value.trim();
+      if(!token){notifyUser('BotFather tokenını kutuya yapıştırın.',true);return}
+      btn.disabled=true;btn.textContent='Doğrulanıyor...';
+      try{
+        const d=await post('/admin/telegram/setup-token',{token});
+        if(!d.ok)throw new Error(d.error||'Token doğrulanamadı');
+        telegramBotUrl=d.botUrl||'';$('tgBotVerified').textContent='✅ Bot doğrulandı: '+(d.botUsername?'@'+d.botUsername:(d.botName||'Telegram botu'));$('tgStep1').style.display='none';$('tgStep2').style.display='block';$('tgWait').textContent='Botu açın ve BAŞLAT / START düğmesine basın. KafePin hesabınızı otomatik bekliyor.';startTelegramPolling();
+      }catch(e){notifyUser(e.message||'Bot tokenı doğrulanamadı.',true)}finally{btn.disabled=false;btn.textContent='Tokenı Doğrula ve Devam Et'}
+    };
+    $('tgOpenBotBtn').onclick=()=>{if(telegramBotUrl){window.open(telegramBotUrl,'_blank');startTelegramPolling()}else notifyUser('Önce bot tokenını doğrulayın.',true)};
+    $('tgFindAccountBtn').onclick=()=>discoverTelegramAccount(true);
+    $('telegramTestBtn').onclick=async()=>{const b=$('telegramTestBtn');b.disabled=true;try{const d=await post('/admin/telegram/test');if(!d.ok)throw new Error(d.error||'Test mesajı gönderilemedi');notifyUser('Telegram test mesajı gönderildi.')}catch(e){notifyUser(e.message||'Test mesajı gönderilemedi.',true)}finally{b.disabled=false}};
+
+    $('healthCheckBtn').onclick=async()=>{
+      const btn=$('healthCheckBtn');btn.disabled=true;
+      try{await loadHealth(true);notifyUser('Sistem sağlık kontrolü tamamlandı.')}finally{btn.disabled=false}
+    };
+    $('rolloverRepairBtn').onclick=async()=>{
+      const btn=$('rolloverRepairBtn');
+      const label=btn.textContent.replace(/^🌙\s*/, '')||'Eksik Gün Sonunu Şimdi Al';
+      if(!(await askUser(`${label}?\n\nYalnız eksik 20:00 gün sonu kaydı yeniden hesaplanacak. Bugünün açık masalarına dokunulmayacak.`, 'Gün Sonu Düzelt')))return;
+      btn.disabled=true;
+      try{
+        const d=await post('/admin/rollover/repair-missed');
+        if(!d.ok)throw new Error(d.error||'Gün sonu düzeltilemedi');
+        notifyUser(d.alreadyComplete?'Eksik gün sonu kaydı kalmadı.':`Gün sonu düzeltildi.${d.total!=null?`\nToplam: ${Number(d.total).toFixed(2)} ₺`:''}`);
+        await Promise.allSettled([loadHealth(true),loadLiveSystemLog()]);
+      }catch(e){notifyUser(e.message||'Gün sonu düzeltilemedi.',true)}finally{btn.disabled=false}
+    };
+    $('backupBtn').onclick=async()=>{$('backupBtn').disabled=true;try{const d=await fetch('/admin/backup/full',{method:'POST'}).then(r=>r.json());if(!d.ok)throw new Error(d.error||'Yedek alınamadı');notifyUser(`Tam yedek hazır:\n${d.path}`)}catch(e){notifyUser(e.message||'Yedek alınamadı.',true)}finally{$('backupBtn').disabled=false;load()}};
+    $('dbBackupBtn').onclick=async()=>{try{const d=await post('/admin/pro/db-backup');if(!d.ok)throw new Error(d.error||'DB yedeği alınamadı');notifyUser(`DB yedeği hazır:\n${d.path}`)}catch(e){notifyUser(e.message||'DB yedeği alınamadı',true)}};
+    $('startBtn').onclick=async()=>{const b=$('startBtn');if(b.disabled)return;b.disabled=true;try{$('status').textContent='● Sunucu başlatılıyor...';await managerCall('/start','POST');setTimeout(load,1200)}catch(e){notifyUser(e.message||'Sunucu başlatılamadı.',true)}finally{setTimeout(loadServer,1400)}};
+    $('stopBtn').onclick=async()=>{if(!(await askUser('KafePin sunucusu durdurulsun mu? Panel açık kalır; Başlat düğmesiyle tekrar açabilirsin.','Durdur')))return;const b=$('stopBtn');b.disabled=true;try{await managerCall('/stop','POST');$('status').textContent='● Sunucu durduruldu • Başlat düğmesiyle tekrar açılabilir';$('logs').innerHTML='<div class="muted">Sunucu durduruldu. Yeni başlangıçta günlük temiz açılacak.</div>';setTimeout(loadServer,700)}catch(e){notifyUser(e.message||'Sunucu durdurulamadı.',true);setTimeout(loadServer,700)}};
+    $('restartBtn').onclick=async()=>{
+      if(!(await askUser('Sunucu güvenli şekilde yeniden başlatılsın mı? Canlı Sistem Günlüğü yeni oturumda temiz başlayacak.','Yeniden Başlat')))return;
+      const b=$('restartBtn');if(b.disabled)return;b.disabled=true;
+      let oldBoot=String(liveLogBootId||'');
+      try{
+        // Restart komutundan hemen once mevcut boot kimligini kesinlestir.
+        // Boylece restart handoff sonrasi eski gunluk bir kare bile geri basılmaz.
+        if(!oldBoot){
+          try{
+            const d=await fetch('/admin/live-log?_beforeRestart='+Date.now(),{cache:'no-store',headers:{'Cache-Control':'no-cache'}}).then(r=>r.json());
+            oldBoot=String(d&&d.startedAt||'');
+            if(oldBoot)liveLogBootId=oldBoot;
+          }catch(_){}
+        }
+        $('status').textContent='● Sunucu yeniden başlatılıyor...';
+
+        // v3.1.26: Eski günlük yalnız arayüzden saklanmaz; restart komutundan
+        // önce mevcut Node'un liveLogs belleği de gerçekten temizlenir. Reset
+        // tamamlanamazsa temiz restart garantisi veremeyeceğimiz için restart başlatılmaz.
+        const resetLog=await post('/admin/live-log/reset-session');
+        if(!resetLog||!resetLog.ok)throw new Error('Canlı Sistem Günlüğü yeni oturum için sıfırlanamadı');
+        oldBoot=String(resetLog.startedAt||oldBoot||liveLogBootId||'');
+        if(oldBoot)liveLogBootId=oldBoot;
+        beginRestartLogWait(oldBoot);
+
+        // Manager v3.1.3 bu endpointte once 202 cevabini kapatir, sonra Node'u
+        // durdurup yeniden acar. Senkron /restart gibi fetch'i yarida kesmez;
+        // AbortController kaynakli "signal is aborted without reason" toast'u oluşmaz.
+        await managerCall('/restart-async','POST');
+        $('status').textContent='● Yeniden başlatma Server Manager’a teslim edildi • yeni sunucu bekleniyor';
+        pollRestartLogUntilNewBoot();
+      }catch(e){
+        clearRestartLogWait();
+        await loadLiveSystemLog();
+        notifyUser(e.message||'Yeniden başlatma başlatılamadı.',true);
+        setTimeout(loadServer,900);
+      }
+    };
+    $('appFolderBtn').onclick=()=>openFolder('app','KafePin klasörü');
+    $('backupFolderBtn').onclick=()=>openFolder('backups','Ana yedek klasörü');
+    $('dbFolderBtn').onclick=()=>openFolder('db','DB yedek klasörü');
+    $('fullFolderBtn').onclick=()=>openFolder('full','FULL ZIP yedek klasörü');
+    $('restoreBtn').onclick=async()=>{const f=$('restoreSelect').value;if(!f||!(await askUser(`"${f}" geri yüklensin mi? Önce doğrulanmış emniyet DB yedeği alınacak. KafePin verileri geri dönecek; kurulu program sürümü korunacak.`,'Geri Yükle')))return;try{const d=await post('/admin/pro/restore',{fileName:f});if(!d.ok)throw new Error(d.error||'Geri yükleme başlatılamadı');$('status').textContent='● Veriler geri yükleniyor • Program sürümü korunuyor • Panel otomatik geri gelecek';notifyUser('KafePin verileri geri yükleniyor. Program sürümü korunacak; panel kısa bir sunucu yeniden başlatmasından sonra otomatik geri gelecek.')}catch(e){notifyUser(e.message||'Geri yükleme başlatılamadı.',true)}};
+    $('updateCheckBtn').onclick=async()=>{
+      const btn=$('updateCheckBtn');
+      if(btn.disabled)return;
+      btn.disabled=true;
+      $('updateState').textContent='Kontrol ediliyor...';
+      $('updateDetail').textContent='GitHub sürüm bilgisi yenileniyor.';
+      try{
+        await loadUpdate(true,true); // Canli gunluge sadece kullanici tiklamasi yazar.
+        await load();               // Yeni tek kaydi hemen ekranda goster.
+      }finally{
+        btn.disabled=false;
+      }
+    };
+    let lastUpdateProgressNotice='';
+    async function loadUpdateProgress(){
+      try{
+        const d=await fetch('/admin/pro/update-progress',{cache:'no-store'}).then(r=>r.json());
+
+        // Bu fonksiyon yalnız YEREL kurulum ilerlemesini izler.
+        // Uzak GitHub sürüm kontrolü burada yapılmaz.
+        // Uzak kontrol: açılışta + 120 saniyede bir + panel öne gelince + manuel düğmede.
+        if(!d||!d.ok||!d.stage||d.stage==='idle'){
+          if(!updateInstallLocked) stopUpdateProgressPolling();
+          return;
+        }
+
+        if(d.stage==='success'){
+          const noticeKey='success:'+(d.version||'')+':'+(d.time||'');
+          if(lastUpdateProgressNotice!==noticeKey){
+            lastUpdateProgressNotice=noticeKey;
+            notifyUser(d.message||'Güncelleme tamamlandı.');
+            // Başarı olayı başına yalnız BİR kez uzak durumu yenile.
+            await loadUpdate(false,false);
+          }
+          return;
+        }
+
+        setUpdateInstallLocked(true,d.version||updateInstallTargetVersion);
+        const labels={backup:'Yedek alınıyor...',download:'Paket indiriliyor...',install:'Kurulum başlatılıyor...',prepare:'Kurucu hazırlanıyor...',prepare_copy:'ZIP hazırlanıyor...',prepare_extract:'ZIP açılıyor...',prepare_read:'Paket doğrulanıyor...',extract:'ZIP açılıyor...',verify:'Paket doğrulanıyor...',stop:'Sunucu durduruluyor...',copy:'Dosyalar kuruluyor...',handoff:'Yeniden başlatma hazırlanıyor...',restart_pending:'Yeni server doğrulanıyor...',error:'Güncelleme hatası'};
+        if(d.stage==='restart_pending'&&isTargetVersionRunning()){
+          $('updateState').textContent=`✓ v${normalizeVersion(localRunningVersion)} kuruldu`;
+          $('updateDetail').textContent='Yeni server çalışıyor • son güvenlik doğrulaması tamamlanıyor.';
+        }else{
+          $('updateState').textContent=labels[d.stage]||'Güncelleme çalışıyor...';
+          $('updateDetail').textContent=d.message||'';
+        }
+
+        if(d.stage==='error'){
+          setUpdateInstallLocked(false);
+          const noticeKey='error:'+(d.version||'')+':'+(d.time||'');
+          if(lastUpdateProgressNotice!==noticeKey){
+            lastUpdateProgressNotice=noticeKey;
+            notifyUser(d.message||'Güncelleme tamamlanamadı.',true);
+            // Hata olayı başına yalnız BİR kez uzak durumu yenile.
+            await loadUpdate(false,false);
+          }
+        }
+      }catch(_){/* sunucu kontrollü kapanırken bağlantı kesilebilir */}
+    }
+    $('updateApplyBtn').onclick=async()=>{if(updateInstallLocked)return;if(!(await askUser('Yeni sürüm kurulacak. Önce emniyet yedeği alınır, paket indirip doğrulanır, ardından sunucu otomatik yeniden başlar.','Güncelle ve Yükle')))return;setUpdateInstallLocked(true,availableUpdateVersion);$('updateState').textContent='Yedek alınıyor...';$('updateDetail').textContent='Güncelleme başlamadan önce tam emniyet yedeği hazırlanıyor.';try{const d=await post('/admin/pro/apply-update');if(!d.ok)throw new Error(d.error);$('updateState').textContent='Kurulum başlatıldı';$('updateDetail').textContent=(d.safetyBackup?'Emniyet yedeği: '+d.safetyBackup+' • ':'')+'Paket doğrulandı; program kısa süre içinde yeniden başlayacak.';notifyUser('Yedek ve paket doğrulandı. Kurulum başlatıldı.');startUpdateProgressPolling();setTimeout(loadUpdateProgress,600)}catch(e){setUpdateInstallLocked(false);notifyUser(e.message||'Güncelleme başlatılamadı.',true);$('updateState').textContent='Güncelleme hatası';$('updateDetail').textContent=e.message||'Güncelleme başlatılamadı.';await loadUpdate(true,false)}};
+    localUpdateBtn.onclick=async()=>{if(!(await askUser('Windows dosya seçici İndirilenler klasöründen açılacak. ZIP başka yerdeyse istediğin klasöre geçebilirsin. Seçimden sonra önce emniyet yedeği alınır ve sunucu yeniden başlar.','ZIP Seç')))return;localUpdateBtn.disabled=true;$('updateState').textContent='ZIP seçimi bekleniyor...';$('updateDetail').textContent='İndirilenler klasöründen Windows dosya seçici açılıyor.';try{const d=await post('/admin/pro/apply-local-update');if(d.cancelled){localUpdateBtn.disabled=false;$('updateState').textContent='İptal edildi';$('updateDetail').textContent='Herhangi bir paket seçilmedi.';return}if(!d.ok)throw new Error(d.error);$('updateState').textContent='Yerel paket kuruluyor...';$('updateDetail').textContent='Yedek alınıyor ve program yenileniyor.';notifyUser('Yerel güncelleme başlatıldı.');startUpdateProgressPolling();setTimeout(loadUpdateProgress,600)}catch(e){notifyUser(e.message||'Yerel paket başlatılamadı.',true);localUpdateBtn.disabled=false;await loadUpdate(true,false)}};
+    $('everyCafeIntegrationBtn').onclick=()=>{window.location.href='/everycafe-integration.html'};
+    $('everyCafeReconcileBtn').onclick=()=>{window.location.href='/everycafe-reconcile.html'};
+    const releaseNotesOverlay=$('releaseNotesOverlay');
+    $('releaseNotesBtn').onclick=()=>{releaseNotesOverlay.classList.add('show')};
+    $('releaseNotesClose').onclick=()=>{releaseNotesOverlay.classList.remove('show')};
+    releaseNotesOverlay.addEventListener('click',e=>{if(e.target===releaseNotesOverlay)releaseNotesOverlay.classList.remove('show')});
+    document.addEventListener('keydown',e=>{if(e.key==='Escape'){releaseNotesOverlay.classList.remove('show');closeTelegramWizard()}});
+
+    if(updateInstallLocked) setUpdateInstallLocked(true,updateInstallTargetVersion);
+    else setUpdateButton(false,'');
+    async function initializeUpdatePanel(){
+      await loadLocalVersionLabels();
+      await loadUpdateProgress();
+      await loadUpdate(false,false);
+    }
+    load();loadBackups();initializeUpdatePanel();
+    // v3.1.22: boşta daha az istek; görünmeyen WebView hiçbir periyodik sorgu üretmez.
+    setInterval(()=>{if(!document.hidden)loadServer()},5000);
+    setInterval(()=>{if(!document.hidden)load()},30000);
+    setInterval(()=>{if(!document.hidden)loadBackups()},60000);
+    setInterval(()=>{if(!document.hidden)loadUpdate(false,false)},300000);
+    document.addEventListener('visibilitychange',()=>{
+      if(document.hidden)return;
+      loadServer();
+      if(Date.now()-lastUpdateStatusAt>60000)loadUpdate(false,false);
+      if(updateInstallLocked)startUpdateProgressPolling();
+    });
+  </script>
+</body>
+</html>

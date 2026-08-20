@@ -1,5 +1,24 @@
-ROOT MATCHES:
+ROOT FILES:
+desktop-app/KafePin.ico
+desktop-app/KafePinProDesktop.cs
+pro-components/mp3-bot-pro.zip
+pro-components/teknik-servis-pro.zip
 pro-components/yazici-pro.zip
+public/admin.html
+public/everycafe-reconcile.html
+public/kafepin-pro-yonetim.html
+public/monitor.html
+services/spinService.js
+utils/fee.js
+KafePin_Desktop_Action.ps1
+KafePin_Desktop_App_Setup.ps1
+KafePin_Desktop_Helper_Ensure.ps1
+KafePin_Manager_Ensure.ps1
+KafePin_Pro_Bilesen_Kurulum.ps1
+KafePin_System_Manager.ps1
+kafepin-pro-version.json
+server.js
+update.json
 NESTED: ['pro-components/yazici-pro.zip']
 NESTED FILES pro-components/yazici-pro.zip:
 web/app.js

@@ -1,0 +1,1485 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="icon" href="/favicon.ico" type="image/x-icon">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KafePin Monitor</title>
+
+<style>
+body{
+    margin:0;
+    background:#050505;
+    color:white;
+    font-family:Arial, "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+    overflow:hidden;
+    width:100vw;
+    height:100vh;
+}
+
+/* HEADER */
+#header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:15px;
+    padding:8px 20px;
+    background:#111;
+    border-bottom:2px solid #222;
+}
+#logo{ display:flex; align-items:center; gap:15px; }
+#logo img{ height:68px; }
+#title{
+    font-size:38px;
+    font-weight:900;
+    letter-spacing:3px;
+    color:#ffffff;
+    text-shadow:
+        0 0 3px #fff,
+        0 0 8px #00e5ff,
+        0 0 15px #00e5ff,
+        0 0 30px #8a2be2;
+}
+
+/* COUNTDOWN */
+#countdownBox{
+    background:#1a1a1a;
+    padding:8px 16px;
+    border-radius:10px;
+    font-size:23px;
+    font-weight:bold;
+    color:#00e5ff;
+    border:1px solid #333;
+}
+#headerRight{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+#connectionStatus{
+    min-width:118px;
+    padding:8px 12px;
+    border:1px solid #245c3d;
+    border-radius:10px;
+    background:#12291d;
+    color:#67ee9c;
+    font-size:18px;
+    font-weight:900;
+    text-align:center;
+}
+#connectionStatus.offline{
+    border-color:#813232;
+    background:#351717;
+    color:#ff6868;
+    animation:blinkDanger 1s infinite;
+}
+.countdownDanger{
+    color:#ff3b3b !important;
+    animation:blinkDanger 1s infinite;
+}
+@keyframes blinkDanger{
+    0%{opacity:1;}
+    50%{opacity:0.4;}
+    100%{opacity:1;}
+}
+
+/* PANELS */
+#topPanels{
+    display:flex;
+    gap:10px;
+    padding:8px 15px;
+    align-items:stretch;
+}
+.panel{
+    flex:1;
+    min-width:0;
+    background:#1a1a1a;
+    border:2px solid #f1c40f;
+    padding:8px;
+    text-align:center;
+    font-size:20px;
+    font-weight:bold;
+    color:#f1c40f;
+    border-radius:10px;
+
+    height:150px;
+    box-sizing:border-box;
+    overflow:hidden;
+    box-shadow:0 8px 22px rgba(0,0,0,.28);
+}
+.panel:nth-child(1){
+    background:linear-gradient(145deg,#3b2064,#211334);
+    border-color:#a970ff;
+    color:#e3ccff;
+}
+.panel:nth-child(2){
+    background:linear-gradient(145deg,#682335,#35131d);
+    border-color:#ff6e91;
+    color:#ffd0db;
+}
+.panel:nth-child(3){
+    background:linear-gradient(145deg,#195d42,#0f3326);
+    border-color:#48e49b;
+    color:#c6ffe2;
+}
+.panel:nth-child(4){
+    background:linear-gradient(145deg,#174f75,#0e2e46);
+    border-color:#49bfff;
+    color:#c8edff;
+}
+.panel:nth-child(5){
+    background:linear-gradient(145deg,#155c67,#0d343b);
+    border-color:#2ee1f3;
+    color:#c7fbff;
+}
+.panel:nth-child(6){
+    background:linear-gradient(145deg,#704217,#3b240f);
+    border-color:#ffad45;
+    color:#ffe1b7;
+}
+.bigValue{
+    font-size:36px;
+    font-weight:900;
+    min-height:45px;
+    line-height:45px;
+    white-space:nowrap;
+}
+#bigText{
+    margin-top:8px;
+    font-size:22px;
+    line-height:1.25;
+}
+#todayCountPanel,
+#readyCountPanel{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:23px;
+    line-height:1.35;
+}
+#aktifToplamPanelValue{
+  color:#7dff7d;
+}
+
+#bugunGelirPanelValue{
+  color:#00e5ff;
+}
+
+#saatlikGelirPanelValue{
+  color:#ffb74d;
+}
+
+.barWrap{
+    width:100%;
+    height:14px;
+    background:#333;
+    border-radius:10px;
+    margin-top:6px;
+    overflow:hidden;
+}
+.barFill{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg,#2ecc71,#f1c40f,#e74c3c);
+    transition: width 700ms ease;
+}
+
+/* LAYOUT */
+#container{
+    display:flex;
+    height:auto;
+    width:100%;
+    min-width:0;
+    overflow:hidden;
+}
+#masalar{
+    flex:3;
+    min-width:0;
+    max-width:100%;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:12px;
+    padding:12px;
+    align-content:stretch;
+    justify-items:stretch;
+}
+#winners{
+    flex:0 0 clamp(220px,19vw,380px);
+    width:clamp(220px,19vw,380px);
+    min-width:0;
+    overflow:hidden;
+    background:#111;
+    border-left:2px solid #222;
+    padding:12px;
+}
+
+/* LUCKY */
+#luckyBox{
+    background:#1b1b1b;
+    padding:12px;
+    border-radius:12px;
+    margin-bottom:12px;
+    text-align:center;
+}
+#crown{
+    font-size:36px;
+    animation:spinCrown 4s linear infinite;
+}
+@keyframes spinCrown{
+    from{transform:rotate(0)}
+    to{transform:rotate(360deg)}
+}
+#luckyTitle{
+    font-size:21px;
+    color:#f1c40f;
+    font-weight:bold;
+}
+#luckyMasa{
+    font-size:36px;
+    font-weight:bold;
+    color:#00e5ff;
+}
+
+/* WINNERS */
+.win{
+    background:#1c1c1c;
+    margin-bottom:6px;
+    padding:8px;
+    border-radius:8px;
+    font-size:24px;
+    line-height:1.3;
+}
+
+/* MASA */
+.card{
+    width:100%;
+    box-sizing:border-box;
+    min-width:0;
+    min-height:0;
+
+    border-radius:16px;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+
+    font-weight:bold;
+    border:4px solid rgba(255,255,255,.35);
+
+    box-shadow:0 0 15px rgba(0,0,0,0.6);
+
+    overflow:hidden;
+}
+.masa{
+    font-size:clamp(22px,2.15vw,43px);
+    color:#fff;
+    font-weight:900;
+    text-shadow:0 2px 4px rgba(0,0,0,.9);
+}
+.time{
+    font-size:clamp(20px,2vw,39px);
+    margin-top:8px;
+
+    color:#fff;
+    font-weight:900;
+
+    text-shadow:0 2px 4px rgba(0,0,0,.9);
+
+    width:100%;
+    text-align:center;
+    line-height:1.3;
+}
+.statusText{
+    display:inline-block;
+    font-size:.82em;
+}
+.fee{
+    display:inline-block;
+    font-size:1.12em;
+}
+.diagnostics{
+    margin-top:8px;
+    padding-top:7px;
+    width:min(92%,760px);
+    border-top:1px solid rgba(255,255,255,.28);
+    color:#dfe8f2;
+    font-size:clamp(14px,1.18vw,24px);
+    line-height:1.35;
+    text-align:center;
+    text-shadow:0 2px 4px rgba(0,0,0,.9);
+}
+.diagnostics .rewardLine{
+    display:block;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.diagnostics.warn{color:#ffd166;font-weight:900}
+.card.connection-warning{
+    border-color:#ffb74d !important;
+    box-shadow:0 0 28px rgba(255,183,77,.8);
+}
+.kapali{ background:#444; color:#fff; }
+.bagli{
+    color:#fff;
+    box-shadow:0 0 18px rgba(255,255,255,.18);
+}
+.aktif{
+    color:#fff;
+    border-color:#45b8ff;
+    box-shadow:0 0 24px rgba(69,184,255,.75);
+}
+.hazir{
+    color:#fff;
+    border-color:#43f39b;
+    animation:blinkReady 1.2s infinite;
+}
+.sure-bitti{
+    color:#fff;
+    border-color:#ffb74d;
+    box-shadow:0 0 30px rgba(255,152,0,.85);
+    animation:blinkTimedEnd 1.1s infinite;
+}
+.free-masa{
+    border-color:#5fffe1 !important;
+    box-shadow:0 0 32px rgba(35,255,205,.8) !important;
+    animation:freePulse 1.6s ease-in-out infinite;
+}
+@keyframes freePulse{
+    0%,100%{filter:brightness(1)}
+    50%{filter:brightness(1.18)}
+}
+@keyframes blinkTimedEnd{
+    0%,100%{border-color:#ffb74d;box-shadow:0 0 14px rgba(255,152,0,.65);}
+    50%{border-color:#fff0c2;box-shadow:0 0 38px rgba(255,112,67,.95);}
+}
+@keyframes blinkReady{
+    0%{box-shadow:0 0 12px #27ae60;border-color:#43f39b;}
+    50%{box-shadow:0 0 32px #2ecc71;border-color:#b8ffd8;}
+    100%{box-shadow:0 0 12px #27ae60;border-color:#43f39b;}
+}
+
+/* TICKER */
+#ticker{
+    position:fixed;
+    bottom:0;
+    left:0;
+    width:100%;
+    height:76px;
+    background:#111;
+    display:flex;
+    align-items:center;
+    overflow:hidden;
+}
+#tickerText{
+    white-space:nowrap;
+    font-size:44px;
+    font-weight:bold;
+    color:#00e5ff;
+    padding-left:100%;
+    animation:tickerMove 45s linear infinite;
+}
+@keyframes tickerMove{
+    from{transform:translateX(0)}
+    to{transform:translateX(-100%)}
+}
+
+/* ORTADA PROMO */
+#promoToast{
+  position:fixed;
+  left:50%;
+  top:42%;
+  transform:translate(-50%,-50%);
+  z-index:9999;
+  background:rgba(10,10,10,.92);
+  border:3px solid #00e5ff;
+  box-shadow:0 0 40px rgba(0,229,255,.35);
+  padding:20px 26px;
+  border-radius:18px;
+  min-width:520px;
+  max-width:75vw;
+  text-align:center;
+  opacity:0;
+  pointer-events:none;
+}
+#promoToast .t1{
+  font-size:22px;
+  font-weight:900;
+  color:#f1c40f;
+}
+#promoToast .t2{
+  margin-top:10px;
+  font-size:34px;
+  font-weight:900;
+  color:#00e5ff;
+}
+#promoToast.show{ animation:toastInOut 4.2s ease-in-out forwards; }
+@keyframes toastInOut{
+  0%{opacity:0; transform:translate(-50%,-50%) scale(.97);}
+  12%{opacity:1; transform:translate(-50%,-50%) scale(1);}
+  88%{opacity:1; transform:translate(-50%,-50%) scale(1);}
+  100%{opacity:0; transform:translate(-50%,-50%) scale(.98);}
+}
+
+/* SES AÇ BUTONU */
+#soundBtn{
+  position:fixed;
+  right:12px;
+  bottom:130px;
+  z-index:10000;
+  background:#1a1a1a;
+  border:2px solid #00e5ff;
+  color:#00e5ff;
+  font-weight:900;
+  padding:10px 12px;
+  border-radius:12px;
+  cursor:pointer;
+  user-select:none;
+  box-shadow:0 0 25px rgba(0,229,255,.20);
+}
+#soundBtn.on{
+  border-color:#2ecc71;
+  color:#2ecc71;
+  box-shadow:0 0 25px rgba(46,204,113,.18);
+}
+
+/* SES PANEL AÇ */
+#soundPanelToggle{
+  position:fixed;
+  right:12px;
+  bottom:74px;
+  z-index:10000;
+  background:#1a1a1a;
+  border:2px solid #666;
+  color:#f1c40f;
+  font-weight:900;
+  padding:10px 12px;
+  border-radius:12px;
+  cursor:pointer;
+  user-select:none;
+  box-shadow:0 0 20px rgba(0,0,0,.28);
+}
+
+/* SES PANELİ */
+#volumePanel{
+  position:fixed;
+  right:12px;
+  bottom:188px;
+  z-index:10000;
+  width:265px;
+  background:#111;
+  border:2px solid #333;
+  border-radius:14px;
+  padding:12px;
+  box-shadow:0 0 25px rgba(0,0,0,.35);
+  display:none;
+}
+#volumePanel.show{
+  display:block;
+}
+.volumeTitle{
+  font-size:14px;
+  font-weight:900;
+  color:#f1c40f;
+  margin-bottom:10px;
+}
+.volumeGroup{
+  margin-bottom:12px;
+}
+.volumeLabel{
+  font-size:13px;
+  font-weight:bold;
+  color:#00e5ff;
+  margin-bottom:6px;
+}
+.volumeValue{
+  font-size:12px;
+  color:#ddd;
+  margin-top:4px;
+}
+.volumeSlider{
+  width:100%;
+  accent-color:#00e5ff;
+}
+.smallMuted{
+  font-size:12px;
+  color:#aaa;
+  margin-top:4px;
+  line-height:1.35;
+}
+.panelBtnRow{
+  display:flex;
+  gap:8px;
+  margin-top:10px;
+}
+.panelBtn{
+  flex:1;
+  border:none;
+  border-radius:8px;
+  padding:8px 10px;
+  font-weight:bold;
+  cursor:pointer;
+}
+.panelBtn.ok{
+  background:#2ecc71;
+  color:#fff;
+}
+.panelBtn.test{
+  background:#2980b9;
+  color:#fff;
+}
+</style>
+</head>
+
+<body>
+
+<audio id="sndWin" src="/win.mp3" preload="auto"></audio>
+<audio id="sndBig" src="/bigwin.wav" preload="auto"></audio>
+
+<div id="promoToast">
+  <div class="t1" id="promoTitle">🎯 ŞANSINI DENE!</div>
+  <div class="t2" id="promoText">Çarkı çevir, ödül kazan!</div>
+</div>
+
+<div id="soundBtn">🔊 SESİ AÇ</div>
+<div id="soundPanelToggle">⚙ SES</div>
+
+<div id="volumePanel">
+  <div class="volumeTitle">🔉 Monitor Ses Ayarları</div>
+
+  <div class="volumeGroup">
+    <div class="volumeLabel">Efekt Sesi</div>
+    <input id="effectSlider" class="volumeSlider" type="range" min="0" max="100" step="1" value="35">
+    <div id="effectValue" class="volumeValue">Efekt: %35</div>
+  </div>
+
+  <div class="volumeGroup">
+    <div class="volumeLabel">Konuşma Sesi</div>
+    <input id="speechSlider" class="volumeSlider" type="range" min="0" max="100" step="1" value="35">
+    <div id="speechValue" class="volumeValue">Konuşma: %35</div>
+  </div>
+
+  <div class="smallMuted">
+    Efekt sesi: <b>win.mp3 / bigwin.wav</b><br>
+    Konuşma sesi: <b>masa anonsu</b>
+  </div>
+
+  <div class="panelBtnRow">
+    <button class="panelBtn test" onclick="testAudioNow()">Test</button>
+    <button class="panelBtn ok" onclick="hideVolumePanel()">Tamam</button>
+  </div>
+</div>
+
+<div id="header">
+  <div id="logo">
+    <img src="logo.png" alt="Logo">
+    <div id="title">KAFEPİN BİLİŞİM HİZMETLERİ</div>
+  </div>
+  <div id="headerRight">
+    <div id="connectionStatus">● BAĞLI</div>
+    <div id="countdownBox">Kafe günü hesaplanıyor...</div>
+  </div>
+</div>
+
+<div id="topPanels">
+  <div class="panel">
+    <div>🎁 BÜYÜK ÖDÜL İLERLEMESİ</div>
+    <div class="barWrap"><div id="bigBar" class="barFill"></div></div>
+    <div id="bigText">Yeni tur başladı</div>
+  </div>
+
+  <div class="panel" id="todayCountPanel">
+    🎉 BUGÜN 0 ÖDÜL / SONUÇ OLUŞTU
+  </div>
+
+  <div class="panel" id="readyCountPanel">
+    🎯 ŞU AN 0 MASA ÇEVİREBİLİR
+  </div>
+
+<div class="panel">
+  <div>💰 AKTİF TOPLAM</div>
+  <div id="aktifToplamPanelValue" class="bigValue">0 ₺</div>
+</div>
+
+<div class="panel">
+  <div>🖥️ EVERYCAFE GERÇEK GELİR</div>
+  <div id="bugunGelirPanelValue" class="bigValue">0 ₺</div>
+</div>
+
+<div class="panel">
+  <div>🕐 SON 1 SAAT</div>
+  <div id="saatlikGelirPanelValue" class="bigValue">0 ₺</div>
+</div>
+
+</div> <!-- topPanels kapanıyor -->
+
+<div id="container">
+  <div id="masalar"></div>
+
+  <div id="winners">
+    <div id="luckyBox">
+      <div id="crown">👑</div>
+      <div id="luckyTitle">BUGÜNÜN EN ŞANSLI MASASI</div>
+      <div id="luckyMasa">Yükleniyor...</div>
+    </div>
+
+    <h2>🎉 Son Kazananlar</h2>
+    <div id="winnerList"></div>
+  </div>
+</div>
+
+<div id="ticker">
+  <div id="tickerText">🎯 Çarkı çevir ödül kazan!</div>
+</div>
+
+<script>
+const MASA_SAYISI = 23;
+
+/* --- Ses --- */
+let soundUnlocked = false;
+let speechUnlocked = false;
+
+const DEFAULT_EFFECT_VOLUME = 35;
+const DEFAULT_SPEECH_VOLUME = 35;
+
+let effectVolumeLevel = DEFAULT_EFFECT_VOLUME / 100;
+let speechVolumeLevel = DEFAULT_SPEECH_VOLUME / 100;
+
+/* --- Konuşma (TTS) --- */
+let pickedVoice = null;
+const lastAnnounced = {};
+const ANNOUNCE_COOLDOWN_MS = 90 * 1000;
+const speechQueue = [];
+let speechBusy = false;
+const SPEECH_QUEUE_MAX = 6;
+let volumeHideTimer = null;
+
+function getStoredInt(key, fallback){
+  try{
+    const v = parseInt(localStorage.getItem(key), 10);
+    if(Number.isFinite(v) && v >= 0 && v <= 100) return v;
+  }catch(e){}
+  return fallback;
+}
+
+function setStoredInt(key, value){
+  try{
+    localStorage.setItem(key, String(value));
+  }catch(e){}
+}
+
+function showVolumePanel(){
+  const p = document.getElementById("volumePanel");
+  if(!p) return;
+  p.classList.add("show");
+  autoHideVolumePanel();
+}
+
+function hideVolumePanel(){
+  const p = document.getElementById("volumePanel");
+  if(!p) return;
+  p.classList.remove("show");
+  if(volumeHideTimer) clearTimeout(volumeHideTimer);
+}
+
+function autoHideVolumePanel(){
+  if(volumeHideTimer) clearTimeout(volumeHideTimer);
+  volumeHideTimer = setTimeout(()=>{
+    hideVolumePanel();
+  }, 4000);
+}
+
+function applyEffectVolume(percent){
+  const p = Math.max(0, Math.min(100, parseInt(percent, 10) || 0));
+  effectVolumeLevel = p / 100;
+
+  const sndWin = document.getElementById("sndWin");
+  const sndBig = document.getElementById("sndBig");
+
+  if(sndWin) sndWin.volume = effectVolumeLevel;
+  if(sndBig) sndBig.volume = effectVolumeLevel;
+
+  const slider = document.getElementById("effectSlider");
+  const value = document.getElementById("effectValue");
+
+  if(slider) slider.value = p;
+  if(value) value.textContent = "Efekt: %" + p;
+
+  setStoredInt("monitor_effect_volume_percent", p);
+}
+
+function applySpeechVolume(percent){
+  const p = Math.max(0, Math.min(100, parseInt(percent, 10) || 0));
+  speechVolumeLevel = p / 100;
+
+  const slider = document.getElementById("speechSlider");
+  const value = document.getElementById("speechValue");
+
+  if(slider) slider.value = p;
+  if(value) value.textContent = "Konuşma: %" + p;
+
+  setStoredInt("monitor_speech_volume_percent", p);
+}
+
+function initVolumeUI(){
+  const eff = getStoredInt("monitor_effect_volume_percent", DEFAULT_EFFECT_VOLUME);
+  const spk = getStoredInt("monitor_speech_volume_percent", DEFAULT_SPEECH_VOLUME);
+
+  applyEffectVolume(eff);
+  applySpeechVolume(spk);
+
+  const effectSlider = document.getElementById("effectSlider");
+  const speechSlider = document.getElementById("speechSlider");
+  const toggleBtn = document.getElementById("soundPanelToggle");
+  const panel = document.getElementById("volumePanel");
+
+  if(effectSlider){
+    effectSlider.addEventListener("input", (e)=>{
+      applyEffectVolume(e.target.value);
+      showVolumePanel();
+    });
+  }
+
+  if(speechSlider){
+    speechSlider.addEventListener("input", (e)=>{
+      applySpeechVolume(e.target.value);
+      showVolumePanel();
+    });
+  }
+
+  if(toggleBtn){
+    toggleBtn.addEventListener("click", ()=>{
+      if(panel.classList.contains("show")) hideVolumePanel();
+      else showVolumePanel();
+    });
+  }
+
+  if(panel){
+    panel.addEventListener("mouseenter", ()=>{
+      if(volumeHideTimer) clearTimeout(volumeHideTimer);
+    });
+    panel.addEventListener("mouseleave", ()=>{
+      autoHideVolumePanel();
+    });
+  }
+}
+
+function playSound(elId){
+  if(!soundUnlocked) return;
+  const a = document.getElementById(elId);
+  if(!a) return;
+  try{
+    a.currentTime = 0;
+    const p = a.play();
+    if(p && typeof p.catch === "function") p.catch(()=>{});
+  }catch(e){}
+}
+
+function testAudioNow(){
+  showVolumePanel();
+
+  if(!soundUnlocked){
+    soundUnlocked = true;
+    speechUnlocked = true;
+    const btn = document.getElementById("soundBtn");
+    btn.textContent = "🔊 SES AÇIK";
+    btn.classList.add("on");
+  }
+
+  playSound("sndWin");
+  enqueueSpeak("Test anonsu. Ses ayarı uygulanmıştır.");
+}
+
+function isBigReward(reward){
+  const r = String(reward || "").toLowerCase();
+  return r.includes("60");
+}
+
+function pickTurkishFemaleVoice(){
+  const vs = window.speechSynthesis?.getVoices?.() || [];
+  if(!vs.length) return null;
+
+  const tr = vs.filter(v => (v.lang || "").toLowerCase().startsWith("tr"));
+  const list = tr.length ? tr : vs;
+
+  const score = (v) => {
+    const n = (v.name || "").toLowerCase();
+    const l = (v.lang || "").toLowerCase();
+    let s = 0;
+    if(l.startsWith("tr")) s += 50;
+    if(n.includes("female") || n.includes("kadın") || n.includes("kadin")) s += 30;
+    if(n.includes("google")) s += 10;
+    return s;
+  };
+
+  return list.sort((a,b)=> score(b) - score(a))[0] || null;
+}
+
+function initVoices(){
+  if(!window.speechSynthesis) return;
+  pickedVoice = pickTurkishFemaleVoice();
+}
+
+if(window.speechSynthesis){
+  window.speechSynthesis.onvoiceschanged = () => initVoices();
+  initVoices();
+}
+
+function speakTR(text){
+  if(!speechUnlocked) return;
+  if(!window.speechSynthesis) return;
+
+  try{
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "tr-TR";
+    if(pickedVoice) u.voice = pickedVoice;
+    u.rate = 1.0;
+    u.pitch = 1.1;
+    u.volume = speechVolumeLevel;
+
+    u.onend = () => {
+      speechBusy = false;
+      processSpeechQueue();
+    };
+    u.onerror = () => {
+      speechBusy = false;
+      processSpeechQueue();
+    };
+
+    speechBusy = true;
+    window.speechSynthesis.speak(u);
+  }catch(e){
+    speechBusy = false;
+  }
+}
+
+function processSpeechQueue(){
+  if(!speechUnlocked) return;
+  if(speechBusy) return;
+  if(!speechQueue.length) return;
+  const txt = speechQueue.shift();
+  speakTR(txt);
+}
+
+function enqueueSpeak(text){
+  if(!speechUnlocked) return;
+
+  const last = speechQueue[speechQueue.length - 1];
+  if(last === text) return;
+
+  speechQueue.push(text);
+  while(speechQueue.length > SPEECH_QUEUE_MAX) speechQueue.shift();
+
+  processSpeechQueue();
+}
+
+document.getElementById("soundBtn").addEventListener("click", ()=>{
+  soundUnlocked = true;
+  speechUnlocked = true;
+  initVoices();
+
+  playSound("sndWin");
+
+  const btn = document.getElementById("soundBtn");
+  btn.textContent = "🔊 SES AÇIK";
+  btn.classList.add("on");
+
+  showVolumePanel();
+  processSpeechQueue();
+});
+
+/* --- Promo --- */
+let toastTimer = null;
+function showPromo(title, text){
+  const t = document.getElementById("promoToast");
+  document.getElementById("promoTitle").textContent = title;
+  document.getElementById("promoText").textContent = text;
+  t.classList.remove("show");
+  void t.offsetWidth;
+  t.classList.add("show");
+
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove("show"), 4500);
+}
+
+const PROMOS = [
+  ["🎯 ŞANSINI DENE!", "Çarkı çevir, ödül kazan!"],
+  ["🎁 SÜRPRİZ ÖDÜLLER", "Hazır olunca hemen çevir!"],
+  ["🔥 BUGÜN DAHA ŞANSLISIN", "Denemeden çıkma!"],
+  ["⭐ KAFEPİN", "Şansını dene, ödül kap!"],
+  ["⭐ KAFEPİN", "İyi eğlenceler dileriz!"],
+  ["⭐ KAFEPİN", "Üyelik açtır, indirimden yararlan!"],
+  ["⭐ DUYURU", "Üyelere özel normal masa 40 TL, VIP masa 60 TL!"],
+  ["⭐ DUYURU", "İlk üyelik 200 TL, sonrası en az yükleme 100 TL!"],
+  ["⭐ DUYURU", "Üyelere kademeli bonus sistemi vardır!"]
+];
+
+let promoIndex = 0;
+function rotatePromo(){
+  const p = PROMOS[promoIndex++ % PROMOS.length];
+  showPromo(p[0], p[1]);
+}
+
+let tickerIndex = 0;
+function nextTickerText(){
+  const p = PROMOS[tickerIndex++ % PROMOS.length];
+  const el = document.getElementById("tickerText");
+  if(!el) return;
+  el.textContent = p[1];
+}
+
+function escapeHtml(value){
+  return String(value ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+/* --- Masaları ekrana sığdır --- */
+function fitMasalar(){
+  const container = document.getElementById("container");
+  const wrap = document.getElementById("masalar");
+  const header = document.getElementById("header");
+  const topPanels = document.getElementById("topPanels");
+  const ticker = document.getElementById("ticker");
+
+  if(!container || !wrap) return;
+
+  const headerH = header ? header.offsetHeight : 0;
+  const panelsH = topPanels ? topPanels.offsetHeight : 0;
+  const tickerH = ticker ? ticker.offsetHeight : 60;
+
+  const SAFE = 22;
+  const usable = Math.floor(window.innerHeight - headerH - panelsH - tickerH - SAFE);
+
+  if(usable > 0){
+    container.style.height = usable + "px";
+  }
+
+  const rect = wrap.getBoundingClientRect();
+  const W = Math.floor(rect.width);
+  const H = Math.floor(usable - 2);
+
+  const gap = 12;
+  const pad = 12;
+
+  const cards = Array.from(wrap.querySelectorAll(".card"));
+  const activeCount = Math.max(cards.length, 1);
+  // TV/Chromecast görünümü %175 hedefiyle hesaplanır. Sabit kart genişliği
+  // kullanılmaz; masa sayısı arttıkça sütun ve yazılar birlikte küçülür.
+  const TV_TARGET_SCALE = 1.75;
+  const COLS =
+    activeCount <= 4
+      ? activeCount
+      : activeCount <= 12
+        ? 4
+        : activeCount <= 18
+          ? 5
+          : 6;
+  const ROWS = Math.ceil(activeCount / COLS);
+
+  const cellW = Math.floor((W - (COLS-1)*gap - pad*2) / COLS);
+  const cellH = Math.floor((H - (ROWS-1)*gap - pad*2) / ROWS);
+  const cellHFinal = Math.max(42, cellH - 2);
+  wrap.style.gridTemplateColumns = `repeat(${COLS}, minmax(0, 1fr))`;
+  wrap.style.gridTemplateRows = `repeat(${ROWS}, minmax(0, 1fr))`;
+  wrap.style.justifyContent = "stretch";
+  wrap.style.alignContent = activeCount <= 2 ? "center" : "stretch";
+
+  cards.forEach(c=>{
+    c.style.height = cellHFinal + "px";
+    const masaEl = c.querySelector(".masa");
+    const timeEl = c.querySelector(".time");
+    const statusEl = c.querySelector(".statusText");
+    const feeEl = c.querySelector(".fee");
+    const computerFeeEl = c.querySelector(".computer-fee");
+    const productFeeEl = c.querySelector(".product-fee");
+    const totalFeeEl = c.querySelector(".total-fee");
+    const networkEl = c.querySelector(".network");
+    const increaseEl = c.querySelector(".increase");
+    const diagnosticsEl = c.querySelector(".diagnostics");
+
+    const hasProducts = !!productFeeEl;
+    // Yüksek TV ölçeğinde az masa daha büyük görünür; ekrana yeni kartlar
+    // geldikçe en dar kenar baz alınarak taşmadan küçülür.
+    const scale = Math.max(.34, Math.min(
+      TV_TARGET_SCALE,
+      cellHFinal / 300,
+      cellW / (hasProducts ? 245 : 200)
+    ));
+    const size = (min, preferred) => Math.max(min, Math.round(Math.min(preferred * TV_TARGET_SCALE, preferred * scale)));
+    if(masaEl) masaEl.style.fontSize = size(12, hasProducts ? 36 : 50) + "px";
+    if(timeEl){
+      timeEl.style.fontSize = size(11, hasProducts ? 35 : 54) + "px";
+      timeEl.style.lineHeight = hasProducts ? "1.08" : "1.3";
+    }
+    if(statusEl) statusEl.style.fontSize = size(11, hasProducts ? 28 : 43) + "px";
+    if(feeEl) feeEl.style.fontSize = "inherit";
+    if(computerFeeEl) computerFeeEl.style.fontSize = size(12, hasProducts ? 32 : 58) + "px";
+    if(productFeeEl) productFeeEl.style.fontSize = size(11, 27) + "px";
+    if(totalFeeEl) totalFeeEl.style.fontSize = size(12, 35) + "px";
+    if(networkEl) networkEl.style.fontSize = size(10, hasProducts ? 23 : 40) + "px";
+    if(increaseEl) increaseEl.style.fontSize = size(10, hasProducts ? 21 : 34) + "px";
+    if(diagnosticsEl) diagnosticsEl.style.fontSize = size(11, hasProducts ? 20 : 32) + "px";
+  });
+}
+
+/* COUNTDOWN */
+function getNextCafeReset(){
+  const now = new Date();
+  const reset = new Date();
+  reset.setHours(20,0,0,0);
+  if(now >= reset) reset.setDate(reset.getDate()+1);
+  return reset.getTime();
+}
+
+function updateCountdown(){
+  const box = document.getElementById("countdownBox");
+  const now = Date.now();
+  const target = getNextCafeReset();
+  let diff = Math.floor((target-now)/1000);
+  if(diff < 0) diff = 0;
+
+  const h = Math.floor(diff/3600);
+  const m = Math.floor((diff%3600)/60);
+  const s = diff%60;
+
+  box.innerText =
+    "Kafe günü sıfırlanmasına: " +
+    String(h).padStart(2,"0")+":"+
+    String(m).padStart(2,"0")+":"+
+    String(s).padStart(2,"0");
+
+  if(diff <= 600) box.classList.add("countdownDanger");
+  else box.classList.remove("countdownDanger");
+}
+setInterval(updateCountdown,1000);
+updateCountdown();
+
+let lastMonitorSuccess = 0;
+function markConnection(ok){
+  const el = document.getElementById("connectionStatus");
+  if(!el) return;
+
+  if(ok){
+    lastMonitorSuccess = Date.now();
+    el.textContent = "● BAĞLI";
+    el.classList.remove("offline");
+    return;
+  }
+
+  el.textContent = "● BAĞLANTI YOK";
+  el.classList.add("offline");
+}
+
+/* MASALAR */
+// EveryCafe kapanışı sonrası, masanın son doğru görünümü kısa süre korunur.
+// Süreli/süresiz ayrımı yoktur; bekleme veya 0 TL görünümü oluşmaz.
+const CLOSED_CARD_HOLD_MS = 40 * 1000;
+const lastActiveCards = {};
+const recentlyClosedCards = {};
+
+async function loadMasalar(){
+  try{
+
+    const r = await fetch("/api/masalar", { cache:"no-store" });
+    if(!r.ok) throw new Error("Masalar alınamadı");
+    const data = await r.json();
+
+    const liveRes = await fetch("/debug/live", { cache:"no-store" });
+    if(!liveRes.ok) throw new Error("Canlı veri alınamadı");
+    const liveData = await liveRes.json();
+
+    document.getElementById("aktifToplamPanelValue").innerText =
+      (liveData.totalRevenue || 0).toLocaleString("tr-TR") + " ₺";
+
+    document.getElementById("saatlikGelirPanelValue").innerText =
+      (liveData.thisHourRevenue || 0).toLocaleString("tr-TR") + " ₺";
+
+    const statsRes = await fetch("/admin/stats", { cache:"no-store" });
+    if(!statsRes.ok) throw new Error("İstatistik alınamadı");
+    const stats = await statsRes.json();
+    const sourceRes = await fetch("/admin/everycafe/source-today", { cache:"no-store" });
+    const sourceData = sourceRes.ok ? await sourceRes.json() : null;
+
+    // Monitor gelir kartı yalnız EveryCafe'nin salt-okunur BUGÜN gerçek kaynağını gösterir.
+    // KafePin doğrudan satış ve çark maliyeti bu değeri değiştirmez.
+    const bugunEveryCafeGelir = Number(sourceData?.today?.total) || 0;
+    const saatlikEveryCafeGelir = Number(sourceData?.lastHour?.total) || 0;
+
+    document.getElementById("bugunGelirPanelValue").innerText =
+      bugunEveryCafeGelir.toLocaleString("tr-TR") + " ₺";
+    document.getElementById("saatlikGelirPanelValue").innerText =
+      saatlikEveryCafeGelir.toLocaleString("tr-TR") + " ₺";
+
+    const map = {};
+    (data || []).forEach(m => map[m.masa] = m);
+
+    const liveMap = {};
+    (liveData.masalar || []).forEach(x => {
+      liveMap[x.masa] = x;
+    });
+
+    if(!window.__prevDurum) window.__prevDurum = {};
+    const prev = window.__prevDurum;
+
+  const html = [];
+for(let i=1; i<=MASA_SAYISI; i++){
+
+  let m = map[i];
+  let heldCard = null;
+  // Sunucunun doğruladığı normal kapanışta, sayfa yenilense bile son tutarı
+  // 40 saniye göster. Süre sonunda kart hiç render edilmez.
+  if(m && m.closedByEveryCafe && !m.freeClosed){
+    delete lastActiveCards[i];
+    delete recentlyClosedCards[i];
+    const closedAt = Number(m.closedAt || Date.now());
+    if(Date.now() - closedAt < CLOSED_CARD_HOLD_MS){
+      const computerTotal = Math.max(0, Number(m.closedComputerTotal) || 0);
+      const productTotal = Math.max(0, Number(m.closedProductTotal) || 0);
+      const total = Math.max(0, Number(m.closedTotal) || (computerTotal + productTotal));
+      html.push(`
+        <div class="card sure-bitti" style="background:linear-gradient(145deg,#374151,#182230)">
+          <div class="masa">Masa ${i}</div>
+          <div class="time">
+            <span class="statusText">HESAP KAPANDI</span>
+            <br><span class="computer-fee">💻 Bilgisayar: ${computerTotal.toFixed(2)} ₺</span>
+            <br><span class="product-fee">☕ Ürün: ${productTotal.toFixed(2)} ₺</span>
+            <br><span class="total-fee">TOPLAM: ${total.toFixed(2)} ₺</span>
+          </div>
+        </div>
+      `);
+    }
+    prev[i] = "kapali";
+    continue;
+  }
+  // Kesin EveryCafe kapanışı, istemcinin hemen ardından dönen bekleme
+  // pinginden ayrıdır. Ücretsiz kapanışta eski ücret yerine yalnızca durum
+  // gösterilir; ardından kart tamamen kaybolur.
+  if(m && m.closedByEveryCafe){
+    if(m.freeClosed){
+      delete lastActiveCards[i];
+      delete recentlyClosedCards[i];
+      const closedAt = Number(m.closedAt || Date.now());
+      if(Date.now() - closedAt < CLOSED_CARD_HOLD_MS){
+        html.push(`
+          <div class="card sure-bitti free-masa" style="background:linear-gradient(145deg,#087b70,#123e52)">
+            <div class="masa">Masa ${i}</div>
+            <div class="time"><span class="statusText">ÜCRETSİZ KAPATILDI</span></div>
+          </div>
+        `);
+      }
+      prev[i] = "kapali";
+      continue;
+    }
+    m = null;
+  }
+
+  if(m && m.durum !== "kapali"){
+    lastActiveCards[i] = { m: {...m}, live: {...(liveMap[i] || {})} };
+    delete recentlyClosedCards[i];
+  }
+
+  if(!m || m.durum === "kapali"){
+    const snapshot = lastActiveCards[i];
+    if(snapshot && !recentlyClosedCards[i]){
+      recentlyClosedCards[i] = {...snapshot, until: Date.now() + CLOSED_CARD_HOLD_MS};
+      delete lastActiveCards[i];
+    }
+    heldCard = recentlyClosedCards[i];
+    if(!heldCard || Date.now() >= heldCard.until){
+      delete recentlyClosedCards[i];
+      prev[i] = "kapali";
+      continue;
+    }
+    m = {...heldCard.m, durum:"sureBitti", kalan:0};
+  }
+
+  // EveryCafe bekleme ekranÄ±: masa henÃ¼z Windows'a geÃ§medi. Bilerek
+  // yalÄ±n tutuyoruz; fiyat, Ã§ark sÃ¼resi veya ping bilgisi yoktur.
+  if(m && m.waitingOnly){
+    html.push(`
+      <div class="card everycafe-waiting-card" style="background:linear-gradient(145deg,#30445d,#182330)">
+        <div class="masa">Masa ${i}</div>
+        <div class="time"><span class="statusText">BEKLEMEDE</span></div>
+      </div>
+    `);
+    prev[i] = m.durum;
+    continue;
+  }
+
+      if(m && m.durum === "hazir"){
+        const before = prev[i];
+        const nowTs = Date.now();
+
+        if(before !== "hazir"){
+          const last = lastAnnounced[i] || 0;
+          if(nowTs - last > ANNOUNCE_COOLDOWN_MS){
+            lastAnnounced[i] = nowTs;
+            enqueueSpeak("Masa " + i + " çevirme hakkınız gelmiştir, çevirebilirsiniz.");
+          }
+        }
+      }
+
+      let cls = "kapali";
+      let text = "Kapalı";
+      const live = heldCard ? heldCard.live : (liveMap[i] || {});
+      const isFreeMasa = live.free === true;
+
+      if(m){
+        if(m.durum === "kapali"){ cls = "kapali"; text = "Kapalı"; }
+        if(m.durum === "bagli"){ cls = "bagli"; text = "Bağlı"; }
+        if(m.durum === "bekliyor"){
+          cls = "aktif";
+          const dk = Math.floor((m.kalan || 0)/60000);
+          text = dk + " dk";
+        }
+        if(m.durum === "hazir"){ cls = "hazir"; text = "Çevirebilir"; }
+        if(m.durum === "sureBitti"){ cls = "sure-bitti"; text = "SÜRE BİTTİ"; }
+      }
+      if(m && isFreeMasa){
+        cls += " free-masa";
+        text = "ÜCRETSİZ MASA";
+      }
+
+const masaHue = (i * 47) % 360;
+const masaBackground =
+  isFreeMasa
+  ? "linear-gradient(145deg,#087b70,#123e52)"
+  : `linear-gradient(145deg,
+    hsl(${masaHue} 58% 38%),
+    hsl(${masaHue} 65% 20%)
+  )`;
+
+const avgPingMs = Number(live.avgPingMs || 0);
+const lastSeenAgoSec = live.lastSeenAgoSec != null ? Number(live.lastSeenAgoSec) : null;
+const connectionWarning =
+  avgPingMs > 6000 || (lastSeenAgoSec != null && lastSeenAgoSec > 20);
+const pingText = avgPingMs > 0 ? Math.round(avgPingMs) + " ms" : "-";
+const lastPingText = lastSeenAgoSec != null ? Math.max(0, lastSeenAgoSec) + " sn" : "-";
+const rewardText = live.lastReward && live.lastReward !== "-" ? live.lastReward : "Ödül yok";
+const lockText = live.locked ? " • 🔒 Hazırlanıyor" : "";
+const computerFee = isFreeMasa ? 0 : Number(live.feeAdj ?? live.fee ?? 0);
+const productTotal = Number(live.productTotal || 0);
+const totalWithProducts = Number(live.totalWithProducts ?? (computerFee + productTotal));
+const productLines = `
+<br><span class="product-fee" style="color:#ffe082;font-weight:700;text-shadow:0 2px 4px rgba(0,0,0,.9);">☕ Ürün: ${productTotal.toFixed(2)} ₺</span>
+<br><span class="total-fee" style="color:#7dff7d;font-weight:900;text-shadow:0 2px 4px rgba(0,0,0,.9);">TOPLAM: ${totalWithProducts.toFixed(2)} ₺</span>`;
+
+html.push(`
+  <div class="card ${cls}${connectionWarning ? " connection-warning" : ""}" style="background:${masaBackground}">
+    <div class="masa">Masa ${i}</div>
+
+    <div class="time">
+      <span class="statusText">${text}</span>
+      <br>
+<span class="network" style="
+  color:${(m?.netSpeed ?? 0) < 1000 ? '#ff8080' : '#fff'};
+  font-weight:700;
+  white-space:nowrap;
+  text-shadow:0 2px 4px rgba(0,0,0,.9);
+">
+  🌐 ${m?.netSpeed ?? 0} Mbps
+</span>
+
+<br>
+
+<span class="fee" style="
+  color:#fff;
+  font-weight:700;
+  text-shadow:0 2px 4px rgba(0,0,0,.9);
+">
+<span class="computer-fee">${isFreeMasa ? "🎁 Bilgisayar: ÜCRETSİZ" : `💻 Bilgisayar: ${computerFee.toFixed(2)} ₺`}</span>${productLines}
+</span>
+<br>
+
+<span class="increase" style="
+  color:#fff;
+  font-weight:700;
+  text-shadow:0 2px 4px rgba(0,0,0,.9);
+">
+⏳ ${
+  liveMap[i]?.nextIncreaseInSec != null
+    ? Math.floor(liveMap[i].nextIncreaseInSec / 60) + " dk sonra"
+    : "-"
+}
+</span>
+    </div>
+
+    <div class="diagnostics${connectionWarning ? " warn" : ""}">
+      ${connectionWarning ? "⚠️ BAĞLANTI YAVAŞ • " : ""}📡 Ping: ${escapeHtml(pingText)} • 🕒 Son ping: ${escapeHtml(lastPingText)}
+      <span class="rewardLine">🎁 ${escapeHtml(rewardText)}${lockText}</span>
+    </div>
+
+  </div>
+`);
+
+      prev[i] = m ? m.durum : "kapali";
+    }
+
+    document.getElementById("masalar").innerHTML = html.join("");
+    fitMasalar();
+    markConnection(true);
+  }catch(e){
+    markConnection(false);
+    console.log("Monitor bağlantı hatası:", e);
+  }
+}
+
+/* LUCKY */
+async function loadLucky(){
+  try{
+    const r = await fetch("/monitor/lucky", { cache:"no-store" });
+    const d = await r.json();
+    document.getElementById("luckyMasa").innerHTML =
+      "Masa " + d.masa + "<br>(" + d.adet + " ödül)";
+  }catch(e){}
+}
+
+/* WINNERS */
+async function loadWinners(){
+  let data = null;
+
+  try{
+    const r1 = await fetch("/monitor/list", { cache:"no-store" });
+    if(r1.ok) data = await r1.json();
+  }catch(e){}
+
+  if(!data){
+    try{
+      const r2 = await fetch("/admin/list", { cache:"no-store" });
+      if(r2.ok) data = await r2.json();
+    }catch(e){}
+  }
+
+  const list = (data || []).slice(0,5);
+  document.getElementById("winnerList").innerHTML = list.map(w=>`
+    <div class="win">Masa ${escapeHtml(w.masa)}<br>${escapeHtml(w.reward)}</div>
+  `).join("");
+}
+
+/* PANELS */
+async function loadPanels(){
+  try{
+    const [statsRes, masalarRes, sourceRes] = await Promise.all([
+      fetch("/admin/stats", { cache:"no-store" }),
+      fetch("/api/masalar", { cache:"no-store" }),
+      fetch("/admin/everycafe/source-today", { cache:"no-store" })
+    ]);
+
+    const s = await statsRes.json();
+    const sourceData = sourceRes.ok ? await sourceRes.json() : null;
+document.getElementById("bugunGelirPanelValue").innerText =
+  (Number(sourceData?.today?.total) || 0).toLocaleString("tr-TR") + " ₺";
+    const masalar = await masalarRes.json();
+
+    const bugunToplam = parseInt(s.bugunToplam || 0, 10) || 0;
+    document.getElementById("todayCountPanel").innerText =
+      "🎉 BUGÜN " + bugunToplam + " ÖDÜL / SONUÇ OLUŞTU";
+
+    const readyCount = (masalar || []).filter(m => m && m.durum === "hazir").length;
+    document.getElementById("readyCountPanel").innerText =
+      "🎯 ŞU AN " + readyCount + " MASA ÇEVİREBİLİR";
+
+    const count = parseInt(s.globalSpinCount || 0, 10) || 0;
+    const hedefNormal = parseInt(s.buyukOdulHedefNormal || 14, 10) || 14;
+    const hedefVip = parseInt(s.buyukOdulHedefVip || 10, 10) || 10;
+    const hedef = parseInt(s.buyukOdulHedefMin || Math.min(hedefNormal, hedefVip), 10) || Math.min(hedefNormal, hedefVip);
+
+    const mod = (count % hedef);
+    const step = (count === 0) ? 0 : (mod === 0 ? hedef : mod);
+    const pct = Math.max(0, Math.min(100, Math.round((step / hedef) * 100)));
+
+    document.getElementById("bigBar").style.width = pct + "%";
+
+    const hedefInfo = `VIP: ${hedefVip} | Normal: ${hedefNormal}`;
+
+    document.getElementById("bigText").innerHTML =
+      (count === 0)
+        ? `Yeni tur başladı<br><span style="font-size:18px;opacity:.9">${hedefInfo}</span>`
+        : `${step} / ${hedef} (${pct}%)<br><span style="font-size:18px;opacity:.9">${hedefInfo}</span>`;
+  }catch(e){}
+}
+
+/* ÖDÜL GELİNCE: promo + ses */
+let lastSeenId = null;
+
+function isEmptyReward(reward){
+  const r = String(reward || "").trim().toLocaleLowerCase("tr-TR");
+  return [
+    "şansına küs",
+    "bir dahaki sefere",
+    "tekrar dene :)",
+    "tekrar dene",
+    "boş",
+    "bos"
+  ].includes(r);
+}
+
+async function checkLast(){
+  try{
+    const r = await fetch("/monitor/last", { cache:"no-store" });
+    const row = await r.json();
+
+    if(row && row.id){
+      if(lastSeenId && row.id !== lastSeenId){
+        const emptyReward = isEmptyReward(row.reward);
+
+        // Boş sonuçlarda yalnız ödül bildirimi/efekti/TTS susturulur.
+        // Monitör teması, masa anonsları ve diğer davranışlar aynen korunur.
+        if(!emptyReward){
+          showPromo("🎉 ÖDÜL ÇIKTI!", "Masa " + row.masa + " — " + row.reward);
+
+          if(isBigReward(row.reward)) playSound("sndBig");
+          else playSound("sndWin");
+
+          const rewardAnnouncement =
+            "Masa " + row.masa + ", " + String(row.reward || "ödül") + " kazandı.";
+
+          // Önce ödül efekti duyulsun, ardından masa ve ödül sesli söylensin.
+          setTimeout(() => {
+            enqueueSpeak(rewardAnnouncement);
+          }, 1000);
+        }
+
+        loadPanels();
+        loadWinners();
+        loadLucky();
+      }
+      lastSeenId = row.id;
+    }
+  }catch(e){}
+}
+
+/* INIT */
+initVolumeUI();
+fitMasalar();
+loadMasalar();
+loadWinners();
+loadLucky();
+loadPanels();
+checkLast();
+
+window.addEventListener("resize", fitMasalar);
+
+setInterval(loadMasalar, 3000);
+setInterval(loadWinners, 3000);
+setInterval(loadLucky, 5000);
+setInterval(loadPanels, 4000);
+setInterval(checkLast, 2000);
+
+setTimeout(rotatePromo, 3500);
+setInterval(rotatePromo, 25000);
+
+nextTickerText();
+const tickerEl = document.getElementById("tickerText");
+if(tickerEl){
+  tickerEl.addEventListener("animationiteration", nextTickerText);
+}
+</script>
+
+</body>
+</html>
