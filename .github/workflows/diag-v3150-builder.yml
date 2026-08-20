@@ -1,0 +1,56 @@
+name: Diagnose KafePin v3.1.50 TEST builder
+
+on:
+  push:
+    branches:
+      - test/v3.1.50-yazici-gelir
+    paths:
+      - '.github/workflows/diag-v3150-builder.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run embedded builder and capture log
+        shell: bash
+        run: |
+          set +e
+          mkdir -p dev
+          python3 - <<'PY' > dev/v3150-build.log 2>&1
+          from pathlib import Path
+          import textwrap, traceback
+          try:
+              src=Path('.github/workflows/build-v3150-test.yml').read_text(encoding='utf-8')
+              marker="python3 - <<'PY'\n"
+              a=src.index(marker)+len(marker)
+              b=src.index("\n          PY\n\n      - name: Static checks",a)
+              code=textwrap.dedent(src[a:b])
+              print('EXTRACTED_LINES', len(code.splitlines()))
+              compile(code,'build_v3150_embedded.py','exec')
+              print('COMPILE_OK')
+              exec(compile(code,'build_v3150_embedded.py','exec'),{})
+              print('EXEC_OK')
+          except Exception:
+              traceback.print_exc()
+              raise
+          PY
+          rc=$?
+          echo "RETURN_CODE=$rc" >> dev/v3150-build.log
+          if [ -f KafePin-Pro-Update-v3.1.50.zip ]; then
+            ls -l KafePin-Pro-Update-v3.1.50.zip >> dev/v3150-build.log
+            sha256sum KafePin-Pro-Update-v3.1.50.zip >> dev/v3150-build.log
+          fi
+          git config user.name 'KafePin Test Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -f dev/v3150-build.log
+          if [ -f KafePin-Pro-Update-v3.1.50.zip ]; then
+            git add KafePin-Pro-Update-v3.1.50.zip KafePin-Pro-Update-v3.1.50.sha256.txt latest-test.branch.json
+          fi
+          git commit -m 'test: v3.1.50 builder diagnostic' || true
+          git push origin HEAD:test/v3.1.50-yazici-gelir
+          exit 0
