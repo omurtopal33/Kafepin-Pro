@@ -16,43 +16,53 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract Yazici PRO text sources
+      - name: Extract Yazici PRO and update text sources
         shell: bash
         run: |
           set -euo pipefail
           rm -rf dev/inspect-v3149
-          mkdir -p dev/inspect-v3149
+          mkdir -p dev/inspect-v3149/root
           python3 - <<'PY'
           from pathlib import Path
-          import io, zipfile, re, json
+          import io, zipfile, re
           root = Path('KafePin-Pro-Update-v3.1.49.zip')
           report=[]
+          out=Path('dev/inspect-v3149')
           with zipfile.ZipFile(root) as z:
               names=z.namelist()
-              report.append('ROOT MATCHES:')
-              matches=[n for n in names if re.search(r'yazici|printer|17891', n, re.I)]
-              report.extend(matches)
+              report.append('ROOT FILES:')
+              report.extend(names)
+              for n in names:
+                  if not n.lower().endswith(('.py','.html','.js','.json','.txt','.ps1','.cmd','.css','.md')):
+                      continue
+                  try: raw=z.read(n)
+                  except Exception: continue
+                  text=None
+                  for enc in ('utf-8-sig','cp1254','latin1'):
+                      try: text=raw.decode(enc); break
+                      except Exception: pass
+                  if text is None: continue
+                  safe=re.sub(r'[^A-Za-z0-9._-]+','_',n).strip('_')
+                  (out/'root'/safe).write_text(text,encoding='utf-8')
               nested=[n for n in names if n.lower().endswith('.zip') and re.search(r'yazici|printer', n, re.I)]
               report.append('NESTED: '+repr(nested))
-              out=Path('dev/inspect-v3149')
               for zi,nz in enumerate(nested):
                   data=z.read(nz)
                   with zipfile.ZipFile(io.BytesIO(data)) as q:
                       report.append('NESTED FILES '+nz+':')
                       report.extend(q.namelist())
                       for n in q.namelist():
-                          if not n.lower().endswith(('.py','.html','.js','.json','.txt','.ps1','.cmd','.css')):
+                          if not n.lower().endswith(('.py','.html','.js','.json','.txt','.ps1','.cmd','.css','.md')):
                               continue
                           raw=q.read(n)
                           text=None
                           for enc in ('utf-8-sig','cp1254','latin1'):
-                              try:
-                                  text=raw.decode(enc); break
+                              try: text=raw.decode(enc); break
                               except Exception: pass
                           if text is None: continue
                           safe=re.sub(r'[^A-Za-z0-9._-]+','_',n).strip('_')
                           (out/f'{zi:02d}_{safe}').write_text(text,encoding='utf-8')
-          (Path('dev/inspect-v3149')/'REPORT.txt').write_text('\n'.join(report),encoding='utf-8')
+          (out/'REPORT.txt').write_text('\n'.join(report),encoding='utf-8')
           PY
       - name: Commit inspection output
         shell: bash
@@ -64,5 +74,5 @@ jobs:
           git config user.name 'KafePin Test Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add -- dev/inspect-v3149
-          git commit -m 'test: export v3.1.49 Yazici PRO sources'
+          git commit -m 'test: export v3.1.49 update metadata'
           git push origin HEAD:test/v3.1.50-yazici-gelir
