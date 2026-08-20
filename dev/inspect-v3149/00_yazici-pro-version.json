@@ -1,0 +1,17 @@
+{
+  "product": "KafePin Yazıcı PRO",
+  "version": "3.1.49-stable",
+  "displayVersion": "v3.1.49 STABLE",
+  "releaseChannel": "stable",
+  "architecture": "separate-loopback-service",
+  "host": "127.0.0.1",
+  "port": 17891,
+  "kafepinCoreModified": false,
+  "features": [
+    "Kimlik Fotokopi: ön/arka, yan yana veya alt alta A4",
+    "Normal Tarama: tek sayfa ve çoklu sayfa PDF",
+    "Windows yazıcı ve WIA tarayıcı seçimi",
+    "PDF/JPG yalnız kullanıcı isteğiyle Belgeler\\KafePin Belgeler altında kayıt",
+    "Geçici tarama temizliği ve manuel klasör açma"
+  ]
+}

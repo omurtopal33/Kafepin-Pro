@@ -1,0 +1,22 @@
+ROOT MATCHES:
+pro-components/yazici-pro.zip
+NESTED: ['pro-components/yazici-pro.zip']
+NESTED FILES pro-components/yazici-pro.zip:
+web/app.js
+web/convert.css
+web/convert.js
+web/index.html
+web/style.css
+config.py
+convert_docx_to_pdf.ps1
+document_engine.py
+KURULUM.cmd
+open_folder.ps1
+pdf_engine.py
+print_image.ps1
+README.md
+requirements.txt
+START_YAZICI_PRO.cmd
+web_service.py
+wia_bridge.ps1
+yazici-pro-version.json
