@@ -39,3 +39,9 @@ Tek finans etkisi, kullanıcı tarafından tahsil edilmiş Teknik Servis kaydın
 - Yazıcı PRO PDF motoru/tarayıcı-yazıcı listeleme ve Teknik Servis A4 fiş akışı sahada kontrol edildi.
 
 Bu, kararlı kümülatif noktadır. Sonraki sürümler TEST güncellemesi olarak yayınlanacaktır.
+
+## Kanal ayrımı
+
+- `latest.json` yalnız STABLE kanalıdır ve v3.1.49’u gösterir.
+- Gelecek v3.1.50 TEST ve sonraki test paketleri yalnız `latest-test.json` içinde duyurulur.
+- Yeni Kafe kurucusu sadece STABLE `latest.json` dosyasını okuyarak v3.1.49’u kurar.

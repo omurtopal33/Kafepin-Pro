@@ -4,11 +4,13 @@
 
 - **v3.1.29:** Yeni Kafe kurulum temeli.
 - **v3.1.49:** Güncel **STABLE / KÜMÜLATİF** sürüm. v3.1.29’dan ara paket kurmadan doğrudan uygulanır.
-- Bundan sonraki yayınlar **TEST** güncellemesi olarak ilerler. Yeni test paketi `latest.json` üzerinden KafePin’e bildirilir.
+- Bundan sonraki yayınlar **TEST** güncellemesi olarak ilerler. TEST paketleri yalnız `latest-test.json` üzerinden bildirilir; `latest.json` yalnız STABLE sürümü gösterir ve v3.1.49’da kalır.
 
 ## Yeni Kafe kurulumu
 
 `KafePin-Pro-Yeni-Kafe-STABLE-v3.1.49.zip` içindeki mevcut Ana Sunucu ve Client EXE’leri kullanılır. Ana Sunucu kurulumu internet bağlantısıyla GitHub’daki v3.1.49 paketini tek adımda uygular. Ardından üç bağımsız bileşen ayrı ayrı sorulur:
+
+Kurulum ekranı **“KafePin Pro v3.1.49 STABLE — kurulum tabanı v3.1.29”** ifadesini gösterir. Teknik bootstrap karşılaştırması v3.1.29 ile devam eder; yalnız STABLE `latest.json` okunur.
 
 - MP3 Bot PRO (`C:\KafePinMp3BotPRO`)
 - Yazıcı PRO (`C:\KafePin\KafePinYaziciPRO`)
