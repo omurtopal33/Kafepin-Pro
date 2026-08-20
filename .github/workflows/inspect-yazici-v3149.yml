@@ -1,0 +1,54 @@
+name: Inspect Yazici PRO v3.1.49
+
+on:
+  push:
+    branches:
+      - test/v3.1.50-yazici-gelir
+    paths:
+      - '.github/workflows/inspect-yazici-v3149.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect v3.1.49 package
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import io, zipfile, re
+          root = Path('KafePin-Pro-Update-v3.1.49.zip')
+          print('ROOT_EXISTS', root.exists(), 'SIZE', root.stat().st_size if root.exists() else 0)
+          with zipfile.ZipFile(root) as z:
+              names = z.namelist()
+              print('--- ROOT MATCHES ---')
+              for n in names:
+                  if re.search(r'yazici|printer|17891', n, re.I):
+                      print(n)
+              nested = [n for n in names if n.lower().endswith('.zip') and re.search(r'yazici|printer', n, re.I)]
+              print('NESTED', nested)
+              for nz in nested:
+                  print('=== NESTED ZIP', nz, '===')
+                  data = z.read(nz)
+                  with zipfile.ZipFile(io.BytesIO(data)) as q:
+                      qnames=q.namelist()
+                      for n in qnames:
+                          print('FILE', n)
+                      print('--- TEXT CONTENT ---')
+                      for n in qnames:
+                          if n.lower().endswith(('.py','.html','.js','.json','.txt','.ps1','.cmd')):
+                              try:
+                                  raw=q.read(n)
+                                  text=raw.decode('utf-8-sig')
+                              except Exception:
+                                  try: text=raw.decode('cp1254')
+                                  except Exception: continue
+                              print(f'\n##### {n} #####\n')
+                              print(text[:30000])
+          PY
