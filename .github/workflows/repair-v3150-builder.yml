@@ -1,0 +1,34 @@
+name: Repair v3.1.50 builder
+
+on:
+  push:
+    branches:
+      - test/v3.1.50-yazici-gelir
+    paths:
+      - '.github/workflows/repair-v3150-builder.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('.github/workflows/build-v3150-test.yml')
+          t=p.read_text(encoding='utf-8')
+          t=t.replace('\nactions:\n\njobs:\n','\njobs:\n',1)
+          p.write_text(t,encoding='utf-8')
+          PY
+          git config user.name 'KafePin Test Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -- .github/workflows/build-v3150-test.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'test: fix v3.1.50 builder yaml'
+          git push origin HEAD:test/v3.1.50-yazici-gelir
