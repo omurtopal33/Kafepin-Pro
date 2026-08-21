@@ -1,11 +1,11 @@
 {
-  "version": "3.1.53",
+  "version": "3.1.54",
   "channel": "candidate",
   "stableVersion": "3.1.49",
   "baseVersion": "3.1.49",
   "cumulative": true,
-  "publishedAt": "2026-08-21T09:14:10+03:00",
-  "notes": "v3.1.53 ADAY / candidate3 — v3.1.49 STABLE tabanlı KÜMÜLATİF güncelleme. spawnSync powershell.exe ETIMEDOUT düzeltildi: Server Manager ön-kontrolünde Yazıcı PRO servis restartı, health beklemesi veya WebView2 indirmesi yapılmaz. Yazıcı PRO runtime ilk açılışta candidate3 health ile doğrulanır. WORD AÇ Office COM ile çalışır. WhatsApp Web WebView2 sekmesidir. AI metne çevirme otomatik satış oluşturmaz; satış yalnız açık onayla KafePin Doğrudan Satış'a gider. EveryCafe salt-okunur kalır. STABLE v3.1.49 olarak kalır.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.53.zip",
-  "sha256": "158f168c61b50b544395b15a579b66e9ba899409fe9a5180fafa50804d0cefe8"
+  "publishedAt": "2026-08-21T10:35:00+03:00",
+  "notes": "v3.1.54 ADAY / candidate2 — v3.1.49 STABLE tabanlı kümülatif güncelleme. İptal onay penceresini kapatır ve satış oluşturmaz; Sil Son Yazdırmalar/onay bekleyen kaydı gerçekten kaldırır; Ücretsiz korunur. Hem 'KafePin Yazıcı PRO' hem eski 'KafePin Yazici PRO' masaüstü kısayolu aynı WebView2 launcher'a zorla bağlanır. WhatsApp Web yalnız Yazıcı PRO iç sekmesinde çalışır; dış tarayıcı fallback'i yoktur. Fotoğraf Çek aynı ağda 5 dakikalık tek kullanımlık QR ile telefondan doğrudan ana makineye gönderir; diğer API'ler LAN'a kapalıdır. EveryCafe salt-okunur ve STABLE v3.1.49 kalır.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.54.zip",
+  "sha256": "7ae19d84aac7af6ebd4d867cb679435b65618ed8092922f6134080ff44a054a7"
 }
