@@ -1,6 +1,7 @@
 param(
   [string]$InstallRoot = 'C:\KafePin',
-  [switch]$NoStartUpdate
+  [switch]$NoStartUpdate,
+  [switch]$PatchOnly
 )
 $ErrorActionPreference = 'Stop'
 $mgr = Join-Path $InstallRoot 'KafePin_Manager_Ensure.ps1'
@@ -41,6 +42,7 @@ if ($errors.Count) {
   Copy-Item -LiteralPath $backup -Destination $mgr -Force
   throw ('Manager PowerShell parse hatasi; yedek geri yuklendi: ' + (($errors | ForEach-Object {$_.Message}) -join ' | '))
 }
+if($PatchOnly){ Write-Host 'KAFEPIN_MANAGER_BOOTSTRAP_PATCH_ONLY_OK'; exit 0 }
 
 $node = ''
 foreach($p in @((Join-Path $InstallRoot 'node\node.exe'),'C:\Program Files\nodejs\node.exe','C:\Program Files (x86)\nodejs\node.exe')) {
