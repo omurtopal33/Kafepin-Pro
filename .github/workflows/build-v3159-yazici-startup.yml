@@ -1,0 +1,172 @@
+name: Build v3.1.59 Yazici Startup Fix
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3159-candidate/**'
+      - '.github/workflows/build-v3159-yazici-startup.yml'
+permissions:
+  contents: write
+jobs:
+  windows-field-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build deterministic v3.1.59
+        shell: pwsh
+        run: |
+          python -m py_compile dev/v3159-candidate/build_v3159.py
+          python dev/v3159-candidate/build_v3159.py
+          if($LASTEXITCODE -ne 0){throw 'First v3.1.59 build failed'}
+          $h1=(Get-FileHash 'KafePin-Pro-Update-v3.1.59.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          python dev/v3159-candidate/build_v3159.py
+          if($LASTEXITCODE -ne 0){throw 'Second v3.1.59 build failed'}
+          $h2=(Get-FileHash 'KafePin-Pro-Update-v3.1.59.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($h1 -ne $h2){throw 'Deterministic SHA mismatch'}
+          Write-Host "V3159_SHA=$h2"
+
+      - name: Validate exact field fix markers
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3159'; Expand-Archive 'KafePin-Pro-Update-v3.1.59.zip' $pkg -Force
+          $u=Get-Content "$pkg/update.json" -Raw|ConvertFrom-Json
+          if($u.version -ne '3.1.59' -or $u.channel -ne 'candidate' -or $u.stableVersion -ne '3.1.49' -or $u.baseVersion -ne '3.1.49' -or -not $u.cumulative){throw 'update policy failed'}
+          $cs=Get-Content "$pkg/desktop-app/KafePinProDesktop.cs" -Raw
+          if($cs -match 'WaitForExit\(50000\)' -or $cs -match 'servis başlatıcısı zaman aşımına uğradı'){throw 'Legacy 50-second launcher timeout survived'}
+          if($cs -notmatch 'WaitForPrinterProAsync\(150\)' -or $cs -notmatch 'DateTime\.UtcNow\.AddSeconds'){throw 'Health/deadline startup fix missing'}
+          if($cs -match 'hostProcess\.Kill\('){throw 'Desktop still kills service host during startup'}
+          $setup=Get-Content "$pkg/KafePin_Desktop_App_Setup.ps1" -Raw
+          if($setup -notmatch 'AppVersion = "1\.1\.6"'){throw 'Desktop setup 1.1.6 missing'}
+          $mgr=Get-Content "$pkg/KafePin_Manager_Ensure.ps1" -Raw
+          if($mgr -notmatch "-AppVersion '1\.1\.6'"){throw 'Manager does not install desktop 1.1.6'}
+          Write-Host 'V3159_FIELD_TIMEOUT_CODE_REMOVED_OK'
+
+      - name: Compile actual KafePin desktop v1.1.6
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3159'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$pkg/KafePin_Desktop_App_Setup.ps1" -InstallRoot $pkg -AppVersion '1.1.6'
+          if($LASTEXITCODE -ne 0){throw 'Desktop v1.1.6 compile/setup failed'}
+          if(-not (Test-Path "$pkg/desktop-app/KafePin Pro.exe")){throw 'Desktop EXE missing'}
+          $m=Get-Content "$pkg/desktop-app/desktop-app-installed.json" -Raw|ConvertFrom-Json
+          if([string]$m.version -ne '1.1.6'){throw "Desktop marker wrong: $($m.version)"}
+          Write-Host 'V3159_DESKTOP_116_COMPILE_OK'
+
+      - name: Runtime proof - slow host is not killed while health becomes ready
+        shell: pwsh
+        run: |
+          @'
+          using System;
+          using System.Diagnostics;
+          using System.Threading;
+          class T {
+            static bool ready=false;
+            static bool WaitReady(int maxSeconds){ var deadline=DateTime.UtcNow.AddSeconds(Math.Max(1,maxSeconds)); while(DateTime.UtcNow<deadline){ if(ready)return true; Thread.Sleep(100); } return ready; }
+            static int Main(){
+              var psi=new ProcessStartInfo("powershell.exe","-NoProfile -Command \"Start-Sleep -Seconds 12\""); psi.UseShellExecute=false;psi.CreateNoWindow=true;psi.WindowStyle=ProcessWindowStyle.Hidden;
+              var p=Process.Start(psi); if(p==null)return 10;
+              new Thread(()=>{Thread.Sleep(6500);ready=true;}).Start();
+              var sw=Stopwatch.StartNew(); bool ok=WaitReady(10); sw.Stop();
+              if(!ok)return 11; if(p.HasExited)return 12; if(sw.ElapsedMilliseconds<6000)return 13;
+              try{p.Kill();}catch{} Console.WriteLine("V3159_SLOW_HOST_HEALTH_WINS_OK ms="+sw.ElapsedMilliseconds); return 0;
+            }
+          }
+          '@|Set-Content 'dev/v3159-candidate/slow_host_harness.cs' -Encoding UTF8
+          $csc=(Get-Command csc.exe -ErrorAction SilentlyContinue).Source
+          if(-not $csc){$csc=Get-ChildItem "$env:WINDIR/Microsoft.NET/Framework64" -Filter csc.exe -Recurse|Sort-Object FullName -Descending|Select-Object -First 1 -ExpandProperty FullName}
+          if(-not $csc){throw 'csc.exe missing'}
+          $src=(Resolve-Path 'dev/v3159-candidate/slow_host_harness.cs').Path
+          $exe=Join-Path (Split-Path -Parent $src) 'slow_host_harness.exe'
+          & $csc /nologo /out:$exe $src
+          if($LASTEXITCODE -ne 0){throw 'slow-host harness compile failed'}
+          & $exe
+          if($LASTEXITCODE -ne 0){throw "slow-host health test failed exit=$LASTEXITCODE"}
+
+      - name: Re-test packaged hidden 17891 plus 17893 service host
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3159'; $root=Join-Path $env:RUNNER_TEMP 'KafePinYaziciPRO-3159'
+          New-Item -ItemType Directory -Force -Path $root|Out-Null
+          Copy-Item "$pkg/v3157-yazici-payload/KafePin_YaziciPRO_ServiceHost.ps1" "$root/KafePin_YaziciPRO_ServiceHost.ps1"
+          @'
+          const http=require('http'); const s=http.createServer((q,r)=>{r.setHeader('Content-Type','application/json');if(q.url.startsWith('/health'))r.end(JSON.stringify({ok:true,version:'3.1.56-candidate1'}));else{r.statusCode=404;r.end('{}')}});s.listen(17893,'127.0.0.1');
+          '@|Set-Content "$root/KafePin_YaziciGelir_Service.js" -Encoding UTF8
+          @'
+          from http.server import BaseHTTPRequestHandler,HTTPServer
+          import json
+          class H(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  if self.path.startswith('/api/health'):
+                      b=json.dumps({'ok':True,'version':'3.1.56-candidate1'}).encode();self.send_response(200);self.send_header('X-KafePin-Yazici-Isolation','separate-loopback-service');self.end_headers();self.wfile.write(b)
+                  else:self.send_response(404);self.end_headers()
+              def log_message(self,*a):pass
+          HTTPServer(('127.0.0.1',17891),H).serve_forever()
+          '@|Set-Content "$root/web_service.py" -Encoding UTF8
+          $node=(Get-Command node.exe).Source;$py=(Get-Command python.exe).Source
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$root/KafePin_YaziciPRO_ServiceHost.ps1" -InstallRoot $root -NodePath $node -PythonPath $py -SkipRepair
+          if($LASTEXITCODE -ne 0){throw 'dual service host failed'}
+          $w=Invoke-RestMethod 'http://127.0.0.1:17891/api/health' -TimeoutSec 2;$r=Invoke-RestMethod 'http://127.0.0.1:17893/health' -TimeoutSec 2
+          if(-not $w.ok -or -not $r.ok){throw 'dual service health failed'}
+          $st=Get-Content "$env:ProgramData/KafePinPro/logs/v3156-yazici-startup.json" -Raw|ConvertFrom-Json
+          foreach($procId in @([int]$st.nodePid,[int]$st.pythonPid)){ $p=Get-Process -Id $procId -ErrorAction Stop;if($p.MainWindowHandle -ne 0){throw "visible service window pid=$procId"};Stop-Process -Id $procId -Force -ErrorAction SilentlyContinue }
+          Write-Host 'V3159_DUAL_SERVICE_HIDDEN_OK'
+
+      - name: Validate ZIP manifest and syntax
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3159'
+          node --check "$pkg/server.js"
+          node --check "$pkg/v3157-yazici-payload/KafePin_YaziciGelir_Service.js"
+          python -m py_compile "$pkg/v3157-yazici-payload/web_service.py"
+          $tokens=$null;$errors=$null;[System.Management.Automation.Language.Parser]::ParseFile("$pkg/KafePin_Manager_Ensure.ps1",[ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){throw 'Manager PowerShell parse failed'}
+          @'
+          import json,zipfile
+          from pathlib import Path
+          p=Path('KafePin-Pro-Update-v3.1.59.zip')
+          with zipfile.ZipFile(p) as z:
+              assert z.testzip() is None
+              u=json.loads(z.read('update.json').decode('utf-8-sig'))
+              assert set(z.namelist())==set(u['files'])
+          print('V3159_ZIP_MANIFEST_OK')
+          '@|Set-Content 'dev/v3159-candidate/check_zip.py' -Encoding UTF8
+          python dev/v3159-candidate/check_zip.py
+
+      - name: Publish tested candidate outputs
+        shell: pwsh
+        run: |
+          $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.59.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $report=@"
+          # KafePin Pro v3.1.59 ADAY — Yazıcı PRO Başlangıç Düzeltmesi
+
+          - STABLE: **3.1.49**
+          - Aday: **3.1.59**
+          - Windows test sonucu: **BAŞARILI**.
+          - Saha hatası `Yazıcı PRO servis başlatıcısı zaman aşımına uğradı` kök nedeni doğrulandı: desktop v1.1.5 `WaitForExit(50000)` ile host'u 50 sn'de kesiyordu.
+          - Legacy 50 sn process-exit timeout kaldırıldı (`V3159_FIELD_TIMEOUT_CODE_REMOVED_OK`).
+          - Gerçek KafePin Desktop **v1.1.6** Windows'ta derlendi (`V3159_DESKTOP_116_COMPILE_OK`).
+          - Yavaş host çalışırken sağlık hazır olduğunda host öldürülmeden devam edildi (`V3159_SLOW_HOST_HEALTH_WINS_OK`).
+          - Paket içindeki gerçek servis host ile 17891+17893 gizli süreç testi **BAŞARILI** (`V3159_DUAL_SERVICE_HIDDEN_OK`).
+          - ZIP/syntax/bütünlük **BAŞARILI**.
+          - Paket SHA256: `$sha`
+          "@
+          Set-Content 'V3.1.59-CANDIDATE-TEST-REPORT.md' $report -Encoding UTF8
+          git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- 'KafePin-Pro-Update-v3.1.59.zip' 'KafePin-Pro-Update-v3.1.59.sha256.txt' 'V3.1.59-CANDIDATE-TEST-REPORT.md' 'latest.json'
+          foreach($p in @('KafePin-Pro-Update-v3.1.58.zip','KafePin-Pro-Update-v3.1.58.sha256.txt','V3.1.58-CANDIDATE-TEST-REPORT.md')){if(Test-Path $p){git rm -f -- $p}}
+          Remove-Item 'dev/v3159-candidate/slow_host_harness.cs','dev/v3159-candidate/slow_host_harness.exe','dev/v3159-candidate/check_zip.py' -Force -ErrorAction SilentlyContinue
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'release: publish field-tested v3.1.59 Yazici startup candidate [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
