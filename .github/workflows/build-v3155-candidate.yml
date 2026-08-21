@@ -33,14 +33,27 @@ jobs:
           if ($parts.Count -ne 4) { throw "Expected 4 builder parts, got $($parts.Count)" }
           $b64 = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ''
           [IO.File]::WriteAllBytes('dev/v3155-candidate/build_v3155.py',[Convert]::FromBase64String($b64))
+          @'
+          from pathlib import Path
+          p=Path('dev/v3155-candidate/build_v3155.py')
+          s=p.read_text(encoding='utf-8')
+          old=",block+'\\n  foreach ($pair in $pairs)',s,count=1,flags=re.S)"
+          new=",lambda _m: block+'\\n  foreach ($pair in $pairs)',s,count=1,flags=re.S)"
+          if old not in s:
+              raise SystemExit('builder manager replacement marker missing')
+          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          '@ | Set-Content 'dev/v3155-candidate/fix_builder.py' -Encoding UTF8
+          python dev/v3155-candidate/fix_builder.py
           python -m py_compile dev/v3155-candidate/build_v3155.py
 
       - name: Build deterministic candidate
         shell: pwsh
         run: |
           python dev/v3155-candidate/build_v3155.py
+          if($LASTEXITCODE -ne 0){throw 'First candidate build failed'}
           $h1=(Get-FileHash 'KafePin-Pro-Update-v3.1.55.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
           python dev/v3155-candidate/build_v3155.py
+          if($LASTEXITCODE -ne 0){throw 'Second candidate build failed'}
           $h2=(Get-FileHash 'KafePin-Pro-Update-v3.1.55.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
           if($h1 -ne $h2){throw 'Deterministic rebuild SHA mismatch'}
           Write-Host "V3155_SHA=$h2"
@@ -98,7 +111,7 @@ jobs:
       - name: Validate package manifest and ZIP
         shell: pwsh
         run: |
-          python - <<'PY'
+          @'
           import json, zipfile
           from pathlib import Path
           p=Path('KafePin-Pro-Update-v3.1.55.zip')
@@ -108,7 +121,8 @@ jobs:
               u=json.loads(z.read('update.json').decode('utf-8-sig'))
               assert set(z.namelist())==set(u['files']), (len(z.namelist()),len(u['files']))
           print('ZIP_MANIFEST_OK')
-          PY
+          '@ | Set-Content 'dev/v3155-candidate/check_zip.py' -Encoding UTF8
+          python dev/v3155-candidate/check_zip.py
 
       - name: Publish tested outputs to candidate branch
         shell: pwsh
