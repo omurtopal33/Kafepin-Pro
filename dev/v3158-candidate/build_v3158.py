@@ -11,7 +11,7 @@ REPORT = ROOT / "V3.1.58-CANDIDATE-TEST-REPORT.md"
 FIXED_DT = (2026, 8, 21, 12, 8, 0)
 
 PRECHECK = '''    try {\n      ensureKafePinManagerReadySync();\n    } catch (managerErr) {\n      const message = String(managerErr.message || managerErr);\n      writeProUpdateState("error", `Server Manager on-kontrolu basarisiz: ${message}`, { version: status.latestVersion });\n      addLiveLog("pro_update", `⚠️ Guncelleme baslatilmadi • Server Manager hazir degil: ${message.slice(0, 150)}`);\n      return res.status(500).json({ ok: false, error: `Server Manager hazir degil: ${message}` });\n    }\n\n'''
-REPLACEMENT = '''    // v3.1.58: Guncelleme BASLAMADAN eski Manager'i on-kosul olarak calistirma.\n    // Eski/bayat Manager yeni paketin indirilmesini engelleyemez. Paket once\n    // indirilip SHA256 ile dogrulanir; tum yeni dosyalar (yeni Manager dahil)\n    // C:\\KafePin'e kopyalandiktan SONRA ensureKafePinManagerReadySync() cagrilir.\n\n'''
+REPLACEMENT = '''    // v3.1.58: Guncelleme BASLAMADAN eski Manager'i on-kosul olarak calistirma.\n    // Eski/bayat Manager yeni paketin indirilmesini engelleyemez. Paket once\n    // indirilip SHA256 ile dogrulanir; tum yeni dosyalar (yeni Manager dahil)\n    // C:\\KafePin'e kopyalandiktan SONRA yeni Manager dogrulanip baslatilir.\n\n'''
 
 def sha256_file(path: Path) -> str:
     h=hashlib.sha256()
