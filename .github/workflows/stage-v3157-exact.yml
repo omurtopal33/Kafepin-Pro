@@ -1,0 +1,35 @@
+name: Stage v3.1.57 Exact Inputs
+on:
+  push:
+    branches: [release-v3.1.57]
+    paths:
+      - '.github/workflows/stage-v3157-exact.yml'
+permissions:
+  contents: write
+jobs:
+  stage:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release-v3.1.57
+          fetch-depth: 1
+      - name: Extract exact published v3.1.56 updater inputs
+        shell: pwsh
+        run: |
+          $src=Join-Path $env:RUNNER_TEMP 'kp3156'
+          Expand-Archive 'KafePin-Pro-Update-v3.1.56.zip' $src -Force
+          $dst='dev/v3157-candidate/exact'
+          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+          Copy-Item "$src/KafePin_Manager_Ensure.ps1" "$dst/KafePin_Manager_Ensure.ps1" -Force
+          Copy-Item "$src/v3156-yazici-payload/yazici-pro-version.json" "$dst/yazici-pro-version.json" -Force
+          $actual=(Get-FileHash "$src/v3156-yazici-payload/yazici-pro-version.json" -Algorithm SHA256).Hash.ToLowerInvariant()
+          Set-Content "$dst/ACTUAL_VERSION_SHA.txt" $actual -Encoding ASCII
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- "$dst/KafePin_Manager_Ensure.ps1" "$dst/yazici-pro-version.json" "$dst/ACTUAL_VERSION_SHA.txt"
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'dev: stage exact v3.1.56 updater inputs [skip ci]'
+          git push origin HEAD:release-v3.1.57

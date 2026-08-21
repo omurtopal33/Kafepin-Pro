@@ -1,0 +1,25 @@
+{
+  "version": "3.1.56",
+  "build": "candidate1",
+  "baseVersion": "3.1.49",
+  "ui": "webview2-whatsapp-internal-mobile-qr-delete-cancel",
+  "revenueService": "node-17893",
+  "aiService": "openai-responses-image-to-text",
+  "fixes": [
+    "whatsapp-web-internal-tab-only",
+    "cancel-closes-modal",
+    "delete-queue-and-pending",
+    "same-lan-qr-camera-upload",
+    "updater-timeout-safe",
+    "both-desktop-shortcuts-webview2",
+    "no-external-browser-fallback",
+    "same-lan-mobile-qr",
+    "cancel-delete-actions",
+    "field-startup-17891-17893",
+    "remove-all-legacy-yazici-shortcuts",
+    "hidden-node-python-service-host",
+    "version-aware-service-restart"
+  ],
+  "launch": "main-kafepin-hidden-dual-service-host",
+  "desktopShortcut": false
+}

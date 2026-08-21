@@ -1,11 +1,11 @@
 {
-  "version": "3.1.56",
+  "version": "3.1.57",
   "channel": "candidate",
   "stableVersion": "3.1.49",
   "baseVersion": "3.1.49",
   "cumulative": true,
-  "publishedAt": "2026-08-21T11:45:00+03:00",
-  "notes": "v3.1.56 ADAY — gerçek saha hatası düzeltmesi. Eski Yazıcı PRO masaüstü kısayolları tüm kullanıcı profillerinden kaldırılır; 17891+17893 görünmez süreçlerle ve sürüm doğrulamasıyla başlatılır; ana KafePin içinden açılır.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.56.zip",
-  "sha256": "b6ac42a0597e26a92347d3ca96afbdba240fd022813b60c42434c58f82a2f4d9"
+  "publishedAt": "2026-08-21T11:58:00+03:00",
+  "notes": "v3.1.57 ADAY — v3.1.56'daki yazici-pro-version.json bayat SHA kurulum hatasını yapısal olarak kaldırır. Paket bütünlüğü ZIP SHA256 ile, payload kopyası gerçek kaynak→hedef SHA256 ile doğrulanır.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.57.zip",
+  "sha256": "613f84888b4f89b12c6792164e395f171b07373e7a57ee95c1aa9cd27b759775"
 }
