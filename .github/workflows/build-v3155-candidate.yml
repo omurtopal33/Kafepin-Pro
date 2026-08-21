@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Reassemble builder and strip legacy shortcut
+      - name: Reassemble builder and prepare Manager
         shell: pwsh
         run: |
           $parts = Get-ChildItem 'dev/v3155-candidate/build.b64.part*' | Sort-Object Name
@@ -37,8 +37,7 @@ jobs:
           from pathlib import Path
           import re
 
-          # Remove the legacy standalone Yazici PRO desktop-shortcut block from the exact
-          # v3.1.54 Manager source before the v3.1.55 builder sees it.
+          # Prepare the exact v3.1.54 Manager for v3.1.55.
           mp=Path('dev/v3155-candidate/exact/KafePin_Manager_Ensure.ps1')
           m=mp.read_text(encoding='utf-8-sig')
           start="  $startCmd = Join-Path $YaziciRoot 'START_YAZICI_PRO.cmd'"
@@ -49,6 +48,19 @@ jobs:
               m=m[:i]+m[j:]
           elif 'CreateShortcut(' in m:
               raise SystemExit('legacy shortcut block markers missing')
+
+          desktop_block="""  $desktopSetup = Join-Path $InstallRoot 'KafePin_Desktop_App_Setup.ps1'
+          if (-not (Test-Path -LiteralPath $desktopSetup -PathType Leaf)) { throw 'KafePin_Desktop_App_Setup.ps1 bulunamadi.' }
+          YaziciLog 'KafePin ana masaustu uygulamasi v1.1.4 kuruluyor.'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $desktopSetup -InstallRoot $InstallRoot -AppVersion '1.1.4'
+          if ($LASTEXITCODE -ne 0) { throw ('KafePin ana masaustu uygulamasi guncellenemedi. Cikis=' + $LASTEXITCODE) }
+          YaziciLog 'KafePin ana masaustu uygulamasi v1.1.4 hazir.'
+          """
+          marker="  [ordered]@{ version='3.1.54';"
+          if 'KafePin ana masaustu uygulamasi v1.1.4 kuruluyor.' not in m:
+              if marker not in m:
+                  raise SystemExit('manager desktop insert marker missing')
+              m=m.replace(marker,desktop_block+marker,1)
           mp.write_text(m,encoding='utf-8-sig')
 
           # Fix Python re.sub replacement escaping in the generated builder.
@@ -60,8 +72,7 @@ jobs:
               raise SystemExit('builder manager replacement marker missing')
           s=s.replace(old,new,1)
 
-          # The source shortcut block is already removed above, so a zero regex match is
-          # expected and valid. Keep one-match behavior valid too.
+          # The shortcut source block is already removed above, so zero matches is valid.
           lines=s.splitlines()
           changed=False
           for n,line in enumerate(lines):
@@ -110,6 +121,7 @@ jobs:
           $mgr=Get-Content "$pkg/KafePin_Manager_Ensure.ps1" -Raw
           if($mgr -match 'CreateShortcut\('){throw 'separate Yazici desktop shortcut creation still present'}
           if($mgr -notmatch 'KafePin_Desktop_App_Setup.ps1'){throw 'main desktop refresh missing'}
+          if($mgr -notmatch "AppVersion '1.1.4'"){throw 'main desktop v1.1.4 install call missing'}
           if($mgr -match 'Wait-YaziciWeb|Wait-YaziciRevenue|Stop-YaziciRuntime'){throw 'updater timeout regression marker found'}
           $server=Get-Content "$pkg/server.js" -Raw
           if($server -notmatch 'sqlite3.OPEN_READONLY'){throw 'EveryCafe read-only marker missing'}
