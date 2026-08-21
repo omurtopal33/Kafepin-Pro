@@ -87,9 +87,11 @@ jobs:
           $csc=(Get-Command csc.exe -ErrorAction SilentlyContinue).Source
           if(-not $csc){$csc=Get-ChildItem "$env:WINDIR/Microsoft.NET/Framework64" -Filter csc.exe -Recurse|Sort-Object FullName -Descending|Select-Object -First 1 -ExpandProperty FullName}
           if(-not $csc){throw 'csc.exe missing'}
-          & $csc /nologo /out:dev/v3159-candidate/slow_host_harness.exe dev/v3159-candidate/slow_host_harness.cs
+          $src=(Resolve-Path 'dev/v3159-candidate/slow_host_harness.cs').Path
+          $exe=Join-Path (Split-Path -Parent $src) 'slow_host_harness.exe'
+          & $csc /nologo /out:$exe $src
           if($LASTEXITCODE -ne 0){throw 'slow-host harness compile failed'}
-          & dev/v3159-candidate/slow_host_harness.exe
+          & $exe
           if($LASTEXITCODE -ne 0){throw "slow-host health test failed exit=$LASTEXITCODE"}
 
       - name: Re-test packaged hidden 17891 plus 17893 service host
