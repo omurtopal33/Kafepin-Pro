@@ -59,7 +59,7 @@ jobs:
           if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
           New-Item -ItemType Directory -Force -Path $dst | Out-Null
           $parts = Get-ChildItem -LiteralPath $srcRoot -Filter 'source-bundle.b64.part*' | Sort-Object Name
-          if ($parts.Count -ne 10) { throw "Expected 10 source chunks, got $($parts.Count)" }
+          if ($parts.Count -ne 11) { throw "Expected 11 source chunks, got $($parts.Count)" }
           $b64 = (($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName).Trim() }) -join '')
           [IO.File]::WriteAllBytes($zip, [Convert]::FromBase64String($b64))
           $sha = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
