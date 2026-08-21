@@ -23,13 +23,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Expand v3.1.52 sources
+      - name: Rebuild and expand v3.1.52 sources
         shell: powershell
         run: |
-          $dst = 'dev/v3152-candidate/src'
+          $srcRoot = 'dev/v3152-candidate'
+          $dst = Join-Path $srcRoot 'src'
+          $zip = Join-Path $srcRoot 'source-bundle.rebuilt.zip'
           if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
           New-Item -ItemType Directory -Force -Path $dst | Out-Null
-          Expand-Archive -LiteralPath 'dev/v3152-candidate/source-bundle.zip' -DestinationPath $dst -Force
+          $parts = Get-ChildItem -LiteralPath $srcRoot -Filter 'source-bundle.b64.part*' | Sort-Object Name
+          if ($parts.Count -ne 7) { throw "Expected 7 source chunks, got $($parts.Count)" }
+          $b64 = (($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName).Trim() }) -join '')
+          [IO.File]::WriteAllBytes($zip, [Convert]::FromBase64String($b64))
+          $sha = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          if ($sha -ne '494d58263dcf5087e78385a774ab4c7822f8995e8af47d3aa10ddb0a638ff160') { throw "Source bundle SHA mismatch: $sha" }
+          Expand-Archive -LiteralPath $zip -DestinationPath $dst -Force
       - name: Build and run full candidate tests
         shell: powershell
         run: python dev/v3152-candidate/src/build_v3152.py
