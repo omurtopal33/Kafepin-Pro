@@ -1,4 +1,4 @@
-name: Validate v3.1.53 Candidate
+name: Validate v3.1.53 Candidate3
 
 on:
   pull_request:
@@ -6,7 +6,6 @@ on:
     paths:
       - 'dev/v3153-candidate/**'
       - '.github/workflows/build-v3153-candidate.yml'
-      - 'README.md'
       - 'KafePin-Pro-Update-v3.1.53.zip'
       - 'KafePin-Pro-Update-v3.1.53.sha256.txt'
       - 'V3.1.53-CANDIDATE-TEST-REPORT.md'
@@ -37,18 +36,43 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build and validate v3.1.53
+      - name: Build base and apply candidate3 fix
         shell: pwsh
         run: |
           python dev/v3153-candidate/build_v3153.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python dev/v3153-candidate/patch_candidate3.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Validate candidate3 package
+        shell: pwsh
+        run: |
+          $tmp = Join-Path $env:RUNNER_TEMP 'kp3153-c3'
+          if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
+          Expand-Archive -LiteralPath 'KafePin-Pro-Update-v3.1.53.zip' -DestinationPath $tmp
+          $u = Get-Content (Join-Path $tmp 'update.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+          if ($u.version -ne '3.1.53' -or $u.baseVersion -ne '3.1.49' -or -not $u.cumulative) { throw 'update.json version/base/cumulative invalid' }
+          $mgr = Get-Content (Join-Path $tmp 'KafePin_Manager_Ensure.ps1') -Raw -Encoding UTF8
+          foreach ($bad in @('Wait-YaziciWeb','Wait-YaziciRevenue','Stop-YaziciRuntime')) { if ($mgr.Contains($bad)) { throw ('Updater timeout risk remains: ' + $bad) } }
+          if (-not $mgr.Contains("updaterWait='none'")) { throw 'candidate3 updater marker missing' }
+          $server = Get-Content (Join-Path $tmp 'server.js') -Raw -Encoding UTF8
+          if (-not $server.Contains('timeout: 35000')) { throw 'Core updater timeout changed unexpectedly' }
+          if (-not $server.Contains('sqlite3.OPEN_READONLY')) { throw 'EveryCafe read-only marker missing' }
+          node --check (Join-Path $tmp 'server.js')
+          node --check (Join-Path $tmp 'v3153-yazici-payload\KafePin_YaziciGelir_Service.js')
+          node --check (Join-Path $tmp 'v3153-yazici-payload\v3153-ai.js')
+          python -m py_compile (Join-Path $tmp 'v3153-yazici-payload\web_service.py')
+          $web = Get-Content (Join-Path $tmp 'v3153-yazici-payload\web_service.py') -Raw -Encoding UTF8
+          if (-not $web.Contains('3.1.53-candidate3') -or -not $web.Contains('Word.Application')) { throw 'candidate3 backend/Word COM missing' }
+          $start = Get-Content (Join-Path $tmp 'v3153-yazici-payload\START_YAZICI_PRO.cmd') -Raw -Encoding UTF8
+          if (-not $start.Contains('3.1.53-candidate3') -or -not $start.Contains('KafePinYaziciPRO')) { throw 'candidate3 runtime restart/health missing' }
+          $wv = Get-Content (Join-Path $tmp 'v3153-yazici-payload\KafePin_YaziciPRO_WebView2.ps1') -Raw -Encoding UTF8
+          if (-not $wv.Contains('web.whatsapp.com') -or -not $wv.Contains('RuntimeBootstrapperUrl')) { throw 'WhatsApp/WebView2 runtime logic missing' }
 
       - name: Parse Windows PowerShell scripts
         shell: powershell
         run: |
-          $tmp = Join-Path $env:RUNNER_TEMP 'kp3153-parse'
-          if (Test-Path $tmp) { Remove-Item $tmp -Recurse -Force }
-          Expand-Archive -LiteralPath 'KafePin-Pro-Update-v3.1.53.zip' -DestinationPath $tmp
+          $tmp = Join-Path $env:RUNNER_TEMP 'kp3153-c3'
           $files = @(
             (Join-Path $tmp 'KafePin_Manager_Ensure.ps1'),
             (Join-Path $tmp 'v3153-yazici-payload\KafePin_YaziciPRO_WebView2.ps1'),
@@ -63,18 +87,14 @@ jobs:
             }
           }
 
-      - name: Commit tested candidate outputs
+      - name: Commit tested candidate3 outputs
         shell: pwsh
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm -f -- 'KafePin-Pro-Update-v3.1.51.zip' 'KafePin-Pro-Update-v3.1.51.sha256.txt' 'KafePin-Pro-Update-v3.1.52.zip' 'KafePin-Pro-Update-v3.1.52.sha256.txt' 'V3.1.51-CANDIDATE-TEST-REPORT.md' 'V3.1.52-CANDIDATE-TEST-REPORT.md' 'latest-candidate.json' 'latest-test.json'
-          git rm -r -f -- 'dev/v3151-candidate' '.github/workflows/build-v3151-candidate.yml'
           git add -- 'KafePin-Pro-Update-v3.1.53.zip' 'KafePin-Pro-Update-v3.1.53.sha256.txt' 'V3.1.53-CANDIDATE-TEST-REPORT.md' 'latest.json'
           $names = @(git diff --cached --name-only)
-          $allowed = @('KafePin-Pro-Update-v3.1.53.zip','KafePin-Pro-Update-v3.1.53.sha256.txt','V3.1.53-CANDIDATE-TEST-REPORT.md','latest.json','KafePin-Pro-Update-v3.1.51.zip','KafePin-Pro-Update-v3.1.51.sha256.txt','KafePin-Pro-Update-v3.1.52.zip','KafePin-Pro-Update-v3.1.52.sha256.txt','V3.1.51-CANDIDATE-TEST-REPORT.md','V3.1.52-CANDIDATE-TEST-REPORT.md','latest-candidate.json','latest-test.json','.github/workflows/build-v3151-candidate.yml')
-          foreach ($n in $names) { if (($allowed -notcontains $n) -and (-not $n.StartsWith('dev/v3151-candidate/'))) { throw ('Unexpected candidate output: ' + $n) } }
-          if ($names.Count -eq 0) { Write-Host 'Candidate outputs already identical'; exit 0 }
-          if ($names.Count -lt 8) { throw 'Candidate output/cleanup set incomplete' }
-          git commit -m 'candidate: publish v3.1.53 and remove superseded updates'
+          if ($names.Count -eq 0) { Write-Host 'Candidate3 outputs already identical'; exit 0 }
+          foreach ($n in $names) { if (@('KafePin-Pro-Update-v3.1.53.zip','KafePin-Pro-Update-v3.1.53.sha256.txt','V3.1.53-CANDIDATE-TEST-REPORT.md','latest.json') -notcontains $n) { throw ('Unexpected output: ' + $n) } }
+          git commit -m 'candidate3: publish timeout-safe v3.1.53 [skip ci]'
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
