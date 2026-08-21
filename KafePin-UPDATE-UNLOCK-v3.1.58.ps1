@@ -12,28 +12,20 @@ Copy-Item -LiteralPath $mgr -Destination $backup -Force
 
 $text = Get-Content -LiteralPath $mgr -Raw -Encoding UTF8
 $normalized = $text.Replace("`r`n","`n")
-$old = @'
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
-    Copy-Item -LiteralPath $src -Destination $dst -Force
-    if ((YaziciFileSha $dst) -ne [string]$pair.Sha) { throw ('Yazici PRO SHA256 dogrulamasi basarisiz: ' + [string]$pair.Dst) }
-'@
-$new = @'
-    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $dst) | Out-Null
-    # v3.1.58 bootstrap: bayat build-time pair.Sha yerine GERCEK kaynak dosya hash'i kullanilir.
-    $sourceSha = YaziciFileSha $src
-    Copy-Item -LiteralPath $src -Destination $dst -Force
-    $destSha = YaziciFileSha $dst
-    if ($destSha -ne $sourceSha) { throw ('Yazici PRO kaynak-hedef SHA256 dogrulamasi basarisiz: ' + [string]$pair.Dst) }
-'@
+$copyLine = '    Copy-Item -LiteralPath $src -Destination $dst -Force'
+$oldCompare = "    if ((YaziciFileSha `$dst) -ne [string]`$pair.Sha) { throw ('Yazici PRO SHA256 dogrulamasi basarisiz: ' + [string]`$pair.Dst) }"
+$newCopy = "    # v3.1.58 bootstrap: bayat build-time pair.Sha yerine GERCEK kaynak dosya hash'i kullanilir.`n    `$sourceSha = YaziciFileSha `$src`n$copyLine"
+$newCompare = "    `$destSha = YaziciFileSha `$dst`n    if (`$destSha -ne `$sourceSha) { throw ('Yazici PRO kaynak-hedef SHA256 dogrulamasi basarisiz: ' + [string]`$pair.Dst) }"
 
 if ($normalized.Contains('$destSha -ne $sourceSha')) {
   Write-Host 'Manager SHA kontrolu zaten yeni yontemde.'
-} elseif ($normalized.Contains($old)) {
-  $normalized = $normalized.Replace($old,$new)
+} else {
+  if (-not $normalized.Contains($copyLine)) { throw 'Eski Manager Copy-Item satiri bulunamadi; dosya degistirilmedi.' }
+  if (-not $normalized.Contains($oldCompare)) { throw 'Eski Manager pair.Sha kontrol satiri bulunamadi; dosya degistirilmedi.' }
+  $normalized = $normalized.Replace($copyLine,$newCopy)
+  $normalized = $normalized.Replace($oldCompare,$newCompare)
   [IO.File]::WriteAllText($mgr, $normalized.Replace("`n","`r`n"), (New-Object Text.UTF8Encoding($true)))
   Write-Host 'Eski bayat SHA kontrolu kaldirildi.'
-} else {
-  throw 'Beklenen eski Manager SHA blogu bulunamadi; dosya degistirilmedi.'
 }
 
 $tokens=$null; $errors=$null
