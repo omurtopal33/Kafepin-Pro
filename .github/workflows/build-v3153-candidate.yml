@@ -10,7 +10,7 @@ permissions:
 
 concurrency:
   group: kafepin-v3153-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate-candidate:
@@ -44,18 +44,21 @@ jobs:
         with:
           node-version: '22'
 
-      - name: Expand and verify v3.1.53 sources
+      - name: Rebuild and verify v3.1.53 sources
         if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
         shell: powershell
         run: |
           $srcRoot = 'dev/v3153-candidate'
           $dst = Join-Path $srcRoot 'src'
-          $zip = Join-Path $srcRoot 'source-bundle.zip'
-          if (-not (Test-Path $zip)) { throw 'source-bundle.zip missing' }
-          $sha = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
-          if ($sha -ne '91189c79ec2d79d7ffcc85f6c2e05b4abf4c3208aff4c00dafceef4d6583df10') { throw "Source bundle SHA mismatch: $sha" }
+          $zip = Join-Path $srcRoot 'source-bundle.rebuilt.zip'
           if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
           New-Item -ItemType Directory -Force -Path $dst | Out-Null
+          $parts = Get-ChildItem -LiteralPath $srcRoot -Filter 'source-bundle.b64.part*' | Sort-Object Name
+          if ($parts.Count -ne 7) { throw "Expected 7 source chunks, got $($parts.Count)" }
+          $b64 = (($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName).Trim() }) -join '')
+          [IO.File]::WriteAllBytes($zip, [Convert]::FromBase64String($b64))
+          $sha = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          if ($sha -ne '91189c79ec2d79d7ffcc85f6c2e05b4abf4c3208aff4c00dafceef4d6583df10') { throw "Source bundle SHA mismatch: $sha" }
           Expand-Archive -LiteralPath $zip -DestinationPath $dst -Force
           Get-ChildItem -LiteralPath $dst -File | Copy-Item -Destination $srcRoot -Force
 
@@ -74,7 +77,7 @@ jobs:
             version='3.1.53'; channel='candidate'; stableVersion='3.1.49'; baseVersion='3.1.49'; cumulative=$false;
             downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.53.zip';
             sha256=$sha;
-            notes='v3.1.53 ADAY: WhatsApp Web Yazıcı PRO içinde WebView2; 3.1.52 gelir/fotokopi/tarama/dilekçe özellikleri korunur; onay penceresine İptal ve Sil eklendi.'
+            notes='v3.1.53 ADAY: WhatsApp Web Yazıcı PRO içinde WebView2; v3.1.52 gelir/fotokopi/tarama/dilekçe özellikleri korunur; onay penceresine İptal ve Sil eklendi.'
           }
           $feed | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 'latest-candidate.json'
 
