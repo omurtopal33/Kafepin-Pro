@@ -51,8 +51,8 @@ function Wait-NewServer([int]$OldPid,[int]$Seconds=90) {
   $deadline=(Get-Date).AddSeconds($Seconds)
   while((Get-Date) -lt $deadline){
     Start-Sleep -Seconds 2
-    $pid=Get-PortPid 3000
-    if($pid -gt 0 -and ($OldPid -le 0 -or $pid -ne $OldPid) -and (Test-ServerHttp)){ Log ('Server ready. PID='+$pid); return $pid }
+    $serverPid=Get-PortPid 3000
+    if($serverPid -gt 0 -and ($OldPid -le 0 -or $serverPid -ne $OldPid) -and (Test-ServerHttp)){ Log ('Server ready. PID='+$serverPid); return $serverPid }
   }
   throw 'Server did not return on port 3000 with a new PID.'
 }

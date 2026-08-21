@@ -1,0 +1,52 @@
+name: Test v3.1.58 Rescue PID Fix
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'KafePin-RESCUE-INSTALL-v3.1.58.ps1'
+      - '.github/workflows/test-v3158-rescue-pid.yml'
+permissions:
+  contents: read
+jobs:
+  windows-pid-fix-test:
+    runs-on: windows-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Parse rescue PowerShell
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('KafePin-RESCUE-INSTALL-v3.1.58.ps1',[ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){$errors|ForEach-Object{Write-Host $_};throw 'PowerShell parse failed'}
+          Write-Host 'V3158_RESCUE_PARSE_OK'
+      - name: Reject reserved PID assignment
+        shell: powershell
+        run: |
+          $txt=Get-Content 'KafePin-RESCUE-INSTALL-v3.1.58.ps1' -Raw
+          if($txt -match '(?im)^\s*\$pid\s*='){throw 'Reserved automatic variable $PID is assigned in rescue script'}
+          if($txt -notmatch '\$serverPid\s*=\s*Get-PortPid 3000'){throw 'serverPid replacement missing'}
+          Write-Host 'V3158_RESCUE_RESERVED_PID_GUARD_OK'
+      - name: Execute Wait-NewServer function with mocked port PID
+        shell: powershell
+        run: |
+          $src=Get-Content 'KafePin-RESCUE-INSTALL-v3.1.58.ps1' -Raw
+          $start=$src.IndexOf('function Wait-NewServer')
+          $end=$src.IndexOf('function Repair-OldManagerSha',$start)
+          if($start -lt 0 -or $end -le $start){throw 'Wait-NewServer function not found'}
+          $fn=$src.Substring($start,$end-$start)
+          $harness=@"
+          function Log([string]`$m){ Write-Host `$m }
+          function Get-PortPid([int]`$Port){ return 4242 }
+          function Test-ServerHttp { return `$true }
+          $fn
+          `$result=Wait-NewServer 1111 5
+          if([int]`$result -ne 4242){ throw 'Wait-NewServer returned wrong PID' }
+          Write-Host 'V3158_RESCUE_WAIT_NEW_SERVER_OK'
+          "@
+          $p=Join-Path $env:RUNNER_TEMP 'wait-new-server-test.ps1'
+          Set-Content -LiteralPath $p -Value $harness -Encoding UTF8
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $p
+          if($LASTEXITCODE -ne 0){throw 'Wait-NewServer runtime test failed'}
