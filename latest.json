@@ -1,11 +1,10 @@
 {
-  "version": "3.1.59",
-  "channel": "candidate",
-  "stableVersion": "3.1.49",
-  "baseVersion": "3.1.49",
+  "version": "3.1.60",
+  "channel": "stable",
+  "baseVersion": "3.1.29",
   "cumulative": true,
-  "publishedAt": "2026-08-21T12:45:00+03:00",
-  "notes": "v3.1.59 ADAY — Yazıcı PRO 50 sn servis başlatıcısı timeout kaldırıldı; desktop artık 17891+17893 sağlık durumunu bekler.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.59.zip",
-  "sha256": "e370ba831a63bbbea5c1c3a285fba722fb9880d66da7727d33c0bcd87035b5c4"
+  "publishedAt": "2026-08-21T13:00:00+03:00",
+  "notes": "v3.1.60 STABLE / KÜMÜLATİF — v3.1.29 kurulum tabanından doğrudan uygulanır. Yazıcı PRO'nun iki bağımsız servisinin 3.1.60 sağlık doğrulaması düzeltildi; Client Yönetim PRO bağımsız loopback paneli seçmeli kurulum bileşeni olarak eklendi. Client paneli EveryCafe'yi yalnız okunur kullanır ve yalnız uyandırma, bilgisayarı kapatma, yeniden başlatma araçlarını sağlar; hesap/masa kapatma veya oturum açma yapmaz. MP3 Bot PRO, Yazıcı PRO ve Teknik Servis PRO bağımsız kalır. KafePin çekirdeği, server.js, finans, session, spin, EveryCafe yazımı, Telegram ve gün sonu davranışları değiştirilmemiştir.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.60.zip",
+  "sha256": "b4beebea5bddafff593be2c8cd6269462f2d4cd60df536e8b342fa6599c3751e"
 }
