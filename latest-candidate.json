@@ -1,11 +1,10 @@
-{
-  "channel": "candidate",
-  "stableVersion": "3.1.49",
-  "version": "3.1.51",
-  "available": true,
-  "baseVersion": "3.1.49",
-  "cumulative": false,
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.51.zip",
-  "sha256": "ad941bf2fb6bed37fdcf2d08efcf4ab7084eb4de95abeae35ca54dce02d2411f",
-  "notes": "v3.1.51 ADAY: v3.1.49 STABLE üzerine Yazıcı PRO + Telegram tekilleştirme. Kullanıcı sahada onaylayıp kitle demeden STABLE değildir."
+﻿{
+    "version":  "3.1.52",
+    "channel":  "candidate",
+    "stableVersion":  "3.1.49",
+    "baseVersion":  "3.1.49",
+    "cumulative":  false,
+    "downloadUrl":  "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.52.zip",
+    "sha256":  "fe663270726d1b82b475db5412148cd41cd730f2fa10e4401bbff6ce737eb47c",
+    "notes":  "v3.1.52 ADAY: YazÄ±cÄ± PRO onaylÄ± gelir + Fotokopi + Tarama/WhatsApp + Belge/DilekÃ§e hazÄ±rlama; v3.1.51 Telegram dÃ¼zeltmeleri korunur."
 }
