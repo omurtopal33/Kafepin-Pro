@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   validate-candidate:
-    if: github.head_ref == 'candidate/v3.1.52-ci' || github.ref_name == 'candidate/v3.1.52-ci'
+    if: startsWith(github.head_ref, 'candidate/v3.1.52-') || startsWith(github.ref_name, 'candidate/v3.1.52-')
     runs-on: windows-latest
     steps:
       - name: Checkout candidate
