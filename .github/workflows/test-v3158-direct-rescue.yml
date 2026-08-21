@@ -1,0 +1,62 @@
+name: Test v3.1.58 Direct Rescue
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'KafePin-RESCUE-INSTALL-v3.1.58.ps1'
+      - 'RUN-KAFEPIN-RESCUE-v3.1.58.cmd'
+      - '.github/workflows/test-v3158-direct-rescue.yml'
+permissions:
+  contents: read
+jobs:
+  windows-rescue-test:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: PowerShell parse
+        shell: pwsh
+        run: |
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('KafePin-RESCUE-INSTALL-v3.1.58.ps1',[ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){$errors|%{Write-Host $_};throw 'Rescue PowerShell parse failed'}
+      - name: Official package URL and SHA
+        shell: powershell
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+          $p=Join-Path $env:RUNNER_TEMP 'official-v3158.zip'
+          Invoke-WebRequest -UseBasicParsing -Uri 'https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.58.zip' -OutFile $p -TimeoutSec 300
+          $h=(Get-FileHash $p -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($h -ne '0e911bccdc67f2bdeb612f6de65116c5f5ab64a2779c931587fe8940d4486099'){throw "Official SHA mismatch: $h"}
+          Write-Host 'V3158_RESCUE_OFFICIAL_DOWNLOAD_SHA_OK'
+      - name: Direct apply in isolated install root
+        shell: powershell
+        run: |
+          $root=Join-Path $env:RUNNER_TEMP 'C-KafePin-rescue-test'
+          New-Item -ItemType Directory -Force -Path $root|Out-Null
+          Set-Content -LiteralPath (Join-Path $root 'server.js') -Value 'OLD_SERVER_FOR_BACKUP_TEST' -Encoding ASCII
+          $zip=(Resolve-Path 'KafePin-Pro-Update-v3.1.58.zip').Path
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\KafePin-RESCUE-INSTALL-v3.1.58.ps1' -InstallRoot $root -LocalZipPath $zip -PrepareOnly
+          if($LASTEXITCODE -ne 0){throw 'Direct rescue prepare/apply failed'}
+          $v=(Get-Content (Join-Path $root 'kafepin-pro-version.json') -Raw|ConvertFrom-Json).version
+          if($v -ne '3.1.58'){throw "Version marker wrong: $v"}
+          $server=Get-Content (Join-Path $root 'server.js') -Raw
+          if($server -notmatch 'v3\.1\.58: Guncelleme BASLAMADAN eski Manager'){throw 'New bootstrap server.js marker missing'}
+          $mgr=Get-Content (Join-Path $root 'KafePin_Manager_Ensure.ps1') -Raw
+          if($mgr -notmatch '\$destSha -ne \$sourceSha'){throw 'New Manager source-target SHA mode missing'}
+          if($mgr -match '-ne \[string\]\$pair\.Sha'){throw 'Stale Manager runtime SHA comparison survived'}
+          $backup=Get-ChildItem (Join-Path $root 'backups') -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if(-not $backup){throw 'Backup directory missing'}
+          $old=Get-Content (Join-Path $backup.FullName 'server.js') -Raw
+          if($old -notmatch 'OLD_SERVER_FOR_BACKUP_TEST'){throw 'Existing file backup failed'}
+          Write-Host 'V3158_DIRECT_RESCUE_APPLY_BACKUP_OK'
+      - name: CMD ASCII validation
+        shell: pwsh
+        run: |
+          $bytes=[IO.File]::ReadAllBytes('RUN-KAFEPIN-RESCUE-v3.1.58.cmd')
+          if(($bytes|Where-Object{$_ -gt 127}).Count -gt 0){throw 'CMD contains non-ASCII bytes'}
+          $txt=[Text.Encoding]::ASCII.GetString($bytes)
+          if($txt -notmatch 'KafePin Pro v3\.1\.58 - DIRECT RESCUE INSTALL'){throw 'CMD marker missing'}
+          Write-Host 'V3158_RESCUE_CMD_ASCII_OK'
