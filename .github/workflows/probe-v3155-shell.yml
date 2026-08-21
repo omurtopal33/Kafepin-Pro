@@ -19,13 +19,10 @@ jobs:
       - name: Inspect historical update packages
         shell: pwsh
         run: |
-          @('KafePin-Pro-Update-v3.1.49.zip','KafePin-Pro-Update-v3.1.29.zip','KafePin-Pro-Update-v3.1.54.zip') | ForEach-Object {
-            Write-Host "=== $_ ==="
-            if(-not (Test-Path $_)){ Write-Host 'MISSING'; return }
-            $tmp=Join-Path $env:RUNNER_TEMP ([IO.Path]::GetFileNameWithoutExtension($_)); if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force}; Expand-Archive $_ $tmp
-            Get-ChildItem $tmp -Recurse -File | Where-Object { $_.Name -match 'Desktop|Setup|index|server|Yazici|Yazıcı' } | ForEach-Object { Write-Host ($_.FullName.Substring($tmp.Length+1)) }
-            $desktop=Get-ChildItem $tmp -Recurse -File | Where-Object { $_.Name -eq 'KafePin_Desktop_App_Setup.ps1' } | Select-Object -First 1
-            if($desktop){ Write-Host '--- DESKTOP SETUP START ---'; Get-Content $desktop.FullName -Raw -Encoding UTF8; Write-Host '--- DESKTOP SETUP END ---' }
-            $pub=Get-ChildItem $tmp -Recurse -File | Where-Object { $_.FullName -match '[\\/]public[\\/]index\.html$' } | Select-Object -First 1
-            if($pub){ Write-Host '--- PUBLIC INDEX YAZICI LINES ---'; Select-String -Path $pub.FullName -Pattern 'Yazıcı|Yazici|17891|printer' -Context 3,3 | ForEach-Object { $_.ToString() } }
-          }
+          $tmp=Join-Path $env:RUNNER_TEMP 'kp149'; if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force}; Expand-Archive 'KafePin-Pro-Update-v3.1.49.zip' $tmp
+          Write-Host '--- DESKTOP CSHARP YAZICI/WEBVIEW LINES ---'
+          $cs=Join-Path $tmp 'desktop-app\KafePinProDesktop.cs'
+          Select-String -Path $cs -Pattern 'Yazıcı|Yazici|17891|WebView|TabPage|WhatsApp|Navigate|Source|Process.Start' -Context 8,12 | ForEach-Object { $_.ToString() }
+          Write-Host '--- DESKTOP SETUP VERSION/LAUNCH ---'
+          $ps=Join-Path $tmp 'KafePin_Desktop_App_Setup.ps1'
+          Select-String -Path $ps -Pattern 'AppVersion|SourceFile|Start-Process|New-KafePinShortcut' -Context 2,4 | ForEach-Object { $_.ToString() }
