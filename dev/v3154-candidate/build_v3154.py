@@ -19,6 +19,8 @@ def sha(b: bytes) -> str:
 
 def patch_candidate2(build: Path) -> None:
     payload = build / 'v3154-yazici-payload'
+    for cache in payload.rglob('__pycache__'):
+        if cache.is_dir(): shutil.rmtree(cache, ignore_errors=True)
     for rel in ['web_service.py','KafePin_YaziciPRO_WebView2.ps1','START_YAZICI_PRO.cmd','KafePin_YaziciGelir_Service.js']:
         p=payload/rel; s=p.read_text(encoding='utf-8-sig')
         s=s.replace('3.1.54-candidate1','3.1.54-candidate2').replace('3154candidate1','3154candidate2')
@@ -49,7 +51,7 @@ def patch_candidate2(build: Path) -> None:
 
     s=mgr.read_text(encoding='utf-8-sig')
     for f in sorted(payload.rglob('*')):
-        if not f.is_file(): continue
+        if not f.is_file() or '__pycache__' in f.parts or f.suffix.lower()=='.pyc': continue
         src=str(f.relative_to(payload)).replace('/','\\')
         pattern=re.compile(r"(Src='"+re.escape(src)+r"';\s*Dst='[^']+';\s*Sha=')[0-9a-fA-F]{64}(')")
         s,n=pattern.subn(lambda m:m.group(1)+sha(f.read_bytes())+m.group(2),s,count=1)
