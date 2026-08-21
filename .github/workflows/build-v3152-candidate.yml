@@ -6,15 +6,26 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate-candidate:
     if: startsWith(github.head_ref, 'candidate/v3.1.52-') || startsWith(github.ref_name, 'candidate/v3.1.52-')
     runs-on: windows-latest
     steps:
-      - name: Checkout candidate
+      - name: Checkout candidate branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          fetch-depth: 0
+      - name: Detect already committed candidate
+        shell: powershell
+        run: |
+          if (Test-Path 'KafePin-Pro-Update-v3.1.52.zip') {
+            'CANDIDATE_ALREADY_COMMITTED=true' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            'CANDIDATE_ALREADY_COMMITTED=false' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -71,3 +82,12 @@ jobs:
             V3.1.52-CANDIDATE-TEST-REPORT.md
             latest-candidate.json
           retention-days: 7
+      - name: Commit first tested candidate to candidate branch
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        shell: bash
+        run: |
+          git config user.name 'KafePin Candidate Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add KafePin-Pro-Update-v3.1.52.zip KafePin-Pro-Update-v3.1.52.sha256.txt V3.1.52-CANDIDATE-TEST-REPORT.md latest-candidate.json
+          git commit -m 'candidate: publish Windows-tested KafePin Pro v3.1.52'
+          git push origin HEAD:candidate/v3.1.52-full
