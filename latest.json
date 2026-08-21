@@ -1,11 +1,11 @@
 {
-  "version": "3.1.55",
+  "version": "3.1.56",
   "channel": "candidate",
   "stableVersion": "3.1.49",
   "baseVersion": "3.1.49",
   "cumulative": true,
-  "publishedAt": "2026-08-21T11:05:00+03:00",
-  "notes": "v3.1.55 ADAY — 3.1.49 STABLE tabanlı kümülatif güncelleme. Yazıcı PRO ana KafePin içinden açılır; ayrı masaüstü Yazıcı PRO kısayolu kaldırılır. 17891 ve 17893 birlikte hazır olmadan panel açılmaz. Gelir çağrıları aynı-origin /revenue proxy üzerinden gider ve Failed to fetch yerine kontrollü servis hatası verir. WhatsApp Web ana KafePin penceresinde paylaşılan WebView2 profiliyle açılır. QR aynı-LAN, Sil, Ücretsiz, İptal ve EveryCafe salt-okunur kuralları korunur.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.55.zip",
-  "sha256": "c0757d3b9313e349e0e5ea47b300bedee2ffc9da732bf4ddbe36a2e00b3291cb"
+  "publishedAt": "2026-08-21T11:45:00+03:00",
+  "notes": "v3.1.56 ADAY — gerçek saha hatası düzeltmesi. Eski Yazıcı PRO masaüstü kısayolları tüm kullanıcı profillerinden kaldırılır; 17891+17893 görünmez süreçlerle ve sürüm doğrulamasıyla başlatılır; ana KafePin içinden açılır.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.56.zip",
+  "sha256": "b6ac42a0597e26a92347d3ca96afbdba240fd022813b60c42434c58f82a2f4d9"
 }
