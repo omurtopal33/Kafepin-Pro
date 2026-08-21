@@ -1,0 +1,159 @@
+name: Build v3.1.58 Updater Bootstrap Fix
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3158-candidate/**'
+      - 'KafePin-UPDATE-UNLOCK-v3.1.58.ps1'
+      - '.github/workflows/build-v3158-bootstrap.yml'
+permissions:
+  contents: write
+jobs:
+  bootstrap-field-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build deterministic v3.1.58
+        shell: pwsh
+        run: |
+          python -m py_compile dev/v3158-candidate/build_v3158.py
+          python dev/v3158-candidate/build_v3158.py
+          if($LASTEXITCODE -ne 0){throw 'First v3.1.58 build failed'}
+          $h1=(Get-FileHash 'KafePin-Pro-Update-v3.1.58.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          python dev/v3158-candidate/build_v3158.py
+          if($LASTEXITCODE -ne 0){throw 'Second v3.1.58 build failed'}
+          $h2=(Get-FileHash 'KafePin-Pro-Update-v3.1.58.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($h1 -ne $h2){throw 'Deterministic SHA mismatch'}
+          Write-Host "V3158_SHA=$h2"
+
+      - name: Reproduce field deadlock and test one-time unlock
+        shell: pwsh
+        run: |
+          $old='dev/v3157-candidate/exact/KafePin_Manager_Ensure.ps1'
+          $txt=Get-Content $old -Raw
+          if($txt -notmatch 'yazici-pro-version\.json.*8db26084ca7fb091c5be9765d3e28d2a11638447e9abfdcfc73c95319b890ff0'){throw 'Exact stale v3.1.56 manager hash not reproduced'}
+          $actual=(Get-Content 'dev/v3157-candidate/exact/ACTUAL_VERSION_SHA.txt' -Raw).Trim()
+          if($actual -ne '641e2da9159cf7d0ba19ad212e246f2eb186907716a2c4b692a35ead29561b3c'){throw 'Exact real payload SHA changed'}
+          $root=Join-Path $env:RUNNER_TEMP 'C-KafePin-field-deadlock'; New-Item -ItemType Directory -Force -Path $root|Out-Null
+          Copy-Item $old "$root/KafePin_Manager_Ensure.ps1"
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File 'KafePin-UPDATE-UNLOCK-v3.1.58.ps1' -InstallRoot $root -PatchOnly
+          if($LASTEXITCODE -ne 0){throw 'Unlock patch failed'}
+          $fixed=Get-Content "$root/KafePin_Manager_Ensure.ps1" -Raw
+          if($fixed -match '-ne \[string\]\$pair\.Sha'){throw 'Stale embedded runtime SHA compare survived'}
+          if($fixed -notmatch '\$destSha -ne \$sourceSha'){throw 'Source-destination SHA compare missing'}
+          Write-Host 'V3158_FIELD_DEADLOCK_UNLOCK_OK'
+
+      - name: Expand and validate bootstrap ordering
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3158'; Expand-Archive 'KafePin-Pro-Update-v3.1.58.zip' $pkg -Force
+          $u=Get-Content "$pkg/update.json" -Raw|ConvertFrom-Json
+          if($u.version -ne '3.1.58' -or $u.channel -ne 'candidate' -or $u.stableVersion -ne '3.1.49' -or $u.baseVersion -ne '3.1.49' -or -not $u.cumulative){throw 'update policy failed'}
+          $server=Get-Content "$pkg/server.js" -Raw
+          $a=$server.IndexOf('app.post("/admin/pro/apply-update"')
+          $b=$server.IndexOf('// Internet olmadiginda da ayni guvenli akis',$a)
+          if($a -lt 0 -or $b -lt 0){throw 'apply-update handler missing'}
+          $handler=$server.Substring($a,$b-$a)
+          if($handler -match 'Server Manager on-kontrolu basarisiz' -or $handler -match 'ensureKafePinManagerReadySync\(\)'){throw 'Old Manager still blocks update before download'}
+          $p=$server.IndexOf('function applyPreparedUpdateDirect')
+          $q=$server.IndexOf('// Eski fonksiyon adi korunuyor',$p)
+          $apply=$server.Substring($p,$q-$p)
+          $copy=$apply.IndexOf('writeProUpdateState("copy"')
+          $ensure=$apply.IndexOf('ensureKafePinManagerReadySync();')
+          if($copy -lt 0 -or $ensure -lt 0 -or $ensure -le $copy){throw 'New Manager is not ensured after package copy'}
+          Write-Host 'V3158_BOOTSTRAP_ORDER_OK'
+
+      - name: Syntax checks
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3158'
+          node --check "$pkg/server.js"
+          node --check "$pkg/v3157-yazici-payload/KafePin_YaziciGelir_Service.js"
+          python -m py_compile "$pkg/v3157-yazici-payload/web_service.py"
+          foreach($f in @("$pkg/KafePin_Manager_Ensure.ps1",'KafePin-UPDATE-UNLOCK-v3.1.58.ps1')){
+            $tokens=$null;$errors=$null;[System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$tokens,[ref]$errors)|Out-Null
+            if($errors.Count){$errors|%{Write-Host $_};throw "PowerShell parse failed: $f"}
+          }
+          if((Get-Content "$pkg/server.js" -Raw) -notmatch 'sqlite3.OPEN_READONLY'){throw 'EveryCafe read-only lost'}
+
+      - name: Re-test hidden 17891 plus 17893 startup
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3158'; $root=Join-Path $env:RUNNER_TEMP 'KafePinYaziciPRO-3158'
+          New-Item -ItemType Directory -Force -Path $root|Out-Null
+          Copy-Item "$pkg/v3157-yazici-payload/KafePin_YaziciPRO_ServiceHost.ps1" "$root/KafePin_YaziciPRO_ServiceHost.ps1"
+          @'
+          const http=require('http'); const s=http.createServer((q,r)=>{r.setHeader('Content-Type','application/json');if(q.url.startsWith('/health'))r.end(JSON.stringify({ok:true,version:'3.1.56-candidate1'}));else{r.statusCode=404;r.end('{}')}});s.listen(17893,'127.0.0.1');
+          '@|Set-Content "$root/KafePin_YaziciGelir_Service.js" -Encoding UTF8
+          @'
+          from http.server import BaseHTTPRequestHandler,HTTPServer
+          import json
+          class H(BaseHTTPRequestHandler):
+              def do_GET(self):
+                  if self.path.startswith('/api/health'):
+                      b=json.dumps({'ok':True,'version':'3.1.56-candidate1'}).encode();self.send_response(200);self.send_header('X-KafePin-Yazici-Isolation','separate-loopback-service');self.end_headers();self.wfile.write(b)
+                  else:self.send_response(404);self.end_headers()
+              def log_message(self,*a):pass
+          HTTPServer(('127.0.0.1',17891),H).serve_forever()
+          '@|Set-Content "$root/web_service.py" -Encoding UTF8
+          $node=(Get-Command node.exe).Source;$py=(Get-Command python.exe).Source
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "$root/KafePin_YaziciPRO_ServiceHost.ps1" -InstallRoot $root -NodePath $node -PythonPath $py -SkipRepair
+          if($LASTEXITCODE -ne 0){throw 'dual service host failed'}
+          $w=Invoke-RestMethod 'http://127.0.0.1:17891/api/health' -TimeoutSec 2;$r=Invoke-RestMethod 'http://127.0.0.1:17893/health' -TimeoutSec 2
+          if(-not $w.ok -or -not $r.ok){throw 'dual service health failed'}
+          $st=Get-Content "$env:ProgramData/KafePinPro/logs/v3156-yazici-startup.json" -Raw|ConvertFrom-Json
+          foreach($pidValue in @([int]$st.nodePid,[int]$st.pythonPid)){ $p=Get-Process -Id $pidValue -ErrorAction Stop;if($p.MainWindowHandle -ne 0){throw "visible service window pid=$pidValue"};Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue }
+          Write-Host 'V3158_DUAL_SERVICE_HIDDEN_OK'
+
+      - name: Validate ZIP manifest
+        shell: pwsh
+        run: |
+          @'
+          import json,zipfile
+          from pathlib import Path
+          p=Path('KafePin-Pro-Update-v3.1.58.zip')
+          with zipfile.ZipFile(p) as z:
+              assert z.testzip() is None
+              u=json.loads(z.read('update.json').decode('utf-8-sig'))
+              assert set(z.namelist())==set(u['files'])
+          print('V3158_ZIP_MANIFEST_OK')
+          '@|Set-Content 'dev/v3158-candidate/check_zip.py' -Encoding UTF8
+          python dev/v3158-candidate/check_zip.py
+
+      - name: Publish tested candidate outputs
+        shell: pwsh
+        run: |
+          $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.58.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $report=@"
+          # KafePin Pro v3.1.58 ADAY — Updater Bootstrap Düzeltmesi
+
+          - STABLE: **3.1.49**
+          - Aday: **3.1.58**
+          - Windows test sonucu: **BAŞARILI**.
+          - Gerçek saha deadlock'u üretildi: v3.1.56 Manager gömülü `8db26084...`, gerçek payload `641e2da...`.
+          - Tek-seferlik unlock script eski Manager üzerinde **BAŞARILI** (`V3158_FIELD_DEADLOCK_UNLOCK_OK`).
+          - Normal updater artık eski Manager ön-kontrolü yapmıyor; paket/yeni Manager önce kuruluyor (`V3158_BOOTSTRAP_ORDER_OK`).
+          - Node/Python/PowerShell sözdizimi ve EveryCafe salt-okunur kuralı **BAŞARILI**.
+          - 17891+17893 gizli süreç regresyon testi **BAŞARILI**.
+          - ZIP manifest/bütünlük **BAŞARILI**.
+          - Paket SHA256: `$sha`
+          "@
+          Set-Content 'V3.1.58-CANDIDATE-TEST-REPORT.md' $report -Encoding UTF8
+          git config user.name 'github-actions[bot]';git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- 'KafePin-Pro-Update-v3.1.58.zip' 'KafePin-Pro-Update-v3.1.58.sha256.txt' 'V3.1.58-CANDIDATE-TEST-REPORT.md' 'latest.json' 'KafePin-UPDATE-UNLOCK-v3.1.58.ps1'
+          foreach($p in @('KafePin-Pro-Update-v3.1.57.zip','KafePin-Pro-Update-v3.1.57.sha256.txt','V3.1.57-CANDIDATE-TEST-REPORT.md')){if(Test-Path $p){git rm -f -- $p}}
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'release: publish field-tested v3.1.58 bootstrap candidate [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

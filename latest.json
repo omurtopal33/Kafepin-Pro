@@ -1,11 +1,11 @@
 {
-  "version": "3.1.57",
+  "version": "3.1.58",
   "channel": "candidate",
   "stableVersion": "3.1.49",
   "baseVersion": "3.1.49",
   "cumulative": true,
-  "publishedAt": "2026-08-21T11:58:00+03:00",
-  "notes": "v3.1.57 ADAY — v3.1.56'daki yazici-pro-version.json bayat SHA kurulum hatasını yapısal olarak kaldırır. Paket bütünlüğü ZIP SHA256 ile, payload kopyası gerçek kaynak→hedef SHA256 ile doğrulanır.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.57.zip",
-  "sha256": "613f84888b4f89b12c6792164e395f171b07373e7a57ee95c1aa9cd27b759775"
+  "publishedAt": "2026-08-21T12:08:00+03:00",
+  "notes": "v3.1.58 ADAY — updater bootstrapping düzeltmesi. Eski Manager yeni güncellemeyi bloke edemez; yeni paket/Manager önce kurulur, Manager doğrulaması sonra yapılır.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.58.zip",
+  "sha256": "0e911bccdc67f2bdeb612f6de65116c5f5ab64a2779c931587fe8940d4486099"
 }

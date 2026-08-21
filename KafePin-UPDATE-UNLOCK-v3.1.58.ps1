@@ -1,0 +1,60 @@
+param(
+  [string]$InstallRoot = 'C:\KafePin',
+  [switch]$NoStartUpdate,
+  [switch]$PatchOnly
+)
+$ErrorActionPreference = 'Stop'
+$mgr = Join-Path $InstallRoot 'KafePin_Manager_Ensure.ps1'
+if (-not (Test-Path -LiteralPath $mgr -PathType Leaf)) { throw ('Manager bulunamadi: ' + $mgr) }
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$backup = $mgr + '.before-v3158-' + $stamp + '.bak'
+Copy-Item -LiteralPath $mgr -Destination $backup -Force
+
+$text = Get-Content -LiteralPath $mgr -Raw -Encoding UTF8
+$normalized = $text.Replace("`r`n","`n")
+$copyLine = '    Copy-Item -LiteralPath $src -Destination $dst -Force'
+$oldCompare = "    if ((YaziciFileSha `$dst) -ne [string]`$pair.Sha) { throw ('Yazici PRO SHA256 dogrulamasi basarisiz: ' + [string]`$pair.Dst) }"
+$newCopy = "    # v3.1.58 bootstrap: bayat build-time pair.Sha yerine GERCEK kaynak dosya hash'i kullanilir.`n    `$sourceSha = YaziciFileSha `$src`n$copyLine"
+$newCompare = "    `$destSha = YaziciFileSha `$dst`n    if (`$destSha -ne `$sourceSha) { throw ('Yazici PRO kaynak-hedef SHA256 dogrulamasi basarisiz: ' + [string]`$pair.Dst) }"
+
+if ($normalized.Contains('$destSha -ne $sourceSha')) {
+  Write-Host 'Manager SHA kontrolu zaten yeni yontemde.'
+} else {
+  if (-not $normalized.Contains($copyLine)) { throw 'Eski Manager Copy-Item satiri bulunamadi; dosya degistirilmedi.' }
+  if (-not $normalized.Contains($oldCompare)) { throw 'Eski Manager pair.Sha kontrol satiri bulunamadi; dosya degistirilmedi.' }
+  $normalized = $normalized.Replace($copyLine,$newCopy)
+  $normalized = $normalized.Replace($oldCompare,$newCompare)
+  [IO.File]::WriteAllText($mgr, $normalized.Replace("`n","`r`n"), (New-Object Text.UTF8Encoding($true)))
+  Write-Host 'Eski bayat SHA kontrolu kaldirildi.'
+}
+
+$tokens=$null; $errors=$null
+[System.Management.Automation.Language.Parser]::ParseFile($mgr,[ref]$tokens,[ref]$errors) | Out-Null
+if ($errors.Count) {
+  Copy-Item -LiteralPath $backup -Destination $mgr -Force
+  throw ('Manager PowerShell parse hatasi; yedek geri yuklendi: ' + (($errors | ForEach-Object {$_.Message}) -join ' | '))
+}
+if($PatchOnly){ Write-Host 'KAFEPIN_MANAGER_BOOTSTRAP_PATCH_ONLY_OK'; exit 0 }
+
+$node = ''
+foreach($p in @((Join-Path $InstallRoot 'node\node.exe'),'C:\Program Files\nodejs\node.exe','C:\Program Files (x86)\nodejs\node.exe')) {
+  if(Test-Path -LiteralPath $p -PathType Leaf){ $node=$p; break }
+}
+if(-not $node){ try{$c=Get-Command node.exe -ErrorAction Stop; $node=[string]$c.Source}catch{} }
+if(-not $node){ throw 'node.exe bulunamadi; Manager onarimi tamamlandi fakat otomatik test baslatilamadi.' }
+
+Write-Host 'Manager gercek kaynak-hedef SHA ile test ediliyor...'
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $mgr -InstallRoot $InstallRoot -NodePath $node
+if($LASTEXITCODE -ne 0){ throw ('Onarilmis Manager testi basarisiz. Cikis=' + $LASTEXITCODE) }
+Write-Host 'KAFEPIN_MANAGER_BOOTSTRAP_REPAIR_OK'
+
+if($NoStartUpdate){ exit 0 }
+Write-Host 'KafePin guncellemesi tek seferde baslatiliyor...'
+try {
+  $r = Invoke-RestMethod -UseBasicParsing -Method Post -Uri 'http://127.0.0.1:3000/admin/pro/apply-update' -TimeoutSec 45
+  if(-not $r.ok){ throw ('Guncelleme endpoint olumsuz yanit verdi: ' + ($r | ConvertTo-Json -Compress)) }
+  Write-Host ('KAFEPIN_UPDATE_STARTED_OK version=' + [string]$r.version)
+  Write-Host 'Paket indiriliyor/kuruluyor; KafePin yeniden baslayabilir.'
+} catch {
+  throw ('Manager onarildi fakat guncelleme baslatma cagrisi basarisiz: ' + $_.Exception.Message)
+}
