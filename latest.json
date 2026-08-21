@@ -1,11 +1,11 @@
 {
-  "version": "3.1.52",
+  "version": "3.1.53",
   "channel": "candidate",
   "stableVersion": "3.1.49",
   "baseVersion": "3.1.49",
-  "cumulative": false,
-  "publishedAt": "2026-08-21T07:23:30+03:00",
-  "notes": "v3.1.52 ADAY — v3.1.49 STABLE üzerine saha testi için yayınlandı. Yazıcı PRO: işlem tamamlandıktan sonra tutar ve ödeme gösterilir; kullanıcı açıkça 'KafePin'e İşle' demeden finans kaydı gönderilmez. Fotokopi S/B/Renkli ve kopya adediyle çalışır; fotokopide ayrıca tarama ücreti alınmaz. Sadece Tarama için sayfa başı tarama ücreti, PDF/JPG ve WhatsApp paylaşımı vardır. Üstte WhatsApp Web, ortak işlemlerde WhatsApp'a Gönder bulunur. Word/Chrome/Adobe çıktıları Son Yazdırmalar'a düşer; Belge/Dilekçe Hazırlama ücreti çıktı ile birleştirilebilir. Ücretsiz kapatma, tutar/ödeme düzeltme ve çift satış engeli vardır. v3.1.51 Telegram çift mesaj/sağlık raporu/Canlı Durum alta taşıma düzeltmeleri korunur. MP3 PRO, Teknik Servis PRO, EveryCafe, session ve spin davranışları değiştirilmez. Bu sürüm ADAYDIR; kullanıcı sahada doğrulayıp 'kitle' demeden STABLE değildir.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.52.zip",
-  "sha256": "fe663270726d1b82b475db5412148cd41cd730f2fa10e4401bbff6ce737eb47c"
+  "cumulative": true,
+  "publishedAt": "2026-08-21T09:14:10+03:00",
+  "notes": "v3.1.53 ADAY — v3.1.49 STABLE tabanlı KÜMÜLATİF güncelleme. v3.1.52 Yazıcı PRO/Event 307 ve açık onaydan önce finans göndermeme davranışı korunur. Yeni: Yazıcı PRO tek masaüstü penceresinde WebView2 ile Yazıcı PRO + WhatsApp Web; Belge / Dilekçe & AI; WORD AÇ ve FOTOĞRAFTAN WORD’E; fotoğraf/kamera/tarayıcı/İndirilenler görsel seçimi; OpenAI Responses API ile görselden metin ve el yazısı denemesi, şüpheli alan işaretleme, Word öncesi düzeltme, Word/PDF/WhatsApp ve isteğe bağlı yerel AI veri temizliği. AI metne çevirme otomatik satış oluşturmaz. KafePin_AI_ belge yazdırılırsa Belge/Dilekçe Hazırlama + çıktı birlikte hesaplanır. Onay ekranı KafePin’e İşle / Düzelt / Ücretsiz / İptal / Sil sunar. Doğrudan Satış POST yalnız açık onay yolundadır; çift satış engeli korunur. EveryCafe’ye yazılmaz. STABLE taban v3.1.49 olarak kalır.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.53.zip",
+  "sha256": "50af3a107da59d9713287fd1c3981674f854b64ac3ed2b0788f782a2a08d67b6"
 }
