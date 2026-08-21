@@ -1,0 +1,37 @@
+name: Stage v3.1.58 Updater Bootstrap Source
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage-v3158-bootstrap.yml'
+permissions:
+  contents: write
+jobs:
+  stage:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+      - name: Extract published v3.1.57 source
+        shell: pwsh
+        run: |
+          $x=Join-Path $env:RUNNER_TEMP 'v3157'
+          Expand-Archive 'KafePin-Pro-Update-v3.1.57.zip' $x -Force
+          New-Item -ItemType Directory -Force -Path 'dev/v3158-candidate/exact' | Out-Null
+          Copy-Item "$x/server.js" 'dev/v3158-candidate/exact/server.js' -Force
+          Copy-Item "$x/KafePin_Manager_Ensure.ps1" 'dev/v3158-candidate/exact/KafePin_Manager_Ensure.ps1' -Force
+          $s=Get-Content "$x/server.js"
+          $hits=Select-String -Path "$x/server.js" -Pattern 'Manager|manager|update|guncelle|Guncelle' -Context 4,8
+          $hits | ForEach-Object { $_.ToString(); $_.Context.PreContext; $_.Line; $_.Context.PostContext; '---' } | Set-Content 'dev/v3158-candidate/exact/update-manager-context.txt' -Encoding UTF8
+      - name: Publish staged source
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add dev/v3158-candidate/exact
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'dev: stage v3.1.58 updater bootstrap source [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
