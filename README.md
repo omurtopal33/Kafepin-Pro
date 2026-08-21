@@ -3,18 +3,20 @@
 ## Kararlı sürüm
 
 - **v3.1.29:** Yeni Kafe kurulum temeli.
-- **v3.1.49:** Güncel **STABLE / KÜMÜLATİF** sürüm. v3.1.29’dan ara paket kurmadan doğrudan uygulanır.
-- Bundan sonraki yayınlar **TEST** güncellemesi olarak ilerler. TEST paketleri yalnız `latest-test.json` üzerinden bildirilir; `latest.json` yalnız STABLE sürümü gösterir ve v3.1.49’da kalır.
+- **v3.1.49:** Önceki kararlı kümülatif sürüm.
+- **v3.1.60:** Güncel **STABLE / KÜMÜLATİF** sürüm. v3.1.29’dan ara paket kurmadan doğrudan uygulanır.
+- TEST paketleri yalnız `latest-test.json` üzerinden bildirilir; `latest.json` yalnız güncel STABLE sürümünü gösterir.
 
 ## Yeni Kafe kurulumu
 
-`KafePin-Pro-Yeni-Kafe-STABLE-v3.1.49.zip` içindeki mevcut Ana Sunucu ve Client EXE’leri kullanılır. Ana Sunucu kurulumu internet bağlantısıyla GitHub’daki v3.1.49 paketini tek adımda uygular. Ardından üç bağımsız bileşen ayrı ayrı sorulur:
+`KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip` içindeki mevcut Ana Sunucu ve Client EXE’leri kullanılır. Ana Sunucu kurulumu internet bağlantısıyla GitHub’daki v3.1.60 paketini tek adımda uygular. Ardından dört bağımsız bileşen ayrı ayrı sorulur:
 
-Kurulum ekranı **“KafePin Pro v3.1.49 STABLE — kurulum tabanı v3.1.29”** ifadesini gösterir. Teknik bootstrap karşılaştırması v3.1.29 ile devam eder; yalnız STABLE `latest.json` okunur.
+Kurulum ekranı **“KafePin Pro v3.1.60 STABLE — kurulum tabanı v3.1.29”** ifadesini gösterir. Teknik bootstrap karşılaştırması v3.1.29 ile devam eder; yalnız STABLE `latest.json` okunur.
 
 - MP3 Bot PRO (`C:\KafePinMp3BotPRO`)
 - Yazıcı PRO (`C:\KafePin\KafePinYaziciPRO`)
 - Teknik Servis PRO (`C:\KafePinTeknikServisPRO`)
+- Client Yönetim PRO (`C:\KafePin\KafePinClientYonetimPRO`)
 
 Client EXE, client ping ve çark kurulum davranışı değişmez.
 
@@ -27,7 +29,8 @@ Client EXE, client ping ve çark kurulum davranışı değişmez.
 
 ## Paketler
 
-Depoda yalnız şu iki sürüm paketi tutulur:
+Depoda önceki kararlı paketler ile güncel paket tutulur:
 
 - `KafePin-Pro-Update-v3.1.29.zip`
 - `KafePin-Pro-Update-v3.1.49.zip`
+- `KafePin-Pro-Update-v3.1.60.zip`
