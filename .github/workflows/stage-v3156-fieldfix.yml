@@ -1,0 +1,42 @@
+name: Stage v3.1.56 Field Fix Inputs
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage-v3156-fieldfix.yml'
+permissions:
+  contents: write
+jobs:
+  stage:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+      - name: Extract exact v3.1.55 published package
+        shell: pwsh
+        run: |
+          $src=Join-Path $env:RUNNER_TEMP 'kp3155'
+          Expand-Archive 'KafePin-Pro-Update-v3.1.55.zip' $src -Force
+          $dst='dev/v3156-candidate/exact'
+          New-Item -ItemType Directory -Force -Path "$dst/desktop-app","$dst/yazici" | Out-Null
+          Copy-Item "$src/KafePin_Manager_Ensure.ps1" "$dst/KafePin_Manager_Ensure.ps1" -Force
+          Copy-Item "$src/KafePin_Desktop_App_Setup.ps1" "$dst/KafePin_Desktop_App_Setup.ps1" -Force
+          Copy-Item "$src/server.js" "$dst/server.js" -Force
+          Copy-Item "$src/desktop-app/KafePinProDesktop.cs" "$dst/desktop-app/KafePinProDesktop.cs" -Force
+          Copy-Item "$src/desktop-app/KafePin.ico" "$dst/desktop-app/KafePin.ico" -Force
+          Copy-Item "$src/v3155-yazici-payload/START_YAZICI_PRO.cmd" "$dst/yazici/START_YAZICI_PRO.cmd" -Force
+          Copy-Item "$src/v3155-yazici-payload/KafePin_YaziciGelir_Service.js" "$dst/yazici/KafePin_YaziciGelir_Service.js" -Force
+          Copy-Item "$src/v3155-yazici-payload/web_service.py" "$dst/yazici/web_service.py" -Force
+          Copy-Item "$src/v3155-yazici-payload/index.html" "$dst/yazici/index.html" -Force
+          Copy-Item "$src/v3155-yazici-payload/v3155-ai.js" "$dst/yazici/v3155-ai.js" -Force
+          Copy-Item "$src/v3155-yazici-payload/yazici-pro-version.json" "$dst/yazici/yazici-pro-version.json" -Force
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- 'dev/v3156-candidate/exact'
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'dev: stage exact v3.1.55 field-fix inputs [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
