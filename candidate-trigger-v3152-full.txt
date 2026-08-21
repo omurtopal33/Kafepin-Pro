@@ -1,1 +1,2 @@
 Trigger full Windows validation for KafePin Pro v3.1.52 candidate.
+Retry after helper-path correction.
