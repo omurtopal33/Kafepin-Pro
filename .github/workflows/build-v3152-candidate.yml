@@ -38,6 +38,7 @@ jobs:
           $sha = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
           if ($sha -ne '494d58263dcf5087e78385a774ab4c7822f8995e8af47d3aa10ddb0a638ff160') { throw "Source bundle SHA mismatch: $sha" }
           Expand-Archive -LiteralPath $zip -DestinationPath $dst -Force
+          Get-ChildItem -LiteralPath $dst -File | Copy-Item -Destination $srcRoot -Force
       - name: Build and run full candidate tests
         shell: powershell
         run: python dev/v3152-candidate/src/build_v3152.py
