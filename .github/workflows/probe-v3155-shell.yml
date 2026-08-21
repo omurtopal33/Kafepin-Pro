@@ -1,0 +1,41 @@
+name: Stage v3.1.55 Exact Sources
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/probe-v3155-shell.yml'
+permissions:
+  contents: write
+jobs:
+  stage:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+      - name: Extract exact published sources
+        shell: pwsh
+        run: |
+          $b149=Join-Path $env:RUNNER_TEMP 'kp149'; $b154=Join-Path $env:RUNNER_TEMP 'kp154'
+          Expand-Archive 'KafePin-Pro-Update-v3.1.49.zip' $b149 -Force
+          Expand-Archive 'KafePin-Pro-Update-v3.1.54.zip' $b154 -Force
+          $dst='dev/v3155-candidate/exact'; New-Item -ItemType Directory -Force -Path "$dst/desktop-app","$dst/yazici" | Out-Null
+          Copy-Item "$b149/desktop-app/KafePinProDesktop.cs" "$dst/desktop-app/KafePinProDesktop.cs" -Force
+          Copy-Item "$b149/KafePin_Desktop_App_Setup.ps1" "$dst/KafePin_Desktop_App_Setup.ps1" -Force
+          Copy-Item "$b149/desktop-app/KafePin.ico" "$dst/desktop-app/KafePin.ico" -Force
+          Copy-Item "$b154/KafePin_Manager_Ensure.ps1" "$dst/KafePin_Manager_Ensure.ps1" -Force
+          Copy-Item "$b154/server.js" "$dst/server.js" -Force
+          Copy-Item "$b154/v3154-yazici-payload/START_YAZICI_PRO.cmd" "$dst/yazici/START_YAZICI_PRO.cmd" -Force
+          Copy-Item "$b154/v3154-yazici-payload/web_service.py" "$dst/yazici/web_service.py" -Force
+          Copy-Item "$b154/v3154-yazici-payload/index.html" "$dst/yazici/index.html" -Force
+          Copy-Item "$b154/v3154-yazici-payload/KafePin_YaziciGelir_Service.js" "$dst/yazici/KafePin_YaziciGelir_Service.js" -Force
+          Copy-Item "$b154/v3154-yazici-payload/v3154-ai.js" "$dst/yazici/v3154-ai.js" -Force
+          Copy-Item "$b154/v3154-yazici-payload/yazici-pro-version.json" "$dst/yazici/yazici-pro-version.json" -Force
+          git config user.name 'github-actions[bot]'; git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- 'dev/v3155-candidate/exact'
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'dev: stage exact v3.1.55 source inputs [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

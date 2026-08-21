@@ -1,0 +1,180 @@
+name: Build v3.1.55 Candidate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3155-candidate/**'
+      - '.github/workflows/build-v3155-candidate.yml'
+permissions:
+  contents: write
+jobs:
+  build-test:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Reassemble builder and prepare Manager
+        shell: pwsh
+        run: |
+          $parts = Get-ChildItem 'dev/v3155-candidate/build.b64.part*' | Sort-Object Name
+          if ($parts.Count -ne 4) { throw "Expected 4 builder parts, got $($parts.Count)" }
+          $b64 = ($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join ''
+          [IO.File]::WriteAllBytes('dev/v3155-candidate/build_v3155.py',[Convert]::FromBase64String($b64))
+          @'
+          from pathlib import Path
+          import re
+
+          # Prepare the exact v3.1.54 Manager for v3.1.55.
+          mp=Path('dev/v3155-candidate/exact/KafePin_Manager_Ensure.ps1')
+          m=mp.read_text(encoding='utf-8-sig')
+          start="  $startCmd = Join-Path $YaziciRoot 'START_YAZICI_PRO.cmd'"
+          end="  [ordered]@{ version='3.1.54';"
+          i=m.find(start)
+          j=m.find(end, i if i >= 0 else 0)
+          if i >= 0 and j > i:
+              m=m[:i]+m[j:]
+          elif 'CreateShortcut(' in m:
+              raise SystemExit('legacy shortcut block markers missing')
+
+          desktop_block="""  $desktopSetup = Join-Path $InstallRoot 'KafePin_Desktop_App_Setup.ps1'
+          if (-not (Test-Path -LiteralPath $desktopSetup -PathType Leaf)) { throw 'KafePin_Desktop_App_Setup.ps1 bulunamadi.' }
+          YaziciLog 'KafePin ana masaustu uygulamasi v1.1.4 kuruluyor.'
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $desktopSetup -InstallRoot $InstallRoot -AppVersion '1.1.4'
+          if ($LASTEXITCODE -ne 0) { throw ('KafePin ana masaustu uygulamasi guncellenemedi. Cikis=' + $LASTEXITCODE) }
+          YaziciLog 'KafePin ana masaustu uygulamasi v1.1.4 hazir.'
+          """
+          marker="  [ordered]@{ version='3.1.54';"
+          if 'KafePin ana masaustu uygulamasi v1.1.4 kuruluyor.' not in m:
+              if marker not in m:
+                  raise SystemExit('manager desktop insert marker missing')
+              m=m.replace(marker,desktop_block+marker,1)
+          mp.write_text(m,encoding='utf-8-sig')
+
+          # Fix Python re.sub replacement escaping in the generated builder.
+          p=Path('dev/v3155-candidate/build_v3155.py')
+          s=p.read_text(encoding='utf-8')
+          old=",block+'\\n  foreach ($pair in $pairs)',s,count=1,flags=re.S)"
+          new=",lambda _m: block+'\\n  foreach ($pair in $pairs)',s,count=1,flags=re.S)"
+          if old not in s:
+              raise SystemExit('builder manager replacement marker missing')
+          s=s.replace(old,new,1)
+
+          # The shortcut source block is already removed above, so zero matches is valid.
+          lines=s.splitlines()
+          changed=False
+          for n,line in enumerate(lines):
+              if 'manager shortcut block patch failed' in line and re.search(r'if\s+n\s*!=\s*1',line):
+                  lines[n]=re.sub(r'if\s+n\s*!=\s*1','if n not in (0,1)',line,count=1)
+                  changed=True
+                  break
+          if not changed:
+              raise SystemExit('builder shortcut failure guard marker missing')
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
+          '@ | Set-Content 'dev/v3155-candidate/fix_builder.py' -Encoding UTF8
+          python dev/v3155-candidate/fix_builder.py
+          if($LASTEXITCODE -ne 0){throw 'Builder prepatch failed'}
+          python -m py_compile dev/v3155-candidate/build_v3155.py
+          if($LASTEXITCODE -ne 0){throw 'Builder Python compile failed'}
+
+      - name: Build deterministic candidate
+        shell: pwsh
+        run: |
+          python dev/v3155-candidate/build_v3155.py
+          if($LASTEXITCODE -ne 0){throw 'First candidate build failed'}
+          $h1=(Get-FileHash 'KafePin-Pro-Update-v3.1.55.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          python dev/v3155-candidate/build_v3155.py
+          if($LASTEXITCODE -ne 0){throw 'Second candidate build failed'}
+          $h2=(Get-FileHash 'KafePin-Pro-Update-v3.1.55.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($h1 -ne $h2){throw 'Deterministic rebuild SHA mismatch'}
+          Write-Host "V3155_SHA=$h2"
+
+      - name: Expand and static validate
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3155'; Expand-Archive 'KafePin-Pro-Update-v3.1.55.zip' $pkg -Force
+          $u=Get-Content "$pkg/update.json" -Raw | ConvertFrom-Json
+          if($u.version -ne '3.1.55' -or $u.channel -ne 'candidate' -or $u.baseVersion -ne '3.1.49' -or -not $u.cumulative){throw 'update.json policy failed'}
+          $l=Get-Content 'latest.json' -Raw | ConvertFrom-Json
+          if($l.version -ne '3.1.55' -or $l.stableVersion -ne '3.1.49' -or $l.baseVersion -ne '3.1.49'){throw 'latest.json stable policy failed'}
+          if(Test-Path "$pkg/v3155-yazici-payload/KafePin_YaziciPRO_WebView2.ps1"){throw 'Standalone Yazici PRO launcher must be removed'}
+          $idx=Get-Content "$pkg/v3155-yazici-payload/index.html" -Raw
+          if($idx -notmatch "const API='/revenue';"){throw 'same-origin revenue API missing'}
+          if($idx -notmatch 'open-whatsapp'){throw 'WhatsApp bridge marker missing'}
+          if($idx -notmatch 'v3155Verified'){throw 'v3155 UI marker missing'}
+          $cs=Get-Content "$pkg/desktop-app/KafePinProDesktop.cs" -Raw
+          foreach($m in @('WhatsAppUrl','PrinterCoreWebView2_WebMessageReceived','EnsureWhatsAppBrowserAsync','ShowWhatsAppView','revenue/health','START_YAZICI_PRO.cmd','--service-only')){if($cs -notmatch [regex]::Escape($m)){throw "desktop marker missing: $m"}}
+          $start=Get-Content "$pkg/v3155-yazici-payload/START_YAZICI_PRO.cmd" -Raw
+          foreach($m in @('17891','17893','3.1.55-candidate1','--service-only')){if($start -notmatch [regex]::Escape($m)){throw "starter marker missing: $m"}}
+          $mgr=Get-Content "$pkg/KafePin_Manager_Ensure.ps1" -Raw
+          if($mgr -match 'CreateShortcut\('){throw 'separate Yazici desktop shortcut creation still present'}
+          if($mgr -notmatch 'KafePin_Desktop_App_Setup.ps1'){throw 'main desktop refresh missing'}
+          if($mgr -notmatch "AppVersion '1.1.4'"){throw 'main desktop v1.1.4 install call missing'}
+          if($mgr -match 'Wait-YaziciWeb|Wait-YaziciRevenue|Stop-YaziciRuntime'){throw 'updater timeout regression marker found'}
+          $server=Get-Content "$pkg/server.js" -Raw
+          if($server -notmatch 'sqlite3.OPEN_READONLY'){throw 'EveryCafe read-only marker missing'}
+          if($server -notmatch 'KAFEPIN_DESKTOP_APP_VERSION = "1.1.4"'){throw 'desktop app version 1.1.4 missing'}
+
+      - name: Syntax checks
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3155'
+          node --check "$pkg/server.js"
+          node --check "$pkg/v3155-yazici-payload/KafePin_YaziciGelir_Service.js"
+          node --check "$pkg/v3155-yazici-payload/v3155-ai.js"
+          python -m py_compile "$pkg/v3155-yazici-payload/web_service.py"
+          $files=@("$pkg/KafePin_Manager_Ensure.ps1","$pkg/KafePin_Desktop_App_Setup.ps1")
+          foreach($f in $files){$tokens=$null;$errors=$null;[System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$tokens,[ref]$errors)|Out-Null;if($errors.Count){$errors|%{Write-Host $_};throw "PowerShell parse failed: $f"}}
+
+      - name: Compile main KafePin desktop shell
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3155'
+          $root=Join-Path $env:RUNNER_TEMP 'kp-desktop-test'
+          New-Item -ItemType Directory -Force -Path "$root/desktop-app" | Out-Null
+          Copy-Item "$pkg/desktop-app/KafePinProDesktop.cs" "$root/desktop-app/KafePinProDesktop.cs"
+          Copy-Item "$pkg/desktop-app/KafePin.ico" "$root/desktop-app/KafePin.ico"
+          Copy-Item "$pkg/KafePin_Desktop_App_Setup.ps1" "$root/KafePin_Desktop_App_Setup.ps1"
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$root/KafePin_Desktop_App_Setup.ps1" -InstallRoot $root -AppVersion '1.1.4'
+          if($LASTEXITCODE -ne 0){throw 'Desktop setup/compile failed'}
+          if(-not (Test-Path "$root/desktop-app/KafePin Pro.exe")){throw 'Desktop EXE not produced'}
+          Write-Host 'DESKTOP_COMPILE_OK'
+
+      - name: Validate package manifest and ZIP
+        shell: pwsh
+        run: |
+          @'
+          import json, zipfile
+          from pathlib import Path
+          p=Path('KafePin-Pro-Update-v3.1.55.zip')
+          with zipfile.ZipFile(p) as z:
+              bad=z.testzip()
+              assert bad is None, bad
+              u=json.loads(z.read('update.json').decode('utf-8-sig'))
+              assert set(z.namelist())==set(u['files']), (len(z.namelist()),len(u['files']))
+          print('ZIP_MANIFEST_OK')
+          '@ | Set-Content 'dev/v3155-candidate/check_zip.py' -Encoding UTF8
+          python dev/v3155-candidate/check_zip.py
+
+      - name: Publish tested outputs to candidate branch
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- 'KafePin-Pro-Update-v3.1.55.zip' 'KafePin-Pro-Update-v3.1.55.sha256.txt' 'V3.1.55-CANDIDATE-TEST-REPORT.md' 'latest.json'
+          foreach($p in @('KafePin-Pro-Update-v3.1.54.zip','KafePin-Pro-Update-v3.1.54.sha256.txt','V3.1.54-CANDIDATE-TEST-REPORT.md')){if(Test-Path $p){git rm -f -- $p}}
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'release: publish tested v3.1.55 candidate [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
