@@ -1,9 +1,0 @@
-{
-  "channel": "disabled",
-  "stableVersion": "3.1.49",
-  "version": null,
-  "available": false,
-  "notes": "TEST kanali kullanilmiyor. Eski guvenli duzene donuldu: mevcut STABLE v3.1.49 korunur; yeni surum aday ZIP olarak sahada denenir. Kullanici basarili oldugunu onaylayip 'kitle' dediginde aday surum STABLE olarak latest.json'a alinir ve sonraki gelistirme o surumun ustunden devam eder.",
-  "downloadUrl": "",
-  "sha256": ""
-}
