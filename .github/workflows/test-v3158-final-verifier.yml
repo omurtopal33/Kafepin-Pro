@@ -1,0 +1,47 @@
+name: Test v3.1.58 Final Verifier
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'KafePin-VERIFY-v3.1.58.ps1'
+      - '.github/workflows/test-v3158-final-verifier.yml'
+permissions:
+  contents: read
+jobs:
+  windows-final-verifier-test:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+      - name: Parse and reserved PID guard
+        shell: powershell
+        run: |
+          $tokens=$null;$errors=$null
+          [System.Management.Automation.Language.Parser]::ParseFile('KafePin-VERIFY-v3.1.58.ps1',[ref]$tokens,[ref]$errors)|Out-Null
+          if($errors.Count){$errors|ForEach-Object{Write-Host $_};throw 'PowerShell parse failed'}
+          $txt=Get-Content 'KafePin-VERIFY-v3.1.58.ps1' -Raw
+          if($txt -match '(?im)^\s*\$pid\s*='){throw 'Reserved $PID assignment found'}
+          if($txt -notmatch '\$serverPid\s*=\s*Get-PortPid 3000'){throw 'serverPid guard missing'}
+          Write-Host 'V3158_FINAL_VERIFIER_PARSE_PID_OK'
+      - name: Runtime test Wait-NewServer
+        shell: powershell
+        run: |
+          $src=Get-Content 'KafePin-VERIFY-v3.1.58.ps1' -Raw
+          $start=$src.IndexOf('function Wait-NewServer')
+          $end=$src.IndexOf('if((Get-Version)',$start)
+          if($start -lt 0 -or $end -le $start){throw 'Wait-NewServer block missing'}
+          $fn=$src.Substring($start,$end-$start)
+          $h=@"
+          function Get-PortPid([int]`$Port){return 9876}
+          function Test-ServerHttp{return `$true}
+          $fn
+          `$r=Wait-NewServer 1111 5
+          if([int]`$r -ne 9876){throw 'Wrong returned PID'}
+          Write-Host 'V3158_FINAL_VERIFIER_WAIT_OK'
+          "@
+          $p=Join-Path $env:RUNNER_TEMP 'verify-wait.ps1'
+          Set-Content -LiteralPath $p -Value $h -Encoding UTF8
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $p
+          if($LASTEXITCODE -ne 0){throw 'Wait-NewServer runtime test failed'}
