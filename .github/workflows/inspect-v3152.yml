@@ -1,0 +1,64 @@
+name: Inspect Yazici PRO for v3.1.52
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'candidate-trigger-v3152.txt'
+      - '.github/workflows/inspect-v3152.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  inspect-yazici:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Extract exact stable Yazici PRO engine
+        shell: pwsh
+        run: |
+          @'
+          from pathlib import Path
+          import zipfile, re, hashlib
+          outer=Path('KafePin-Pro-Update-v3.1.49.zip')
+          expected='9eb3468b4991476ae7850be0556315f05a4430ae3b94264cc53238b69fc2b34e'
+          got=hashlib.sha256(outer.read_bytes()).hexdigest()
+          if got!=expected: raise SystemExit(f'base sha mismatch: {got}')
+          out=Path('inspect3152'); out.mkdir(exist_ok=True)
+          with zipfile.ZipFile(outer) as z:
+              inner=z.read('pro-components/yazici-pro.zip')
+          (out/'yazici-pro.zip').write_bytes(inner)
+          with zipfile.ZipFile(out/'yazici-pro.zip') as z:
+              for src,dst in [('web/app.js','app.js'),('web_service.py','web_service.py'),('web/index.html','index.html')]:
+                  (out/dst).write_bytes(z.read(src))
+          app=(out/'app.js').read_text(encoding='utf-8-sig',errors='replace')
+          py=(out/'web_service.py').read_text(encoding='utf-8-sig',errors='replace')
+          lines=[]
+          lines.append('=== APP.JS IDs/FETCH ===')
+          for i,l in enumerate(app.splitlines(),1):
+              low=l.lower()
+              if any(x in low for x in ['scannormal','normalpreview','printbtn','savepdf','savejpg','fetch(','/api/','scan','print']):
+                  lines.append(f'{i}: {l}')
+          lines.append('\n=== WEB_SERVICE ROUTES ===')
+          for i,l in enumerate(py.splitlines(),1):
+              low=l.lower()
+              if any(x in low for x in ['@app.', 'route(', 'scan', 'print', 'save', 'pdf', 'jpg']):
+                  lines.append(f'{i}: {l}')
+          (out/'inspection.txt').write_text('\n'.join(lines),encoding='utf-8')
+          print('INSPECT_OK')
+          '@ | Set-Content inspect_yazici.py -Encoding UTF8
+          python inspect_yazici.py
+      - name: Upload inspection
+        uses: actions/upload-artifact@v4
+        with:
+          name: yazici-v3152-inspection
+          path: |
+            inspect3152/app.js
+            inspect3152/web_service.py
+            inspect3152/index.html
+            inspect3152/inspection.txt
+          if-no-files-found: error
+          retention-days: 2
