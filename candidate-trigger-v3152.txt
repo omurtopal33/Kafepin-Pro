@@ -1,1 +1,1 @@
-KafePin Pro v3.1.52 candidate inspection trigger.
+KafePin Pro v3.1.52 candidate full validation trigger.
