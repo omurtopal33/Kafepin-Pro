@@ -1,11 +1,11 @@
 {
-  "version": "3.1.51",
+  "version": "3.1.52",
   "channel": "candidate",
   "stableVersion": "3.1.49",
   "baseVersion": "3.1.49",
   "cumulative": false,
-  "publishedAt": "2026-08-20T21:23:00+03:00",
-  "notes": "v3.1.51 ADAY — v3.1.49 STABLE üzerine saha testi için yayınlandı. Yazıcı PRO: WhatsApp/Hızlı Çıktı, Son Yazdırmalar, Yazıcı Geliri ve Ücretsiz Yazdır. Telegram: aynı mesajın çift gönderimini engelleme, sağlık raporu tekilleştirme ve Canlı Durumun tek mesaj olarak en altta tutulması. MP3 PRO, Teknik Servis PRO, EveryCafe, session, spin ve diğer v3.1.49 çekirdekleri değiştirilmez. Bu sürüm ADAYDIR; kullanıcı sahada doğrulayıp 'kitle' demeden STABLE sayılmaz.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.51.zip",
-  "sha256": "ad941bf2fb6bed37fdcf2d08efcf4ab7084eb4de95abeae35ca54dce02d2411f"
+  "publishedAt": "2026-08-21T07:23:30+03:00",
+  "notes": "v3.1.52 ADAY — v3.1.49 STABLE üzerine saha testi için yayınlandı. Yazıcı PRO: işlem tamamlandıktan sonra tutar ve ödeme gösterilir; kullanıcı açıkça 'KafePin'e İşle' demeden finans kaydı gönderilmez. Fotokopi S/B/Renkli ve kopya adediyle çalışır; fotokopide ayrıca tarama ücreti alınmaz. Sadece Tarama için sayfa başı tarama ücreti, PDF/JPG ve WhatsApp paylaşımı vardır. Üstte WhatsApp Web, ortak işlemlerde WhatsApp'a Gönder bulunur. Word/Chrome/Adobe çıktıları Son Yazdırmalar'a düşer; Belge/Dilekçe Hazırlama ücreti çıktı ile birleştirilebilir. Ücretsiz kapatma, tutar/ödeme düzeltme ve çift satış engeli vardır. v3.1.51 Telegram çift mesaj/sağlık raporu/Canlı Durum alta taşıma düzeltmeleri korunur. MP3 PRO, Teknik Servis PRO, EveryCafe, session ve spin davranışları değiştirilmez. Bu sürüm ADAYDIR; kullanıcı sahada doğrulayıp 'kitle' demeden STABLE değildir.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.52.zip",
+  "sha256": "fe663270726d1b82b475db5412148cd41cd730f2fa10e4401bbff6ce737eb47c"
 }
