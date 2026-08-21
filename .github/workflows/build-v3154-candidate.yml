@@ -26,7 +26,7 @@ jobs:
       - name: Reassemble v3.1.54
         shell: pwsh
         run: python dev/v3154-candidate/build_v3154.py
-      - name: Validate package
+      - name: Validate package and UI wiring
         shell: pwsh
         run: |
           $tmp=Join-Path $env:RUNNER_TEMP 'kp3154'; if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force}; Expand-Archive 'KafePin-Pro-Update-v3.1.54.zip' $tmp
@@ -34,7 +34,7 @@ jobs:
           if($u.version -ne '3.1.54' -or $u.baseVersion -ne '3.1.49' -or -not $u.cumulative){throw 'metadata invalid'}
           $mgr=Get-Content (Join-Path $tmp 'KafePin_Manager_Ensure.ps1') -Raw -Encoding UTF8
           foreach($bad in @('Wait-YaziciWeb','Wait-YaziciRevenue','Stop-YaziciRuntime')){if($mgr.Contains($bad)){throw ('updater timeout risk '+$bad)}}
-          if(-not $mgr.Contains("updaterWait='none'")){throw 'updaterWait marker missing'}
+          foreach($must in @("updaterWait='none'",'KafePin Yazıcı PRO.lnk','KafePin Yazici PRO.lnk','START_YAZICI_PRO.cmd')){if(-not $mgr.Contains($must)){throw ('manager marker missing '+$must)}}
           $server=Get-Content (Join-Path $tmp 'server.js') -Raw -Encoding UTF8
           if(-not $server.Contains('sqlite3.OPEN_READONLY')){throw 'EveryCafe read-only missing'}
           node --check (Join-Path $tmp 'server.js')
@@ -42,12 +42,67 @@ jobs:
           node --check (Join-Path $tmp 'v3154-yazici-payload\v3154-ai.js')
           python -m py_compile (Join-Path $tmp 'v3154-yazici-payload\web_service.py')
           $html=Get-Content (Join-Path $tmp 'v3154-yazici-payload\index.html') -Raw -Encoding UTF8
-          foreach($must in @('confirm3154Cancel','confirm3154Delete','qjobdel','txdel','ai3154Mobile')){if(-not $html.Contains($must)){throw ('UI marker missing '+$must)}}
-          if($html.Contains('confirm3153Delete') -or $html.Contains("window.open(WA")){throw 'old/broken UI fallback remains'}
-          $web=Get-Content (Join-Path $tmp 'v3154-yazici-payload\web_service.py') -Raw -Encoding UTF8
-          foreach($must in @('3.1.54-candidate1','secrets.token_urlsafe(24)','request.path.startswith("/mobile/")','app.run(host="0.0.0.0"','qrcode.make')){if(-not $web.Contains($must)){throw ('mobile marker missing '+$must)}}
+          foreach($must in @('confirm3154Cancel','confirm3154Delete','qjobdel','txdel','ai3154Mobile','__kafepinRevenue3154')){if(-not $html.Contains($must)){throw ('UI marker missing '+$must)}}
+          if($html.Contains('confirm3153Delete') -or $html.Contains('window.open(')){throw 'old/external browser UI fallback remains'}
+          $start=Get-Content (Join-Path $tmp 'v3154-yazici-payload\START_YAZICI_PRO.cmd') -Raw -Encoding UTF8
+          if($start.Contains('start "" "http://127.0.0.1:17891')){throw 'external browser fallback remains in START'}
+          foreach($must in @('powershell.exe -STA','KafePin_YaziciPRO_WebView2.ps1','3.1.54-candidate2')){if(-not $start.Contains($must)){throw ('START marker missing '+$must)}}
           $wv=Get-Content (Join-Path $tmp 'v3154-yazici-payload\KafePin_YaziciPRO_WebView2.ps1') -Raw -Encoding UTF8
-          foreach($must in @('web.whatsapp.com','CoreWebView2Environment]::CreateAsync','EnsureCoreWebView2Async','3.1.54-candidate1')){if(-not $wv.Contains($must)){throw ('WebView2 marker missing '+$must)}}
+          foreach($must in @('web.whatsapp.com','CreateAsync','EnsureCoreWebView2Async','open-whatsapp','3.1.54-candidate2')){if(-not $wv.Contains($must)){throw ('WebView2 marker missing '+$must)}}
+      - name: Runtime-test same-LAN QR upload
+        shell: pwsh
+        run: |
+          python -m pip install --disable-pip-version-check flask pillow
+          $env:KP3154_TMP = Join-Path $env:RUNNER_TEMP 'kp3154'
+          @'
+          import io, os, sys, types
+          from pathlib import Path
+          from PIL import Image
+          root=Path(os.environ['KP3154_TMP'])/'v3154-yazici-payload'; sys.path.insert(0,str(root))
+          cfg=types.ModuleType('config'); cfg.APP_DIR=root; cfg.APP_NAME='test'; cfg.documents_dir=lambda: root/'docs'; cfg.load_config=lambda:{'dpi':300,'color_mode':'color','identity_layout':'side_by_side','ai_auto_clear':True}; cfg.save_config=lambda x:x; sys.modules['config']=cfg
+          de=types.ModuleType('document_engine'); de.apply_adjustments=lambda *a,**k:None; de.build_identity=lambda *a,**k:None; de.build_normal=lambda *a,**k:None; de.build_photo_sheet=lambda *a,**k:None; sys.modules['document_engine']=de
+          pe=types.ModuleType('pdf_engine'); pe.SUPPORTED_EXTENSIONS=set(); pe.merge_to_pdf=lambda *a,**k:None; sys.modules['pdf_engine']=pe
+          import web_service as w
+          assert w.APP_VERSION=='3.1.54-candidate2'
+          w._lan_ipv4=lambda:'192.168.1.50'; c=w.app.test_client()
+          assert c.get('/api/health',environ_base={'REMOTE_ADDR':'192.168.1.22'}).status_code==403
+          r=c.post('/api/ai/mobile-capture/start',environ_base={'REMOTE_ADDR':'127.0.0.1'}); assert r.status_code==200; j=r.get_json(); token=j['token']; assert j['url'].startswith('http://192.168.1.50:17891/mobile/') and j['expires_in']==300
+          r=c.get('/mobile/'+token,environ_base={'REMOTE_ADDR':'192.168.1.22'}); assert r.status_code==200 and 'FOTOĞRAFI GÖNDER' in r.get_data(as_text=True)
+          r=c.get('/api/ai/mobile-capture/qr?token='+token,environ_base={'REMOTE_ADDR':'127.0.0.1'}); assert r.status_code==200 and r.data.startswith(b'\x89PNG\r\n\x1a\n')
+          im=Image.new('RGB',(24,24),'white'); b=io.BytesIO(); im.save(b,'PNG'); b.seek(0)
+          r=c.post('/mobile/'+token,data={'image':(b,'phone.png')},content_type='multipart/form-data',environ_base={'REMOTE_ADDR':'192.168.1.22'}); assert r.status_code==200 and 'Fotoğraf gönderildi' in r.get_data(as_text=True)
+          r=c.get('/api/ai/mobile-capture/status?token='+token,environ_base={'REMOTE_ADDR':'127.0.0.1'}); assert r.get_json()['uploaded'] is True and r.get_json()['source_ready'] is True
+          b=io.BytesIO(); im.save(b,'PNG'); b.seek(0); r=c.post('/mobile/'+token,data={'image':(b,'again.png')},content_type='multipart/form-data',environ_base={'REMOTE_ADDR':'192.168.1.22'}); assert r.status_code==400
+          print('MOBILE_QR_RUNTIME_OK')
+          '@ | python -
+      - name: Runtime-test Sil and Ucretsiz service
+        shell: pwsh
+        run: |
+          $tmp=Join-Path $env:RUNNER_TEMP 'kp3154'; $pd=Join-Path $env:RUNNER_TEMP 'kp3154-programdata'; $env:ProgramData=$pd; $env:KAFEPIN_YAZICI_TEST_MODE='1'
+          $stateDir=Join-Path $pd 'KafePinPro\yazici-gelir'; New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
+          '{"initialized":true,"lastSeenRecordId":101,"jobs":{"101":{"record_id":101,"status":"pending","pages":1,"document":"Test","printer":"Test Printer"}},"transactions":{}}' | Set-Content (Join-Path $stateDir 'state.json') -Encoding UTF8
+          $svc=Start-Process node -ArgumentList @((Join-Path $tmp 'v3154-yazici-payload\KafePin_YaziciGelir_Service.js')) -PassThru -WindowStyle Hidden
+          try {
+            for($i=0;$i -lt 30;$i++){try{$q=Invoke-RestMethod 'http://127.0.0.1:17893/queue' -TimeoutSec 1;break}catch{Start-Sleep -Milliseconds 200}}
+            if(-not $q.ok){throw 'revenue service did not start'}
+            $d=Invoke-RestMethod 'http://127.0.0.1:17893/queue/delete' -Method Post -ContentType 'application/json' -Body '{"record_id":101}'; if($d.job.status -ne 'deleted'){throw 'queue delete failed'}
+            $p=Invoke-RestMethod 'http://127.0.0.1:17893/service/prepare' -Method Post -ContentType 'application/json' -Body '{"service_type":"scan","quantity":1,"payment_method":"CASH"}'; $id=$p.transaction.id
+            $d=Invoke-RestMethod 'http://127.0.0.1:17893/transaction/delete' -Method Post -ContentType 'application/json' -Body (ConvertTo-Json @{id=$id}); if($d.transaction.status -ne 'deleted'){throw 'transaction delete failed'}
+            $p=Invoke-RestMethod 'http://127.0.0.1:17893/service/prepare' -Method Post -ContentType 'application/json' -Body '{"service_type":"scan","quantity":1,"payment_method":"CASH"}'; $id=$p.transaction.id
+            $f=Invoke-RestMethod 'http://127.0.0.1:17893/transaction/free' -Method Post -ContentType 'application/json' -Body (ConvertTo-Json @{id=$id}); if($f.transaction.status -ne 'free' -or [double]$f.transaction.total -ne 0){throw 'free failed'}
+            Write-Host 'DELETE_FREE_RUNTIME_OK'
+          } finally { Stop-Process -Id $svc.Id -Force -ErrorAction SilentlyContinue }
+      - name: Verify WebView2 engine and WhatsApp reachability
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'; [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+          $v='1.0.4129.50'; $n=Join-Path $env:TEMP 'wv2.nupkg'; $z=Join-Path $env:TEMP 'wv2.zip'; $d=Join-Path $env:TEMP 'wv2sdk'
+          Invoke-WebRequest -UseBasicParsing -Uri ('https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/'+$v) -OutFile $n -TimeoutSec 60; Copy-Item $n $z -Force; Expand-Archive $z $d -Force
+          $loader=Join-Path $d 'runtimes\win-x64\native'; $env:PATH=$loader+';'+$env:PATH; Add-Type -Path (Join-Path $d 'lib\net462\Microsoft.Web.WebView2.Core.dll')
+          $runtime=[Microsoft.Web.WebView2.Core.CoreWebView2Environment]::GetAvailableBrowserVersionString(); if(-not $runtime){throw 'WebView2 Runtime missing'}
+          $task=[Microsoft.Web.WebView2.Core.CoreWebView2Environment]::CreateAsync($null,(Join-Path $env:TEMP 'kp3154-wv2-profile'),$null); if(-not $task.Wait(20000)){throw 'WebView2 environment timeout'}; $e=$task.GetAwaiter().GetResult(); if(-not $e){throw 'WebView2 environment failed'}
+          $r=Invoke-WebRequest -UseBasicParsing -Uri 'https://web.whatsapp.com/' -TimeoutSec 30; if($r.StatusCode -lt 200 -or $r.StatusCode -ge 400){throw ('WhatsApp Web HTTP '+$r.StatusCode)}
+          Write-Host ('WEBVIEW2_WHATSAPP_OK runtime='+$runtime)
       - name: Parse Windows PowerShell
         shell: powershell
         run: |
@@ -61,5 +116,4 @@ jobs:
           git rm -r -f --ignore-unmatch 'dev/v3153-candidate' '.github/workflows/build-v3153-candidate.yml'
           git add -- 'KafePin-Pro-Update-v3.1.54.zip' 'KafePin-Pro-Update-v3.1.54.sha256.txt' 'V3.1.54-CANDIDATE-TEST-REPORT.md' 'latest.json'
           if(git diff --cached --quiet){exit 0}
-          git commit -m 'candidate: publish v3.1.54 and remove v3.1.53 [skip ci]'
-          git push origin HEAD:${{ github.event.pull_request.head.ref }}
+          git commit -m 'candidate: publish tested v3.1.54 [skip ci]'; git push origin HEAD:${{ github.event.pull_request.head.ref }}
