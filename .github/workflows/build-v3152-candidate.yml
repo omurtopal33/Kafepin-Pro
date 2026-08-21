@@ -1,0 +1,64 @@
+name: Validate v3.1.52 Candidate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-candidate:
+    if: github.head_ref == 'candidate/v3.1.52-ci' || github.ref_name == 'candidate/v3.1.52-ci'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout candidate
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Expand v3.1.52 sources
+        shell: powershell
+        run: |
+          $dst = 'dev/v3152-candidate/src'
+          if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
+          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+          Expand-Archive -LiteralPath 'dev/v3152-candidate/source-bundle.zip' -DestinationPath $dst -Force
+      - name: Build and run full candidate tests
+        shell: powershell
+        run: python dev/v3152-candidate/src/build_v3152.py
+      - name: Create candidate SHA and feed
+        shell: powershell
+        run: |
+          $sha=(Get-FileHash -Algorithm SHA256 'KafePin-Pro-Update-v3.1.52.zip').Hash.ToLowerInvariant()
+          "$sha  KafePin-Pro-Update-v3.1.52.zip" | Set-Content -Encoding ASCII 'KafePin-Pro-Update-v3.1.52.sha256.txt'
+          $feed=[ordered]@{
+            version='3.1.52'; channel='candidate'; stableVersion='3.1.49'; baseVersion='3.1.49'; cumulative=$false;
+            downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.52.zip';
+            sha256=$sha;
+            notes='v3.1.52 ADAY: Yazıcı PRO onaylı gelir + Fotokopi + Tarama/WhatsApp + Belge/Dilekçe hazırlama; v3.1.51 Telegram düzeltmeleri korunur.'
+          }
+          $feed | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 'latest-candidate.json'
+      - name: Verify candidate files
+        shell: powershell
+        run: |
+          if (-not (Test-Path 'KafePin-Pro-Update-v3.1.52.zip')) { throw 'ZIP missing' }
+          if (-not (Test-Path 'V3.1.52-CANDIDATE-TEST-REPORT.md')) { throw 'Report missing' }
+          $r=Get-Content 'V3.1.52-CANDIDATE-TEST-REPORT.md' -Raw
+          foreach($m in @('onaydan önce gitmedi','duplicate confirm','Belge/Dilekçe','WhatsApp Web','MP3 PRO')) { if($r.IndexOf($m,[StringComparison]::OrdinalIgnoreCase)-lt 0){throw "report marker missing: $m"} }
+      - name: Upload tested candidate artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kafepin-v3.1.52-candidate
+          path: |
+            KafePin-Pro-Update-v3.1.52.zip
+            KafePin-Pro-Update-v3.1.52.sha256.txt
+            V3.1.52-CANDIDATE-TEST-REPORT.md
+            latest-candidate.json
+          retention-days: 7
