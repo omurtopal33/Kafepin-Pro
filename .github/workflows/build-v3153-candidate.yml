@@ -36,11 +36,9 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Build base and apply candidate3 fix
+      - name: Apply candidate3 fix to existing v3.1.53
         shell: pwsh
         run: |
-          python dev/v3153-candidate/build_v3153.py
-          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           python dev/v3153-candidate/patch_candidate3.py
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
