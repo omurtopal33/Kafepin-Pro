@@ -53,8 +53,8 @@ jobs:
           foreach($m in @('Remove-LegacyYaziciProShortcuts','CleanupLegacyYaziciOnly','KafePin Yazıcı PRO.lnk','KafePin Yazici PRO.lnk')){if($setup -notmatch [regex]::Escape($m)){throw "shortcut cleanup marker missing: $m"}}
           $cs=Get-Content "$pkg/desktop-app/KafePinProDesktop.cs" -Raw
           foreach($m in @('KafePin_YaziciPRO_ServiceHost.ps1','3.1.56-candidate1','17893/health','v3156-yazici-startup.log')){if($cs -notmatch [regex]::Escape($m)){throw "desktop marker missing: $m"}}
-          $host=Get-Content "$pkg/v3156-yazici-payload/KafePin_YaziciPRO_ServiceHost.ps1" -Raw
-          foreach($m in @('Start-Both','WindowStyle Hidden','17891/api/health','17893/health','Repair-Python')){if($host -notmatch [regex]::Escape($m)){throw "host marker missing: $m"}}
+          $hostText=Get-Content "$pkg/v3156-yazici-payload/KafePin_YaziciPRO_ServiceHost.ps1" -Raw
+          foreach($m in @('Start-Both','WindowStyle Hidden','17891/api/health','17893/health','Repair-Python')){if($hostText -notmatch [regex]::Escape($m)){throw "host marker missing: $m"}}
           $server=Get-Content "$pkg/server.js" -Raw
           if($server -notmatch 'sqlite3.OPEN_READONLY'){throw 'EveryCafe read-only lost'}
           if($server -notmatch 'KAFEPIN_DESKTOP_APP_VERSION = "1.1.5"'){throw 'desktop target 1.1.5 missing'}
@@ -79,13 +79,7 @@ jobs:
           $public=Join-Path $env:PUBLIC 'Desktop'
           $fake='C:\Users\KafePinFieldTest'; $fakeDesk=Join-Path $fake 'Desktop'; $fakeOne=Join-Path $fake 'OneDrive\Desktop'
           New-Item -ItemType Directory -Force -Path $current,$public,$fakeDesk,$fakeOne | Out-Null
-          $targets=@(
-            (Join-Path $current 'KafePin Yazıcı PRO.lnk'),
-            (Join-Path $current 'KafePin Yazici PRO.lnk'),
-            (Join-Path $public 'KafePin Yazıcı PRO.lnk'),
-            (Join-Path $fakeDesk 'KafePin Yazici PRO.lnk'),
-            (Join-Path $fakeOne 'KafePin Yazıcı PRO.lnk')
-          )
+          $targets=@((Join-Path $current 'KafePin Yazıcı PRO.lnk'),(Join-Path $current 'KafePin Yazici PRO.lnk'),(Join-Path $public 'KafePin Yazıcı PRO.lnk'),(Join-Path $fakeDesk 'KafePin Yazici PRO.lnk'),(Join-Path $fakeOne 'KafePin Yazıcı PRO.lnk'))
           foreach($p in $targets){Set-Content -LiteralPath $p -Value 'legacy-field-shortcut' -Encoding ASCII}
           & powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$pkg/KafePin_Desktop_App_Setup.ps1" -InstallRoot $pkg -CleanupLegacyYaziciOnly
           if($LASTEXITCODE -ne 0){throw 'shortcut cleanup command failed'}
@@ -123,18 +117,14 @@ jobs:
           $r=Invoke-RestMethod 'http://127.0.0.1:17893/health' -TimeoutSec 2
           if(-not $w.ok -or $w.version -ne '3.1.56-candidate1' -or -not $r.ok -or $r.version -ne '3.1.56-candidate1'){throw 'health/version mismatch'}
           $st=Get-Content "$env:ProgramData/KafePinPro/logs/v3156-yazici-startup.json" -Raw | ConvertFrom-Json
-          foreach($pidValue in @([int]$st.nodePid,[int]$st.pythonPid)){
-            $p=Get-Process -Id $pidValue -ErrorAction Stop
-            if($p.MainWindowHandle -ne 0){throw "service has visible window pid=$pidValue"}
-          }
+          foreach($pidValue in @([int]$st.nodePid,[int]$st.pythonPid)){ $p=Get-Process -Id $pidValue -ErrorAction Stop; if($p.MainWindowHandle -ne 0){throw "service has visible window pid=$pidValue"} }
           foreach($pidValue in @([int]$st.nodePid,[int]$st.pythonPid)){Stop-Process -Id $pidValue -Force -ErrorAction SilentlyContinue}
           Write-Host 'DUAL_SERVICE_HIDDEN_FIELD_TEST_OK'
 
       - name: Compile main KafePin desktop shell
         shell: pwsh
         run: |
-          $pkg=Join-Path $env:RUNNER_TEMP 'v3156'
-          $root=Join-Path $env:RUNNER_TEMP 'kp-desktop-3156'
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3156'; $root=Join-Path $env:RUNNER_TEMP 'kp-desktop-3156'
           New-Item -ItemType Directory -Force -Path "$root/desktop-app" | Out-Null
           Copy-Item "$pkg/desktop-app/KafePinProDesktop.cs" "$root/desktop-app/KafePinProDesktop.cs"
           Copy-Item "$pkg/desktop-app/KafePin.ico" "$root/desktop-app/KafePin.ico"
@@ -163,8 +153,7 @@ jobs:
       - name: Publish tested outputs to candidate branch
         shell: pwsh
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git config user.name 'github-actions[bot]'; git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add -- 'KafePin-Pro-Update-v3.1.56.zip' 'KafePin-Pro-Update-v3.1.56.sha256.txt' 'V3.1.56-CANDIDATE-TEST-REPORT.md' 'latest.json'
           foreach($p in @('KafePin-Pro-Update-v3.1.55.zip','KafePin-Pro-Update-v3.1.55.sha256.txt','V3.1.55-CANDIDATE-TEST-REPORT.md')){if(Test-Path $p){git rm -f -- $p}}
           if(git diff --cached --quiet){exit 0}
