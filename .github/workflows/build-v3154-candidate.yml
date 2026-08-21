@@ -1,0 +1,65 @@
+name: Validate v3.1.54 Candidate
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3154-candidate/**'
+      - '.github/workflows/build-v3154-candidate.yml'
+permissions:
+  contents: write
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Reassemble v3.1.54
+        shell: pwsh
+        run: python dev/v3154-candidate/build_v3154.py
+      - name: Validate package
+        shell: pwsh
+        run: |
+          $tmp=Join-Path $env:RUNNER_TEMP 'kp3154'; if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force}; Expand-Archive 'KafePin-Pro-Update-v3.1.54.zip' $tmp
+          $u=Get-Content (Join-Path $tmp 'update.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+          if($u.version -ne '3.1.54' -or $u.baseVersion -ne '3.1.49' -or -not $u.cumulative){throw 'metadata invalid'}
+          $mgr=Get-Content (Join-Path $tmp 'KafePin_Manager_Ensure.ps1') -Raw -Encoding UTF8
+          foreach($bad in @('Wait-YaziciWeb','Wait-YaziciRevenue','Stop-YaziciRuntime')){if($mgr.Contains($bad)){throw ('updater timeout risk '+$bad)}}
+          if(-not $mgr.Contains("updaterWait='none'")){throw 'updaterWait marker missing'}
+          $server=Get-Content (Join-Path $tmp 'server.js') -Raw -Encoding UTF8
+          if(-not $server.Contains('sqlite3.OPEN_READONLY')){throw 'EveryCafe read-only missing'}
+          node --check (Join-Path $tmp 'server.js')
+          node --check (Join-Path $tmp 'v3154-yazici-payload\KafePin_YaziciGelir_Service.js')
+          node --check (Join-Path $tmp 'v3154-yazici-payload\v3154-ai.js')
+          python -m py_compile (Join-Path $tmp 'v3154-yazici-payload\web_service.py')
+          $html=Get-Content (Join-Path $tmp 'v3154-yazici-payload\index.html') -Raw -Encoding UTF8
+          foreach($must in @('confirm3154Cancel','confirm3154Delete','qjobdel','txdel','ai3154Mobile')){if(-not $html.Contains($must)){throw ('UI marker missing '+$must)}}
+          if($html.Contains('confirm3153Delete') -or $html.Contains("window.open(WA")){throw 'old/broken UI fallback remains'}
+          $web=Get-Content (Join-Path $tmp 'v3154-yazici-payload\web_service.py') -Raw -Encoding UTF8
+          foreach($must in @('3.1.54-candidate1','secrets.token_urlsafe(24)','request.path.startswith("/mobile/")','app.run(host="0.0.0.0"','qrcode.make')){if(-not $web.Contains($must)){throw ('mobile marker missing '+$must)}}
+          $wv=Get-Content (Join-Path $tmp 'v3154-yazici-payload\KafePin_YaziciPRO_WebView2.ps1') -Raw -Encoding UTF8
+          foreach($must in @('web.whatsapp.com','CoreWebView2Environment]::CreateAsync','EnsureCoreWebView2Async','3.1.54-candidate1')){if(-not $wv.Contains($must)){throw ('WebView2 marker missing '+$must)}}
+      - name: Parse Windows PowerShell
+        shell: powershell
+        run: |
+          $tmp=Join-Path $env:RUNNER_TEMP 'kp3154'
+          foreach($f in @((Join-Path $tmp 'KafePin_Manager_Ensure.ps1'),(Join-Path $tmp 'v3154-yazici-payload\KafePin_YaziciPRO_WebView2.ps1'),(Join-Path $tmp 'v3154-yazici-payload\KafePin_AI_Ayarla.ps1'))){$t=$null;$e=$null;[System.Management.Automation.Language.Parser]::ParseFile($f,[ref]$t,[ref]$e)|Out-Null;if($e.Count){$e|%{Write-Error $_.Message};throw ('PowerShell parser failed '+$f)}}
+      - name: Commit tested outputs and clean v3.1.53
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'; git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -f --ignore-unmatch 'KafePin-Pro-Update-v3.1.53.zip' 'KafePin-Pro-Update-v3.1.53.sha256.txt' 'V3.1.53-CANDIDATE-TEST-REPORT.md'
+          git rm -r -f --ignore-unmatch 'dev/v3153-candidate' '.github/workflows/build-v3153-candidate.yml'
+          git add -- 'KafePin-Pro-Update-v3.1.54.zip' 'KafePin-Pro-Update-v3.1.54.sha256.txt' 'V3.1.54-CANDIDATE-TEST-REPORT.md' 'latest.json'
+          if(git diff --cached --quiet){exit 0}
+          git commit -m 'candidate: publish v3.1.54 and remove v3.1.53 [skip ci]'
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
