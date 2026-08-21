@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Reassemble builder
+      - name: Reassemble builder and strip legacy shortcut
         shell: pwsh
         run: |
           $parts = Get-ChildItem 'dev/v3155-candidate/build.b64.part*' | Sort-Object Name
@@ -35,16 +35,48 @@ jobs:
           [IO.File]::WriteAllBytes('dev/v3155-candidate/build_v3155.py',[Convert]::FromBase64String($b64))
           @'
           from pathlib import Path
+          import re
+
+          # Remove the legacy standalone Yazici PRO desktop-shortcut block from the exact
+          # v3.1.54 Manager source before the v3.1.55 builder sees it.
+          mp=Path('dev/v3155-candidate/exact/KafePin_Manager_Ensure.ps1')
+          m=mp.read_text(encoding='utf-8-sig')
+          start="  $startCmd = Join-Path $YaziciRoot 'START_YAZICI_PRO.cmd'"
+          end="  [ordered]@{ version='3.1.54';"
+          i=m.find(start)
+          j=m.find(end, i if i >= 0 else 0)
+          if i >= 0 and j > i:
+              m=m[:i]+m[j:]
+          elif 'CreateShortcut(' in m:
+              raise SystemExit('legacy shortcut block markers missing')
+          mp.write_text(m,encoding='utf-8-sig')
+
+          # Fix Python re.sub replacement escaping in the generated builder.
           p=Path('dev/v3155-candidate/build_v3155.py')
           s=p.read_text(encoding='utf-8')
           old=",block+'\\n  foreach ($pair in $pairs)',s,count=1,flags=re.S)"
           new=",lambda _m: block+'\\n  foreach ($pair in $pairs)',s,count=1,flags=re.S)"
           if old not in s:
               raise SystemExit('builder manager replacement marker missing')
-          p.write_text(s.replace(old,new,1),encoding='utf-8')
+          s=s.replace(old,new,1)
+
+          # The source shortcut block is already removed above, so a zero regex match is
+          # expected and valid. Keep one-match behavior valid too.
+          lines=s.splitlines()
+          changed=False
+          for n,line in enumerate(lines):
+              if 'manager shortcut block patch failed' in line and re.search(r'if\s+n\s*!=\s*1',line):
+                  lines[n]=re.sub(r'if\s+n\s*!=\s*1','if n not in (0,1)',line,count=1)
+                  changed=True
+                  break
+          if not changed:
+              raise SystemExit('builder shortcut failure guard marker missing')
+          p.write_text('\n'.join(lines)+'\n',encoding='utf-8')
           '@ | Set-Content 'dev/v3155-candidate/fix_builder.py' -Encoding UTF8
           python dev/v3155-candidate/fix_builder.py
+          if($LASTEXITCODE -ne 0){throw 'Builder prepatch failed'}
           python -m py_compile dev/v3155-candidate/build_v3155.py
+          if($LASTEXITCODE -ne 0){throw 'Builder Python compile failed'}
 
       - name: Build deterministic candidate
         shell: pwsh
