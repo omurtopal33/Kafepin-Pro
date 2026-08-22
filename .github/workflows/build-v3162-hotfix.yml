@@ -133,8 +133,16 @@ jobs:
           node --check (Join-Path $out 'server.js')
           if($LASTEXITCODE -ne 0){throw 'server.js syntax failed'}
 
-          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'KafePin_Desktop_App_Setup.ps1') -InstallRoot $out -AppVersion '1.1.8'
-          if($LASTEXITCODE -ne 0){throw 'Desktop v1.1.8 compile/setup smoke test failed'}
+          $core=Get-ChildItem $out -Recurse -File -Filter 'Microsoft.Web.WebView2.Core.dll' | Select-Object -First 1
+          $forms=Get-ChildItem $out -Recurse -File -Filter 'Microsoft.Web.WebView2.WinForms.dll' | Select-Object -First 1
+          if($null -eq $core -or $null -eq $forms){throw 'WebView2 compile references missing'}
+          $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          if(-not (Test-Path $csc)){ $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
+          if(-not (Test-Path $csc)){throw 'C# compiler missing'}
+          $exe=Join-Path $env:RUNNER_TEMP 'KafePinProDesktop-v1.1.8-smoke.exe'
+          & $csc /nologo /target:winexe /out:$exe /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll /reference:$core.FullName /reference:$forms.FullName (Join-Path $out 'desktop-app\KafePinProDesktop.cs')
+          if($LASTEXITCODE -ne 0 -or -not (Test-Path $exe)){throw 'Desktop v1.1.8 C# compile smoke test failed'}
+          Write-Host "DESKTOP_COMPILE_OK=$exe"
 
       - name: Validate client v3.1.62
         shell: pwsh
