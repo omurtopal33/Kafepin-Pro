@@ -1,0 +1,102 @@
+name: Build v3.1.62 Hotfix
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3162-hotfix/**'
+      - '.github/workflows/build-v3162-hotfix.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dev/v3162-hotfix/**'
+      - '.github/workflows/build-v3162-hotfix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build deterministic v3.1.62 and client
+        shell: pwsh
+        run: |
+          python -m py_compile dev/v3162-hotfix/build_v3162.py
+          python dev/v3162-hotfix/build_v3162.py
+          if($LASTEXITCODE -ne 0){throw 'v3.1.62 build failed'}
+          $u1=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c1=(Get-FileHash 'KafePin-Client-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          python dev/v3162-hotfix/build_v3162.py
+          if($LASTEXITCODE -ne 0){throw 'v3.1.62 second build failed'}
+          $u2=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c2=(Get-FileHash 'KafePin-Client-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($u1 -ne $u2){throw 'Update deterministic SHA mismatch'}
+          if($c1 -ne $c2){throw 'Client deterministic SHA mismatch'}
+          Write-Host "V3162_SHA=$u2"
+          Write-Host "CLIENT_SHA=$c2"
+
+      - name: Validate hotfix markers
+        shell: pwsh
+        run: |
+          $tmp=Join-Path $env:RUNNER_TEMP 'v3162-check'
+          if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.62.zip' $tmp
+          $cs=Get-Content (Join-Path $tmp 'desktop-app\KafePinProDesktop.cs') -Raw
+          foreach($m in @('PRO Servisleri Yenile','ProServicesRefreshButton_Click','MP3 Bot PRO: hazır','Yazıcı PRO: hazır','Teknik Servis PRO: hazır')){if($cs -notmatch [regex]::Escape($m)){throw "Desktop hotfix marker missing: $m"}}
+          $mgr=Get-Content (Join-Path $tmp 'KafePin_Manager_Ensure.ps1') -Raw
+          if($mgr -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'Legacy fatal payload check returned'}
+          if($mgr -notmatch "-AppVersion '1\.1\.8'"){throw 'Desktop v1.1.8 invocation missing'}
+          $server=Get-Content (Join-Path $tmp 'server.js') -Raw
+          if($server -notmatch 'available: compareProVersions\(remote\.version, current\) > 0'){throw 'Update equality guard missing'}
+          $meta=Get-Content (Join-Path $tmp 'update.json') -Raw | ConvertFrom-Json
+          if($meta.version -ne '3.1.62' -or -not $meta.cumulative -or $meta.baseVersion -ne '3.1.60'){throw 'Metadata invalid'}
+          if(-not (Test-Path 'KafePin-Client-v3.1.62.zip')){throw 'Client v3.1.62 missing'}
+          $ctmp=Join-Path $env:RUNNER_TEMP 'client3162'
+          if(Test-Path $ctmp){Remove-Item $ctmp -Recurse -Force}
+          Expand-Archive 'KafePin-Client-v3.1.62.zip' $ctmp
+          if(-not (Test-Path (Join-Path $ctmp 'CLIENT-VERSION.txt'))){throw 'Client version marker missing'}
+
+      - name: Publish v3.1.62 STABLE on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $latest=[ordered]@{
+            version='3.1.62'
+            channel='stable'
+            stableBase='3.1.60'
+            baseVersion='3.1.60'
+            futureUpdateBase='3.1.60'
+            cumulative=$true
+            publishedAt=(Get-Date).ToUniversalTime().ToString('o')
+            notes='v3.1.62 STABLE — PRO Servisleri Yenile düğmesi geri getirildi. Çalışan servisler korunur; düşmüş MP3 Bot PRO, Yazıcı PRO ve Teknik Servis PRO güvenli biçimde yeniden ayağa kaldırılır. Desktop v1.1.8. v3.1.61 Manager/payload düzeltmeleri ve çekirdek davranışlar korunur.'
+            downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.62.zip'
+            sha256=$sha
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content 'latest.json' -Encoding utf8
+          git config user.name 'KafePin Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add KafePin-Pro-Update-v3.1.62.zip KafePin-Pro-Update-v3.1.62.sha256.txt KafePin-Client-v3.1.62.zip RELEASE_NOTES-v3.1.62.md latest.json
+          git commit -m 'release: publish v3.1.62 stable hotfix and client'
+          git push
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v3.1.62
+          path: |
+            KafePin-Pro-Update-v3.1.62.zip
+            KafePin-Pro-Update-v3.1.62.sha256.txt
+            KafePin-Client-v3.1.62.zip
+            RELEASE_NOTES-v3.1.62.md
