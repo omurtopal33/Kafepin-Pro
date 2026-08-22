@@ -85,9 +85,28 @@ jobs:
           if($mgr -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'Legacy fatal Yazici payload check returned'}
           if($mgr -notmatch 'v3\.1\.60 FINAL desktop korunuyor'){throw 'v3.1.60 desktop preservation marker missing'}
 
-          $textFiles=Get-ChildItem $out -Recurse -File | Where-Object { $_.Extension -in @('.cs','.html','.js','.ps1','.cmd','.txt','.json','.css') }
-          $allText=($textFiles | ForEach-Object { try { Get-Content $_.FullName -Raw -ErrorAction Stop } catch { '' } }) -join "`n"
-          foreach($m in @('PRO Servisleri Yenile','MP3 Bot PRO','Yazıcı PRO','Teknik Servis PRO')){if($allText -notmatch [regex]::Escape($m)){throw "v3.1.60 FINAL identity marker missing: $m"}}
+          @'
+          from pathlib import Path
+          import sys
+          root = Path(r"__OUT__")
+          markers = ["PRO Servisleri Yenile", "MP3 Bot PRO", "Yazıcı PRO", "Teknik Servis PRO"]
+          for marker in markers:
+              needles = [marker.encode("utf-8"), marker.encode("utf-16le"), marker.encode("utf-16be")]
+              found = []
+              for p in root.rglob("*"):
+                  if not p.is_file():
+                      continue
+                  try:
+                      data = p.read_bytes()
+                  except Exception:
+                      continue
+                  if any(n in data for n in needles):
+                      found.append(p.relative_to(root).as_posix())
+              if not found:
+                  raise SystemExit("v3.1.60 FINAL identity marker missing: " + marker)
+              print("MARKER", marker, "=>", ";".join(found))
+          '@.Replace('__OUT__',$out) | python -
+          if($LASTEXITCODE -ne 0){throw 'binary UI marker validation failed'}
 
           foreach($same in @('server.js','KafePin_Desktop_App_Setup.ps1')){
             $a=(Get-FileHash (Join-Path $canonRoot $same) -Algorithm SHA256).Hash
