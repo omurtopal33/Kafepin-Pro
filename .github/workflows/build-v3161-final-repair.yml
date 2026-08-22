@@ -1,0 +1,69 @@
+name: Build v3.1.61 Final Repair
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3161-candidate/**'
+      - '.github/workflows/build-v3161-final-repair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build deterministic v3.1.61 and client
+        shell: pwsh
+        run: |
+          python -m py_compile dev/v3161-candidate/build_v3161.py
+          python dev/v3161-candidate/build_v3161.py
+          if($LASTEXITCODE -ne 0){throw 'v3.1.61 build failed'}
+          $h1=(Get-FileHash 'KafePin-Pro-Update-v3.1.61.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c1=(Get-FileHash 'KafePin-Client-v3.1.61.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          python dev/v3161-candidate/build_v3161.py
+          if($LASTEXITCODE -ne 0){throw 'v3.1.61 second build failed'}
+          $h2=(Get-FileHash 'KafePin-Pro-Update-v3.1.61.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c2=(Get-FileHash 'KafePin-Client-v3.1.61.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($h1 -ne $h2){throw 'Update deterministic SHA mismatch'}
+          if($c1 -ne $c2){throw 'Client deterministic SHA mismatch'}
+          Write-Host "V3161_SHA=$h2"
+          Write-Host "CLIENT_SHA=$c2"
+
+      - name: Validate package markers
+        shell: pwsh
+        run: |
+          $tmp=Join-Path $env:RUNNER_TEMP 'v3161-check'
+          if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.61.zip' $tmp
+          $mgr=Get-Content (Join-Path $tmp 'KafePin_Manager_Ensure.ps1') -Raw
+          if($mgr -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'Legacy Yazici payload fatal survived'}
+          if($mgr -notmatch "-AppVersion '1\.1\.7'"){throw 'Desktop repair invocation missing'}
+          $cs=Get-Content (Join-Path $tmp 'desktop-app\KafePinProDesktop.cs') -Raw
+          foreach($m in @('MP3 Bot PRO','Yazıcı PRO','Teknik Servis PRO')){if($cs -notmatch [regex]::Escape($m)){throw "Desktop menu missing: $m"}}
+          $server=Get-Content (Join-Path $tmp 'server.js') -Raw
+          if($server -notmatch 'available: compareProVersions\(remote\.version, current\) > 0'){throw 'Update equality guard missing'}
+          $meta=Get-Content (Join-Path $tmp 'update.json') -Raw | ConvertFrom-Json
+          if($meta.version -ne '3.1.61' -or -not $meta.cumulative -or $meta.baseVersion -ne '3.1.60'){throw 'Metadata invalid'}
+          if(-not (Test-Path 'KafePin-Client-v3.1.61.zip')){throw 'Client package missing'}
+
+      - name: Upload candidate artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v3.1.61-candidate
+          path: |
+            KafePin-Pro-Update-v3.1.61.zip
+            KafePin-Pro-Update-v3.1.61.sha256.txt
+            KafePin-Client-v3.1.61.zip
+            RELEASE_NOTES-v3.1.61.md
