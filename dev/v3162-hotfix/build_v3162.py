@@ -17,10 +17,6 @@ REPORT = ROOT / "RELEASE_NOTES-v3.1.62.md"
 FIXED_DT = (2026, 8, 22, 16, 30, 0)
 VERSION = "3.1.62"
 
-# v3.1.60 FINAL consists of the locked UPDATE + NEW-CAFE pair. The new-cafe
-# package is authoritative for runtime files that exist in both packages,
-# because finalize_v3160 copied the final live installer/runtime material into
-# it. v3.1.62 may then change only Manager + version metadata.
 ALLOWED_CHANGED_FILES = {
     "KafePin_Manager_Ensure.ps1",
     "update.json",
@@ -66,19 +62,29 @@ def pack_tree(root: Path, out: Path) -> None:
 
 
 def marker_paths(root: Path, marker: str) -> list[str]:
-    needle = marker.casefold()
+    needles = [
+        marker.encode("utf-8"),
+        marker.encode("utf-16le"),
+        marker.encode("utf-16be"),
+    ]
     found: list[str] = []
     for p in root.rglob("*"):
         if not p.is_file():
             continue
-        if p.suffix.lower() not in {".cs", ".html", ".js", ".ps1", ".cmd", ".txt", ".json", ".css"}:
-            continue
         try:
-            text = p.read_text(encoding="utf-8-sig", errors="ignore")
+            data = p.read_bytes()
         except Exception:
             continue
-        if needle in text.casefold():
+        if any(n in data for n in needles):
             found.append(p.relative_to(root).as_posix())
+            continue
+        if p.suffix.lower() in {".cs", ".html", ".js", ".ps1", ".cmd", ".txt", ".json", ".css"}:
+            try:
+                text = data.decode("utf-8-sig", errors="ignore")
+            except Exception:
+                continue
+            if marker.casefold() in text.casefold():
+                found.append(p.relative_to(root).as_posix())
     return found
 
 
@@ -106,7 +112,6 @@ def validate_v3160_identity(canonical: Path, new_cafe_root: Path) -> dict[str, l
     for marker in required:
         paths = marker_paths(canonical, marker)
         if not paths:
-            # Diagnostic: the marker may live only in a new-cafe-only installer file.
             nc_paths = marker_paths(new_cafe_root, marker)
             if nc_paths:
                 raise SystemExit(
