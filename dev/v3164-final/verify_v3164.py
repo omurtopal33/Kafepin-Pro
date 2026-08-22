@@ -83,8 +83,12 @@ def main() -> None:
         '"Yazıcı PRO: yeniden başlatıldı\\n"',
         '"Teknik Servis PRO: yeniden başlatıldı\\n"',
         '"Client Yönetim PRO: yeniden başlatıldı\\n"',
-        "clientProButton.Visible = IsClientProEnabledForThisCafe();",
+        "clientProButton.Visible = everyCafeEnabled && IsClientProEnabledForThisCafe();",
         "private bool IsClientProEnabledForThisCafe()",
+        "private bool IsEveryCafeEnabledForThisCafe()",
+        "ApplyEveryCafeAdminVisibilityAsync()",
+        "if (topBar.ClientSize.Width < 700) return;",
+        "private void SelectCafeBrandLogo(object sender, EventArgs e)",
     ):
         require(desktop, marker, "DESKTOP")
     if "C:\\KafePinPro\\" not in desktop:

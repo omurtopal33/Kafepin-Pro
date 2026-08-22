@@ -43,5 +43,6 @@ Bu repoda herhangi bir kod değişikliği yapmadan önce aşağıdaki dosyaları
 - Toplam Varlık ve Bankaya Geçecek Kart yalnız Anlık Finans'ta; 20:00–20:00 Kafe Günü kartları yalnız Kasa & Muhasebe'de bulunur.
 - Gizli eski kaynak kart grupları görünemez ve otomatik kart dizilimi satır sonunda boş alan bırakamaz.
 - `PRO Servisleri` düğmesi yalnız durum raporu vermez; dört bağımsız PRO servisini gerçekten durdurup yeniden başlatır. KafePin çekirdek Node süreci ile WhatsApp/Telegram WebView2 profilleri bu işlemden etkilenmez.
+- Yeni kafe kurulumu çevrimdış tabandan sonra yalnız daha yeni `latest.json` STABLE sürümüne tek adımda eşitlenir; TEST kanalına geçmez. EveryCafe/PRO/Client/Çark/logo ve yerel config tercihlerini koruma kuralları `KAFEPIN_RULES.md` 15. bölümdeki regresyon testleriyle zorunludur.
 
 Bir kural ile kullanıcı isteği çelişirse kod yazmadan önce çelişkiyi kullanıcıya açıkça bildir ve onay iste.

@@ -114,6 +114,15 @@ def verify() -> None:
         desktop_setup = main_read("server/KafePin_Desktop_App_Setup.ps1").decode("utf-8-sig")
         require("$newCafeWizard" not in desktop_setup, "Masaüstü kurucu eski WinForms ayar sihirbazını tekrar çağırıyor")
         require("KafePin_Pro_Bilesen_Kurulum.ps1'\n  $newCafeWizard" not in desktop_setup, "Masaüstü kurucu PRO seçimlerini ikinci kez çağırıyor")
+        desktop = main_read("server/desktop-app/KafePinProDesktop.cs").decode("utf-8-sig")
+        for marker in (
+            "clientProButton.Visible = everyCafeEnabled && IsClientProEnabledForThisCafe();",
+            "private bool IsEveryCafeEnabledForThisCafe()",
+            "ApplyEveryCafeAdminVisibilityAsync()",
+            "if (topBar.ClientSize.Width < 700) return;",
+            "private void SelectCafeBrandLogo(object sender, EventArgs e)",
+        ):
+            require(marker in desktop, f"Masaüstü EveryCafe/menü/logo kuralı eksik: {marker}")
 
         with zipfile.ZipFile(UPDATE) as update:
             info = json.loads(update.read("update.json").decode("utf-8-sig"))

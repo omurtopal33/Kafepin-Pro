@@ -35,3 +35,10 @@ Sahada doğrulanan bağımsız klasörler:
 - `C:\KafePinPro\ClientYonetimPRO`
 
 Bu klasörler aynı üst dizinde olsa da proses, config, veri ve runtime sınırları bağımsızdır.
+
+## Yeni kafe sonraki STABLE eşitleme kilidi
+
+- Yeni kafe paketi önce kendi çevrimdış tabanını kurar, sonra yalnız daha yeni `latest.json` STABLE sürümü varsa doğrudan o kümülatif sürüme geçer.
+- EveryCafe yoksa masaüstü ve Admin EveryCafe alanları ile Client Yönetim PRO gizlidir; varsa salt-okunur senkronizasyon aynen aktiftir.
+- Yerel EveryCafe yolu, masa/IP, yedek, PRO seçimleri, mesajlaşma oturumları, logo ve bileşen config/verileri güncellemeyle sıfırlanmaz.
+- Client tarafında Çark seçimi ping + kısayol; Çark yoksa yalnız ping kuralı korunur.

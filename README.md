@@ -17,6 +17,7 @@ Yeni bir kafede kurulum sırası sabittir:
 2. Kurucu internet olmasa da **v3.1.64 FINAL / STABLE** sürümünü doğrudan kurar; internet varsa önce yalnız `latest.json` içindeki daha yeni **STABLE UPDATE** kontrol edilir ve varsa tek seferde uygulanır.
 3. Ara sürümlerin tek tek kurulması gerekmez.
 4. Sistem zaten `latest.json` sürümündeyse başlangıçta tekrar “güncelleme var” uyarısı gösterilmez.
+5. Sonraki STABLE güncellemeler yeni kafe kurulumundaki EveryCafe, masa/IP, yedek, PRO bileşen, logo ve yerel config seçimlerini korur; yalnız program dosyalarını kümülatif olarak eşitler.
 
 Kurulum ekranı **“KafePin Pro v3.1.64 FINAL / STABLE — tam kurulum”** ifadesini gösterir. Ana Sunucu kurulumu önce EveryCafe kullanımı ve varsa salt-okunur `ecmdata.ecm` yolu, masa sayısı ve yedek klasörünü Türkçe CMD akışında sorar. Telegram bu kurulumda sorulmaz; sonradan KafePin Pro panelinden ayarlanır. Ardından PRO hizmetleri ayrı ayrı sorulur:
 

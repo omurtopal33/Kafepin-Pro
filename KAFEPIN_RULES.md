@@ -153,3 +153,13 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 - `[hidden]` kaynak kart grupları CSS tarafından yeniden görünür yapılamaz; kart satırları ekran genişliğini boşluksuz doldurur.
 - `PRO Servisleri` komutu MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO ve Client Yönetim PRO süreçlerini gerçekten yeniden başlatır; KafePin çekirdek sunucusu ile WhatsApp/Telegram oturumlarına dokunmaz.
 - Bu maddeler `dev/v3164-final/verify_v3164.py` ile paket seviyesinde doğrulanmadan yeni sürüm yayınlanmaz.
+
+## 15. Yeni kafe kurulumundan sonra STABLE eşitleme kuralı
+
+- Yeni kafe paketi önce kendi içindeki doğrulanmış çevrimdış FINAL / STABLE tabanı kurar.
+- Temel kurulum tamamlandıktan sonra yalnız GitHub `latest.json` **STABLE** kanalı okunur. `latest-test.json` veya TEST sürümleri yeni kafeye otomatik kurulmaz.
+- `latest.json` sürümü kurulum tabanından daha yeniyse ara sürümler tek tek kurulmadan doğrudan en yeni kümülatif STABLE sürüme geçilir. Daha yeni STABLE yoksa paket içindeki sürüm korunur.
+- Sonraki kümülatif güncellemeler yeni kafe kurulumunda alınan yerel kararları silmez veya varsayılana döndürmez: EveryCafe kullanımı ve salt-okunur DB yolu, masa/IP ayarları, yedek yolu, Telegram/mesajlaşma oturumları, seçili PRO bileşenleri, kafe logosu ve bileşenlere ait config/veri korunur.
+- EveryCafe seçilmediyse EveryCafe Senkron, Geçmiş Aktarım, Entegrasyon Günlüğü, Admin EveryCafe paneli ve Client Yönetim PRO gösterilmez. EveryCafe seçildiyse mevcut salt-okunur senkronizasyon yapısı tam olarak çalışmaya devam eder.
+- Client kurulumunda Çark seçildiyse ping bileşeni ile Çark kısayolu birlikte kurulur; Çark seçilmediyse yalnız ping bileşeni kurulur.
+- Her yeni STABLE paket, yeni kafe tabanından doğrudan o sürüme eşitleme ve yukarıdaki yerel tercihleri koruma senaryosuyla test edilmeden `latest.json` kanalına yayınlanmaz.

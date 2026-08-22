@@ -115,6 +115,8 @@ namespace KafePinProDesktop
         private readonly Label splashTitle;
         private readonly Label splashText;
         private readonly Button retryButton;
+        private readonly Label brandLabel;
+        private readonly PictureBox brandLogo;
         private readonly Button managementButton;
         private readonly Button adminButton;
         private readonly Button monitorButton;
@@ -201,14 +203,26 @@ namespace KafePinProDesktop
             topBar.BackColor = Color.FromArgb(12, 23, 34);
             topBar.Padding = new Padding(12, 8, 12, 8);
 
-            Label brand = new Label();
-            brand.Text = "KafePin Pro";
-            brand.ForeColor = Color.FromArgb(105, 236, 183);
-            brand.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
-            brand.AutoSize = false;
-            brand.TextAlign = ContentAlignment.MiddleLeft;
-            brand.SetBounds(12, 8, 150, 40);
-            topBar.Controls.Add(brand);
+            brandLabel = new Label();
+            brandLabel.Text = "KafePin Pro";
+            brandLabel.ForeColor = Color.FromArgb(105, 236, 183);
+            brandLabel.Font = new Font("Segoe UI", 14F, FontStyle.Bold);
+            brandLabel.AutoSize = false;
+            brandLabel.TextAlign = ContentAlignment.MiddleLeft;
+            brandLabel.SetBounds(12, 8, 150, 40);
+            brandLabel.Cursor = Cursors.Hand;
+            brandLabel.Click += SelectCafeBrandLogo;
+            topBar.Controls.Add(brandLabel);
+
+            brandLogo = new PictureBox();
+            brandLogo.SetBounds(8, 8, 112, 40);
+            brandLogo.SizeMode = PictureBoxSizeMode.Zoom;
+            brandLogo.BackColor = Color.Transparent;
+            brandLogo.Cursor = Cursors.Hand;
+            brandLogo.Visible = false;
+            brandLogo.Click += SelectCafeBrandLogo;
+            topBar.Controls.Add(brandLogo);
+            LoadCafeBrandLogo();
 
             managementButton = MakeNavButton("Yönetim", 160, 12, 100);
             adminButton = MakeNavButton("Admin", 268, 12, 70);
@@ -220,10 +234,7 @@ namespace KafePinProDesktop
             printerProButton = MakeNavButton("🖨️ Yazıcı PRO", 974, 12, 128);
             serviceProButton = MakeNavButton("🛠 Teknik Servis PRO", 1110, 12, 150);
             clientProButton = MakeNavButton("🖥 Client Yönetim PRO", 1268, 12, 152);
-            // Client Yönetim PRO yalnız EveryCafe kullanılan ve kurulumda özellikle
-            // seçilen kafelerde görünür. Eski/yarım bir kurulumdan kalmış klasörün
-            // varlığı tek başına sekmeyi görünür yapamaz.
-            clientProButton.Visible = IsClientProEnabledForThisCafe();
+            ApplyEveryCafeNavigationVisibility();
             whatsAppTopButton = MakeNavButton("WA Business", 1428, 12, 112);
             whatsAppPersonalTopButton = MakeNavButton("WA Kişisel", 1548, 12, 106);
             telegramTopButton = MakeNavButton("Telegram", 1662, 12, 90);
@@ -269,6 +280,8 @@ namespace KafePinProDesktop
             {
                 try
                 {
+                    ApplyEveryCafeNavigationVisibility();
+                    LayoutTopNavigation(topBar, brandLabel);
                     if (whatsAppViewActive)
                     {
                         await ReloadActiveMessagingViewAsync();
@@ -327,9 +340,9 @@ namespace KafePinProDesktop
             topBar.Resize += delegate
             {
                 hint.Visible = false;
-                LayoutTopNavigation(topBar, brand);
+                LayoutTopNavigation(topBar, brandLabel);
             };
-            LayoutTopNavigation(topBar, brand);
+            LayoutTopNavigation(topBar, brandLabel);
 
             contentPanel = new Panel();
             contentPanel.Dock = DockStyle.Fill;
@@ -508,8 +521,20 @@ namespace KafePinProDesktop
             serverWatchTimer.Tick += ServerWatchTimer_Tick;
 
             contentPanel.Resize += delegate { LayoutSplash(); };
-            Resize += delegate { LayoutWhatsAppPanel(); LayoutWhatsAppSidebarToggle(); };
-            Shown += async delegate { BeginInitialize(); serverWatchTimer.Start(); await WarmMessagingBrowsersAsync(); };
+            Resize += delegate
+            {
+                LayoutTopNavigation(topBar, brandLabel);
+                LayoutWhatsAppPanel();
+                LayoutWhatsAppSidebarToggle();
+            };
+            Shown += async delegate
+            {
+                ApplyEveryCafeNavigationVisibility();
+                BeginInvoke(new Action(delegate { LayoutTopNavigation(topBar, brandLabel); }));
+                BeginInitialize();
+                serverWatchTimer.Start();
+                await WarmMessagingBrowsersAsync();
+            };
             FormClosing += delegate { try { Application.RemoveMessageFilter(messagingPanelDismissFilter); } catch { } try { serverWatchTimer.Stop(); } catch { } try { messagingNotifyIcon.Visible = false; messagingNotifyIcon.Dispose(); } catch { } try { browser.Dispose(); } catch { } try { mp3Browser.Dispose(); } catch { } try { printerBrowser.Dispose(); } catch { } try { whatsAppBrowser.Dispose(); } catch { } try { whatsAppPersonalBrowser.Dispose(); } catch { } try { telegramBrowser.Dispose(); } catch { } try { clientBrowser.Dispose(); } catch { } };
             LayoutSplash();
             LayoutWhatsAppSidebarToggle();
@@ -545,8 +570,93 @@ namespace KafePinProDesktop
             return badge;
         }
 
+        private string GetCafeBrandingDirectory()
+        {
+            return Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "KafePinPro", "branding");
+        }
+
+        private void LoadCafeBrandLogo()
+        {
+            try
+            {
+                string directory = GetCafeBrandingDirectory();
+                string[] candidates = new string[] {
+                    Path.Combine(directory, "cafe-logo.png"),
+                    Path.Combine(directory, "cafe-logo.jpg"),
+                    Path.Combine(directory, "cafe-logo.jpeg"),
+                    Path.Combine(directory, "cafe-logo.bmp")
+                };
+                string selected = null;
+                foreach (string candidate in candidates)
+                {
+                    if (!File.Exists(candidate)) continue;
+                    selected = candidate;
+                    break;
+                }
+                if (string.IsNullOrWhiteSpace(selected))
+                {
+                    brandLogo.Visible = false;
+                    brandLabel.Visible = true;
+                    return;
+                }
+                using (FileStream stream = new FileStream(selected, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (Image source = Image.FromStream(stream))
+                {
+                    Image old = brandLogo.Image;
+                    brandLogo.Image = new Bitmap(source);
+                    if (old != null) old.Dispose();
+                }
+                brandLabel.Visible = false;
+                brandLogo.Visible = true;
+            }
+            catch
+            {
+                brandLogo.Visible = false;
+                brandLabel.Visible = true;
+            }
+        }
+
+        private void SelectCafeBrandLogo(object sender, EventArgs e)
+        {
+            try
+            {
+                using (OpenFileDialog dialog = new OpenFileDialog())
+                {
+                    dialog.Title = "Kafe logosunu seç";
+                    dialog.Filter = "Logo dosyaları|*.png;*.jpg;*.jpeg;*.bmp|PNG|*.png|JPEG|*.jpg;*.jpeg|Bitmap|*.bmp";
+                    dialog.Multiselect = false;
+                    if (dialog.ShowDialog(this) != DialogResult.OK) return;
+                    FileInfo info = new FileInfo(dialog.FileName);
+                    if (info.Length <= 0 || info.Length > 5L * 1024L * 1024L)
+                        throw new InvalidOperationException("Logo en fazla 5 MB olabilir.");
+                    string extension = info.Extension.ToLowerInvariant();
+                    if (extension != ".png" && extension != ".jpg" && extension != ".jpeg" && extension != ".bmp")
+                        throw new InvalidOperationException("Logo PNG, JPG, JPEG veya BMP olmalı.");
+                    byte[] logoBytes = File.ReadAllBytes(dialog.FileName);
+                    string directory = GetCafeBrandingDirectory();
+                    Directory.CreateDirectory(directory);
+                    foreach (string oldLogo in Directory.GetFiles(directory, "cafe-logo.*"))
+                    {
+                        try { File.Delete(oldLogo); } catch { }
+                    }
+                    File.WriteAllBytes(Path.Combine(directory, "cafe-logo" + extension), logoBytes);
+                    LoadCafeBrandLogo();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Logo kaydedilemedi:\n" + ex.Message, "KafePin Pro", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
         private void LayoutTopNavigation(Panel topBar, Label brand)
         {
+            // Form ilk oluşurken Dock yerleşimi tamamlanmadan geçici olarak çok dar
+            // bir genişlik raporlanabilir. Bu geçici değerle düğmeleri 30 piksele
+            // sıkıştırmak yerine Shown/Resize turundaki gerçek genişliği bekle.
+            if (topBar.ClientSize.Width < 700) return;
             Button[] buttons = new Button[] {
                 managementButton, adminButton, monitorButton, everyCafeSyncButton,
                 everyCafeHistoryButton, everyCafeIntegrationButton, mp3BotButton,
@@ -569,7 +679,8 @@ namespace KafePinProDesktop
 
             int totalWidth = Math.Max(1, topBar.ClientSize.Width);
             bool compact = totalWidth < 1400;
-            brand.Visible = !compact;
+            brand.Visible = !compact && brandLogo.Image == null;
+            brandLogo.Visible = !compact && brandLogo.Image != null;
             brand.Width = 118;
             int x = compact ? 4 : 126;
             int gap = compact ? 2 : 4;
@@ -613,6 +724,48 @@ namespace KafePinProDesktop
                 );
             }
             catch { return false; }
+        }
+
+        private bool IsEveryCafeEnabledForThisCafe()
+        {
+            try
+            {
+                string envPath = Path.Combine(GetKafePinRoot(), ".env");
+                if (!File.Exists(envPath)) return false;
+                foreach (string rawLine in File.ReadAllLines(envPath))
+                {
+                    string line = (rawLine ?? string.Empty).Trim();
+                    if (line.Length == 0 || line.StartsWith("#")) continue;
+                    int equalsIndex = line.IndexOf('=');
+                    if (equalsIndex <= 0) continue;
+                    string key = line.Substring(0, equalsIndex).Trim();
+                    if (!key.Equals("EVERYCAFE_DB_PATH", StringComparison.OrdinalIgnoreCase)) continue;
+                    string value = line.Substring(equalsIndex + 1).Trim().Trim('"');
+                    if (string.IsNullOrWhiteSpace(value)) return false;
+                    return value.IndexOf("everycafe-disabled.ecm", StringComparison.OrdinalIgnoreCase) < 0;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        private void ApplyEveryCafeNavigationVisibility()
+        {
+            bool everyCafeEnabled = IsEveryCafeEnabledForThisCafe();
+            everyCafeSyncButton.Visible = everyCafeEnabled;
+            everyCafeHistoryButton.Visible = everyCafeEnabled;
+            everyCafeIntegrationButton.Visible = everyCafeEnabled;
+            // Client Yönetim PRO hem EveryCafe kullanılıyor hem de kurulumda
+            // bileşen açıkça seçilmişse görünür. Klasör kalıntısı yetmez.
+            clientProButton.Visible = everyCafeEnabled && IsClientProEnabledForThisCafe();
+
+            if (!everyCafeEnabled &&
+                (targetUrl.Equals(EveryCafeSyncUrl, StringComparison.OrdinalIgnoreCase) ||
+                 targetUrl.Equals(EveryCafeHistoryUrl, StringComparison.OrdinalIgnoreCase) ||
+                 targetUrl.Equals(EveryCafeIntegrationUrl, StringComparison.OrdinalIgnoreCase)))
+            {
+                targetUrl = HomeUrl;
+            }
         }
 
         private void LayoutWhatsAppBadges()
@@ -2274,7 +2427,7 @@ namespace KafePinProDesktop
             return false;
         }
 
-        private void Browser_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
+        private async void Browser_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs e)
         {
             if (e.IsSuccess)
             {
@@ -2286,6 +2439,7 @@ namespace KafePinProDesktop
                     try { UpdateNavButtons(browser.Source != null ? browser.Source.ToString() : targetUrl); } catch { }
                     KeepWhatsAppSidebarOnTop();
                 }
+                await ApplyEveryCafeAdminVisibilityAsync();
                 hasLoadedOnce = true;
                 initializing = false;
             }
@@ -2301,6 +2455,40 @@ namespace KafePinProDesktop
                 }
                 initializing = false;
             }
+        }
+
+        private async Task ApplyEveryCafeAdminVisibilityAsync()
+        {
+            if (IsEveryCafeEnabledForThisCafe() || browser.CoreWebView2 == null) return;
+            string current = browser.Source != null ? browser.Source.ToString() : targetUrl;
+            if (current.IndexOf("/admin.html", StringComparison.OrdinalIgnoreCase) < 0) return;
+            const string script = @"(() => {
+  const apply = () => {
+    const panelButton = document.querySelector('#adminPanelSwitcher [data-panel=""everycafe""]');
+    if (panelButton) panelButton.style.display = 'none';
+    const switcher = document.getElementById('adminPanelSwitcher');
+    if (switcher) switcher.style.gridTemplateColumns = 'repeat(3,minmax(0,1fr))';
+    const quickLink = document.querySelector('#adminQuickNav a[href=""#section-everycafe""]');
+    if (quickLink) quickLink.style.display = 'none';
+    let section = document.getElementById('section-everycafe');
+    if (!section) {
+      section = Array.from(document.querySelectorAll('.card')).find(card => {
+        const heading = card.querySelector(':scope > h2');
+        return heading && heading.textContent.includes('EveryCafe Entegrasyon');
+      });
+    }
+    if (section) section.style.display = 'none';
+    const inlinePanel = document.getElementById('everyCafeInlinePanel');
+    if (inlinePanel) inlinePanel.style.display = 'none';
+    if (document.body && document.body.dataset.adminPanel === 'everycafe' && typeof window.setAdminPanel === 'function') {
+      window.setAdminPanel('cafe', false);
+    }
+  };
+  apply();
+  let remaining = 20;
+  const timer = window.setInterval(() => { apply(); if (--remaining <= 0) window.clearInterval(timer); }, 250);
+})();";
+            try { await browser.CoreWebView2.ExecuteScriptAsync(script); } catch { }
         }
 
         private void CoreWebView2_NavigationStarting(object sender, CoreWebView2NavigationStartingEventArgs e)
