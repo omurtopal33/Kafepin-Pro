@@ -133,9 +133,26 @@ jobs:
           node --check (Join-Path $out 'server.js')
           if($LASTEXITCODE -ne 0){throw 'server.js syntax failed'}
 
-          $core=Get-ChildItem $out -Recurse -File -Filter 'Microsoft.Web.WebView2.Core.dll' | Select-Object -First 1
-          $forms=Get-ChildItem $out -Recurse -File -Filter 'Microsoft.Web.WebView2.WinForms.dll' | Select-Object -First 1
-          if($null -eq $core -or $null -eq $forms){throw 'WebView2 compile references missing'}
+          $nugetCmd=Get-Command nuget.exe -ErrorAction SilentlyContinue
+          if($null -eq $nugetCmd){
+            $nugetExe=Join-Path $env:RUNNER_TEMP 'nuget.exe'
+            Invoke-WebRequest 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nugetExe
+          } else {
+            $nugetExe=$nugetCmd.Source
+          }
+          $pkg=Join-Path $env:RUNNER_TEMP 'webview2-sdk'
+          if(Test-Path $pkg){Remove-Item $pkg -Recurse -Force}
+          & $nugetExe install Microsoft.Web.WebView2 -OutputDirectory $pkg -ExcludeVersion -NonInteractive -Source 'https://api.nuget.org/v3/index.json'
+          if($LASTEXITCODE -ne 0){throw 'WebView2 NuGet restore failed'}
+
+          $core=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.Core.dll' | Where-Object {$_.FullName -match 'net462|net48'} | Select-Object -First 1
+          $forms=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.WinForms.dll' | Where-Object {$_.FullName -match 'net462|net48'} | Select-Object -First 1
+          if($null -eq $core -or $null -eq $forms){
+            $core=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.Core.dll' | Select-Object -First 1
+            $forms=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.WinForms.dll' | Select-Object -First 1
+          }
+          if($null -eq $core -or $null -eq $forms){throw 'WebView2 NuGet compile references missing'}
+
           $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
           if(-not (Test-Path $csc)){ $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
           if(-not (Test-Path $csc)){throw 'C# compiler missing'}
