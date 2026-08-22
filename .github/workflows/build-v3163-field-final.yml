@@ -1,0 +1,190 @@
+name: Build v3.1.63 FIELD FINAL Restore
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3163-field-final/**'
+      - '.github/workflows/build-v3163-field-final.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dev/v3163-field-final/**'
+      - '.github/workflows/build-v3163-field-final.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Pin exact original v3.1.60 FIELD FINAL source
+        shell: pwsh
+        run: |
+          git fetch origin a120bb332b1f613638c21e00874be214e04ecf12 --depth=1
+          if($LASTEXITCODE -ne 0){throw 'immutable v3.1.60 lock commit fetch failed'}
+          git checkout FETCH_HEAD -- KafePin-Pro-Update-v3.1.60.zip KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip
+          if($LASTEXITCODE -ne 0){throw 'v3.1.60 FIELD FINAL sources could not be checked out'}
+          $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.60.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha -ne '1976d0377739f2c866c4faee1d11c9623c659c8ab743db3871fece1d81f2ba2b'){
+            throw "Wrong v3.1.60 source SHA: $sha"
+          }
+          Write-Host "FIELD_FINAL_V3160_SHA=$sha"
+          Get-Item KafePin-Pro-Update-v3.1.60.zip,KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip | Select-Object Name,Length
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build twice and prove deterministic output
+        shell: pwsh
+        run: |
+          python -m py_compile dev/v3163-field-final/build_v3163.py
+          python dev/v3163-field-final/build_v3163.py
+          if($LASTEXITCODE -ne 0){throw 'first v3.1.63 build failed'}
+          $u1=(Get-FileHash 'KafePin-Pro-Update-v3.1.63.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c1=(Get-FileHash 'KafePin-Client-v3.1.63.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          python dev/v3163-field-final/build_v3163.py
+          if($LASTEXITCODE -ne 0){throw 'second v3.1.63 build failed'}
+          $u2=(Get-FileHash 'KafePin-Pro-Update-v3.1.63.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c2=(Get-FileHash 'KafePin-Client-v3.1.63.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($u1 -ne $u2){throw 'Update deterministic SHA mismatch'}
+          if($c1 -ne $c2){throw 'Client deterministic SHA mismatch'}
+          Write-Host "V3163_SHA=$u2"
+          Write-Host "CLIENT_SHA=$c2"
+
+      - name: Prove FIELD FINAL cards and core are preserved
+        shell: pwsh
+        run: |
+          $base=Join-Path $env:RUNNER_TEMP 'field-final-base'
+          $out=Join-Path $env:RUNNER_TEMP 'field-final-3163'
+          foreach($p in @($base,$out)){if(Test-Path $p){Remove-Item $p -Recurse -Force}}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.60.zip' $base
+          Expand-Archive 'KafePin-Pro-Update-v3.1.63.zip' $out
+
+          foreach($same in @(
+            'public\admin.html',
+            'public\monitor.html',
+            'public\kafepin-pro-yonetim.html',
+            'public\everycafe-reconcile.html',
+            'server.js',
+            'services\spinService.js',
+            'utils\fee.js',
+            'KafePin_Desktop_App_Setup.ps1',
+            'KafePin_Pro_Bilesen_Kurulum.ps1',
+            'KafePin_Yeni_Kafe_Ayar_Sihirbazi.ps1'
+          )){
+            $a=(Get-FileHash (Join-Path $base $same) -Algorithm SHA256).Hash
+            $b=(Get-FileHash (Join-Path $out $same) -Algorithm SHA256).Hash
+            if($a -ne $b){throw "FIELD FINAL file changed unexpectedly: $same"}
+            Write-Host "PRESERVED $same $a"
+          }
+
+          $admin=Get-Content (Join-Path $out 'public\admin.html') -Raw
+          foreach($marker in @('Bugünkü Çark Maliyeti','Kaynak: KafePin Çark','dashboard-cards','Gerçek Masa Geliri')){
+            if($admin -notmatch [regex]::Escape($marker)){throw "FIELD FINAL admin/card marker missing: $marker"}
+          }
+
+          $desktop=Get-Content (Join-Path $out 'desktop-app\KafePinProDesktop.cs') -Raw
+          foreach($marker in @('PRO Servisleri Yenile','Ekranı Yenile','MP3 Bot PRO','Yazıcı PRO','Teknik Servis PRO','Client Yönetim PRO')){
+            if($desktop -notmatch [regex]::Escape($marker)){throw "Desktop marker missing: $marker"}
+          }
+
+          $manager=Get-Content (Join-Path $out 'KafePin_Manager_Ensure.ps1') -Raw
+          if($manager -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'legacy Yazici fatal blocker returned'}
+          if($manager -notmatch 'KAFEPIN_YAZICI_RUNTIME_SHA_VERIFY_SKIPPED_LEGACY_PAYLOAD_NOT_REQUIRED'){throw 'verify-only safe-exit marker missing'}
+          if($manager -notmatch "-AppVersion '1\.1\.9'"){throw 'desktop v1.1.9 force rebuild missing'}
+
+          $meta=Get-Content (Join-Path $out 'update.json') -Raw | ConvertFrom-Json
+          if($meta.version -ne '3.1.63' -or $meta.baseVersion -ne '3.1.60' -or -not $meta.cumulative){throw 'v3.1.63 metadata invalid'}
+          if($meta.fieldFinalSourceSha256 -ne '1976d0377739f2c866c4faee1d11c9623c659c8ab743db3871fece1d81f2ba2b'){throw 'FIELD FINAL source SHA metadata invalid'}
+
+      - name: Syntax and Desktop compile smoke test
+        shell: pwsh
+        run: |
+          $out=Join-Path $env:RUNNER_TEMP 'compile3163'
+          if(Test-Path $out){Remove-Item $out -Recurse -Force}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.63.zip' $out
+
+          $tokens=$null; $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $out 'KafePin_Manager_Ensure.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count -gt 0){$errors | Format-List | Out-String | Write-Host; throw 'Manager syntax failed'}
+          node --check (Join-Path $out 'server.js')
+          if($LASTEXITCODE -ne 0){throw 'server.js syntax failed'}
+
+          $nugetCmd=Get-Command nuget.exe -ErrorAction SilentlyContinue
+          if($null -eq $nugetCmd){
+            $nugetExe=Join-Path $env:RUNNER_TEMP 'nuget.exe'
+            Invoke-WebRequest 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nugetExe
+          } else { $nugetExe=$nugetCmd.Source }
+          $pkg=Join-Path $env:RUNNER_TEMP 'webview2-sdk'
+          if(Test-Path $pkg){Remove-Item $pkg -Recurse -Force}
+          & $nugetExe install Microsoft.Web.WebView2 -OutputDirectory $pkg -ExcludeVersion -NonInteractive -Source 'https://api.nuget.org/v3/index.json'
+          if($LASTEXITCODE -ne 0){throw 'WebView2 restore failed'}
+          $core=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.Core.dll' | Where-Object {$_.FullName -match 'net462|net48'} | Select-Object -First 1
+          $forms=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.WinForms.dll' | Where-Object {$_.FullName -match 'net462|net48'} | Select-Object -First 1
+          if($null -eq $core -or $null -eq $forms){throw 'WebView2 refs missing'}
+          $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          if(-not (Test-Path $csc)){ $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
+          $exe=Join-Path $env:RUNNER_TEMP 'KafePinProDesktop-v1.1.9-smoke.exe'
+          $coreRef="/reference:$($core.FullName)"
+          $formsRef="/reference:$($forms.FullName)"
+          & $csc /nologo /target:winexe /out:$exe /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll $coreRef $formsRef (Join-Path $out 'desktop-app\KafePinProDesktop.cs')
+          if($LASTEXITCODE -ne 0 -or -not (Test-Path $exe)){throw 'Desktop compile failed'}
+          Write-Host "DESKTOP_COMPILE_OK=$exe"
+
+      - name: Validate client package
+        shell: pwsh
+        run: |
+          $ctmp=Join-Path $env:RUNNER_TEMP 'client3163'
+          if(Test-Path $ctmp){Remove-Item $ctmp -Recurse -Force}
+          Expand-Archive 'KafePin-Client-v3.1.63.zip' $ctmp
+          if(-not (Test-Path (Join-Path $ctmp 'CLIENT-OKU-BENI.txt'))){throw 'client readme missing'}
+          $files=Get-ChildItem $ctmp -Recurse -File | Where-Object {$_.Name -ne 'CLIENT-OKU-BENI.txt'}
+          if($files.Count -lt 1){throw 'client runtime empty'}
+          Write-Host "CLIENT_RUNTIME_FILES=$($files.Count)"
+          $files | ForEach-Object { Write-Host "CLIENT_RUNTIME=$($_.FullName.Substring($ctmp.Length+1))" }
+
+      - name: Publish v3.1.63 STABLE after merge
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.63.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $latest=[ordered]@{
+            version='3.1.63'
+            channel='stable'
+            finalStable=$false
+            stableBase='3.1.60'
+            baseVersion='3.1.60'
+            futureUpdateBase='3.1.60'
+            cumulative=$true
+            fieldFinalSourceSha256='1976d0377739f2c866c4faee1d11c9623c659c8ab743db3871fece1d81f2ba2b'
+            desktopVersion='1.1.9'
+            publishedAt=(Get-Date).ToUniversalTime().ToString('o')
+            notes='v3.1.63 STABLE: orijinal saha v3.1.60 FINAL kartlari ve cekirdegi birebir korunur; eski v3.1.57 Yazici payload blokaji kaldirilir ve PRO Servisleri Yenile geri gelir. v3.1.60 FINAL paketi degistirilmez.'
+            downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.63.zip'
+            sha256=$sha
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content 'latest.json' -Encoding utf8
+          git config user.name 'KafePin Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add KafePin-Pro-Update-v3.1.63.zip KafePin-Pro-Update-v3.1.63.sha256.txt KafePin-Client-v3.1.63.zip RELEASE_NOTES-v3.1.63.md latest.json
+          git commit -m 'release: publish v3.1.63 field-final restore and client'
+          git push
+
+      - name: Upload validated artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v3.1.63-field-final
+          path: |
+            KafePin-Pro-Update-v3.1.63.zip
+            KafePin-Pro-Update-v3.1.63.sha256.txt
+            KafePin-Client-v3.1.63.zip
+            RELEASE_NOTES-v3.1.63.md
