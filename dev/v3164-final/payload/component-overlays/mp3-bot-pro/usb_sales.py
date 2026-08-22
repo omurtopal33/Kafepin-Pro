@@ -15,12 +15,14 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 from duplicate_guard import car_artist_title, car_song_key, filename_song_key
+from library_metadata import artist_title_for_path, duration_seconds_for_path
 
 
 CORE_DIRECT_SALE_URL = "http://127.0.0.1:3000/admin/product-sales/add-custom-direct"
 DRIVE_REMOVABLE = 2
 LAYOUTS = {"customer", "artist", "flat"}
 PAYMENTS = {"CASH", "CARD"}
+AUDIO_EXTENSIONS = {".mp3", ".flac", ".wav", ".wma", ".m4a", ".aac", ".ogg"}
 FILE_ATTRIBUTE_HIDDEN = 0x2
 FILE_ATTRIBUTE_SYSTEM = 0x4
 
@@ -34,7 +36,14 @@ def is_visible_browsable_folder(path: Path) -> bool:
             attrs = int(getattr(path.stat(), "st_file_attributes", 0))
             if attrs & (FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM):
                 return False
-        return path.name.casefold() not in {"$recycle.bin", "system volume information"}
+        # Gezgin yalnız aktarılabilir içerik için kullanılır. Kapak/resim
+        # klasörleri ve Windows'un sistem klasörleri hiçbir USB ekranında
+        # gösterilmez (MP3, Film ve Oyun aynı ortak filtreyi kullanır).
+        hidden_names = {
+            "$recycle.bin", "recycler", "recycled", "system volume information",
+            "cover", "covers", "artwork", "album art", "albumart", "folder art", "scans",
+        }
+        return path.name.casefold().strip() not in hidden_names
     except OSError:
         return False
 
@@ -53,8 +62,15 @@ def _drive_root(value: str) -> str:
 
 
 def _formatted_track(source: Path) -> tuple[str, str, str]:
-    clean_stem = re.sub(r"^\s*\d{1,4}\s*[.)_-]\s*", "", source.stem)
-    artist, title = car_artist_title(clean_stem)
+    artist, title = artist_title_for_path(source)
+    # Etiketsiz klasik dosya adları için eski, güvenli Sanatçı - Şarkı ayracı
+    # yedeği korunur. Fiziksel Track01 adı hedef USB adı olarak kullanılmaz.
+    if not artist or not title or title.casefold().startswith("parça "):
+        clean_stem = re.sub(r"^\s*\d{1,4}\s*[.)_-]\s*", "", source.stem)
+        parsed_artist, parsed_title = car_artist_title(clean_stem)
+        artist = artist or parsed_artist
+        if parsed_title and not parsed_title.casefold().startswith("track"):
+            title = parsed_title
     filename = _safe_component(f"{artist} - {title}" if artist and title else title or source.stem, "Muzik") + ".mp3"
     return artist, title, filename
 
@@ -186,22 +202,32 @@ class UsbSalesManager:
         self._remember_browser_folder(folder)
         entries = list(folder.iterdir())
         folders = sorted((p for p in entries if is_visible_browsable_folder(p)), key=lambda p: p.name.casefold())
-        files = sorted((p for p in entries if p.is_file() and p.suffix.lower() == ".mp3"), key=lambda p: p.name.casefold())
+        files = sorted((p for p in entries if p.is_file() and p.suffix.lower() in AUDIO_EXTENSIONS), key=lambda p: _formatted_track(p)[2].casefold())
         parent = folder.parent
         return {
             "folder": str(folder),
             "parent": "" if parent == folder else str(parent),
             "roots": self.source_roots(),
             "folders": [{"name": p.name, "path": str(p)} for p in folders],
-            "files": [{"name": p.name, "path": str(p), "size_mb": round(p.stat().st_size / (1024 * 1024), 1)} for p in files],
+            "files": [
+                {
+                    "name": _formatted_track(p)[2].rsplit(".", 1)[0],
+                    "source_name": p.name,
+                    "path": str(p),
+                    "format": p.suffix.lstrip(".").upper(),
+                    "duration_seconds": duration_seconds_for_path(p),
+                    "size_mb": round(p.stat().st_size / (1024 * 1024), 1),
+                }
+                for p in files
+            ],
         }
 
     def add_sources(self, values: list[str]) -> list[dict]:
         with self.lock:
             for value in values:
                 path = Path(str(value or "")).expanduser().resolve()
-                if not path.exists() or (not path.is_dir() and not (path.is_file() and path.suffix.lower() == ".mp3")):
-                    raise ValueError(f"Geçerli klasör veya MP3 bulunamadı: {path}")
+                if not path.exists() or (not path.is_dir() and not (path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS)):
+                    raise ValueError(f"Geçerli klasör veya desteklenen ses dosyası bulunamadı: {path}")
                 key = hashlib.sha256(os.path.normcase(str(path)).encode("utf-8")).hexdigest()[:16]
                 self.extra_sources[key] = path
             self._save_sources_locked()
@@ -209,7 +235,13 @@ class UsbSalesManager:
 
     def sources(self) -> list[dict]:
         with self.lock:
-            return [{"id": key, "name": path.name, "path": str(path), "kind": "folder" if path.is_dir() else "file"}
+            return [{
+                "id": key,
+                "name": path.name if path.is_dir() else _formatted_track(path)[2].rsplit(".", 1)[0],
+                "source_name": path.name if path.is_file() else "",
+                "path": str(path),
+                "kind": "folder" if path.is_dir() else "file",
+            }
                     for key, path in self.extra_sources.items()]
 
     def remove_source(self, source_id: str) -> list[dict]:
@@ -287,7 +319,7 @@ class UsbSalesManager:
             base = path if path.is_dir() else path.parent
             selected.append((path.name if path.is_dir() else path.parent.name or "Secilen Sarkilar", path, base))
         if not selected:
-            raise ValueError("Dosya gezgininden en az bir klasör veya MP3 ekleyin.")
+            raise ValueError("Dosya gezgininden en az bir klasör veya desteklenen ses dosyası ekleyin.")
         return selected
 
     def build_plan(self, customer_root: Path, data: dict) -> dict:
@@ -312,7 +344,7 @@ class UsbSalesManager:
         duplicate_count = 0
         source_count = 0
         for customer, entry, base in sources:
-            candidates = [entry] if entry.is_file() else [p for p in entry.rglob("*.mp3") if p.is_file()]
+            candidates = [entry] if entry.is_file() else [p for p in entry.rglob("*") if p.is_file() and p.suffix.lower() in AUDIO_EXTENSIONS]
             for source in sorted(candidates, key=lambda p: str(p).casefold()):
                 source_count += 1
                 artist, title, filename = _formatted_track(source)
@@ -437,12 +469,16 @@ class UsbSalesManager:
                             destination = destination.with_name(f"{stem} ({number}){suffix}")
                             number += 1
                     temp = destination.with_name("." + destination.name + "." + uuid.uuid4().hex + ".copying")
-                    if bitrate:
+                    # Araç USB'si için hedef her zaman MP3'tür. 'Orijinal'
+                    # seçeneği yalnız zaten-MP3 kaynaklarda doğrudan kopyadır;
+                    # FLAC/WAV/WMA vb. ise uyumlu 320 kbps MP3 üretilir.
+                    if bitrate or source.suffix.lower() != ".mp3":
+                        output_bitrate = bitrate or 320
                         flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
                         completed = subprocess.run(
                             [self._ffmpeg(), "-hide_banner", "-nostats", "-y", "-i", str(source),
                              "-map_metadata", "-1", "-vn", "-ar", "44100", "-ac", "2",
-                             "-c:a", "libmp3lame", "-b:a", f"{bitrate}k",
+                             "-c:a", "libmp3lame", "-b:a", f"{output_bitrate}k",
                              "-metadata", f"artist={item['artist']}", "-metadata", f"title={item['title']}",
                              "-id3v2_version", "3", "-f", "mp3", str(temp)],
                             stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=900,

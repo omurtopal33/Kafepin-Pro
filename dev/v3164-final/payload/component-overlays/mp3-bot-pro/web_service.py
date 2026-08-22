@@ -12,6 +12,7 @@ import tempfile
 import threading
 import time
 import traceback
+import unicodedata
 import webbrowser
 from pathlib import Path
 from typing import Any
@@ -21,7 +22,13 @@ import requests as http_requests
 from yt_dlp import YoutubeDL
 from flask import Flask, Response, jsonify, request, send_file, send_from_directory, stream_with_context
 
+try:
+    from mutagen import File as MutagenFile
+except Exception:
+    MutagenFile = None
+
 from audio_normalizer import get_eq_presets
+from library_metadata import display_name_for_path, duration_seconds_for_path
 
 LISTEN_EQ_PRESETS = (
     "Orijinal / Düz",
@@ -59,10 +66,42 @@ except Exception:
     copy_image_and_text = None
 
 
-APP_VERSION = "2.34.30-usb-sales-suite"
+APP_VERSION = "2.34.31-winamp-queue-library"
 FUNCTIONAL_BASELINE = "2.26"
 HOST = "127.0.0.1"
 PORT = 17890
+
+# Doğrulanmış eski arşiv eşleştirmeleri. Kaynak dosyaya dokunmadan, eksik
+# Title etiketi olan Track01 benzeri kayıtları gerçek parça adıyla gösterir.
+CURATED_ALBUM_TRACKS = {
+    "askin nur yengi gozumun bebegi": (
+        "Öpeyim Geçsin", "Gözümün Bebeği", "Hayırlı Olsun", "Başka Sözüm Yok", "Tutmadım",
+        "Yasak Elmam", "Bekleyenim Var", "Kibrit ve Alev", "Kahve Bahane", "Ayrı Gayrı",
+    ),
+}
+
+
+def _catalog_key(value: str) -> str:
+    text = unicodedata.normalize("NFKD", str(value or "")).replace("ı", "i")
+    text = "".join(char for char in text if not unicodedata.combining(char))
+    return re.sub(r"[^a-z0-9]+", " ", text.casefold()).strip()
+
+
+def _catalog_title_for_track(path: Path) -> str:
+    match = re.fullmatch(r"(?:track|parca|parça|song)?[ ._-]*0*(\d+)", path.stem, flags=re.IGNORECASE)
+    if not match:
+        return ""
+    index = int(match.group(1)) - 1
+    folder_key = _catalog_key(path.parent.name)
+    for album_key, titles in CURATED_ALBUM_TRACKS.items():
+        if album_key in folder_key and 0 <= index < len(titles):
+            return titles[index]
+    return ""
+
+
+def _library_track_label(path: Path) -> str:
+    """Tek ortak adlandırma kuralı: her yerde Sanatçı - Şarkı."""
+    return display_name_for_path(path)
 APP_DIR = Path(__file__).resolve().parent
 WEB_DIR = APP_DIR / "web"
 PID_FILE = DATA_DIR / "web_service.pid"
@@ -324,6 +363,7 @@ class Mp3WebCore:
         self.winamp_folder: Path | None = None
         self.winamp_paths: list[Path] = []
         self.winamp_stream_paths: dict[str, Path] = {}
+        self.winamp_search_cache: dict[str, list[tuple[Path, str, int]]] = {}
         self.favorite_paths: list[Path] = []
         self.player_index: int | None = None
         self.player_message = "Hazır — müşteri ve şarkı seç."
@@ -354,6 +394,8 @@ class Mp3WebCore:
         return {
             "customer_root": str(cfg.get("customer_root") or ""),
             "favorites_root": str(cfg.get("favorites_root") or ""),
+            "winamp_folder": str(cfg.get("winamp_folder") or ""),
+            "winamp_saved_locations": list(cfg.get("winamp_saved_locations") or []),
             "download_method": "native",
             "direct_bitrate_kbps": int(cfg.get("direct_bitrate_kbps", 320) or 320),
             "eq_preset": str(cfg.get("eq_preset") or "Araba Dengeli"),
@@ -385,6 +427,7 @@ class Mp3WebCore:
         allowed = {
             "customer_root",
             "favorites_root",
+            "winamp_saved_locations",
             "direct_bitrate_kbps",
             "eq_preset",
             "listen_eq_preset",
@@ -413,7 +456,7 @@ class Mp3WebCore:
                 if key not in data:
                     continue
                 value = data[key]
-                if key in {"usb_saved_locations", "usb_film_saved_locations", "usb_game_saved_locations"}:
+                if key in {"winamp_saved_locations", "usb_saved_locations", "usb_film_saved_locations", "usb_game_saved_locations"}:
                     if not isinstance(value, list):
                         raise ValueError("Arşiv konumları liste olmalıdır.")
                     cleaned: list[str] = []
@@ -1177,7 +1220,14 @@ class Mp3WebCore:
             root.destroy()
         if not selected:
             raise ValueError("Klasör seçilmedi.")
-        return self.browse_winamp_folder(str(selected))
+        selected_path = str(Path(selected).resolve())
+        with self.lock:
+            saved = [str(item) for item in (self.cfg.get("winamp_saved_locations") or []) if str(item).strip()]
+            saved = [item for item in saved if item.casefold() != selected_path.casefold()]
+            saved.append(selected_path)
+            self.cfg["winamp_saved_locations"] = saved[-12:]
+            save_config(self.cfg)
+        return self.browse_winamp_folder(selected_path)
 
     def browse_winamp_folder(self, requested: str | None = None) -> dict[str, Any]:
         if requested:
@@ -1196,12 +1246,38 @@ class Mp3WebCore:
             entries = list(folder.iterdir())
         except PermissionError as exc:
             raise RuntimeError("Bu klasörü görüntüleme izni yok.") from exc
-        folders = sorted(
-            [path for path in entries if path.is_dir()],
-            key=lambda path: path.name.casefold(),
-        )
+        hidden_system_folders = {"$recycle.bin", "recycler", "recycled", "system volume information"}
+        # Kapak/resim klasörleri Winamp gezgininin parçası değildir.  Bunlar
+        # hiçbir seviyede klasör listesine düşmez; listede yalnız müzik ve
+        # gerçek albüm/arsiv klasörleri kalır.
+        artwork_folders = {"cover", "covers", "artwork", "album art", "albumart", "folder art", "scans"}
+        def visible_music_folder(path: Path) -> bool:
+            if (
+                not path.is_dir()
+                or path.name.casefold().strip() in hidden_system_folders
+                or path.name.casefold().strip() in artwork_folders
+            ):
+                return False
+            try:
+                attributes = int(getattr(path.stat(), "st_file_attributes", 0) or 0)
+                # Windows FILE_ATTRIBUTE_HIDDEN (0x2) / SYSTEM (0x4): these are
+                # never useful as a music-library navigation destination.
+                return not bool(attributes & 0x6)
+            except OSError:
+                return False
         paths = sorted(
             [path for path in entries if path.is_file() and path.suffix.lower() in self._supported_audio_suffixes()],
+            key=lambda path: path.name.casefold(),
+        )
+        # Album artwork often lives in a sibling Cover/Artwork folder.  It is
+        # not a music navigation target; when this directory already contains
+        # playable audio, keep the Winamp view focused on those tracks.
+        folders = sorted(
+            [
+                path
+                for path in entries
+                if visible_music_folder(path)
+            ],
             key=lambda path: path.name.casefold(),
         )
         tracks: list[dict[str, Any]] = []
@@ -1211,7 +1287,11 @@ class Mp3WebCore:
             token = hashlib.sha256(str(resolved).casefold().encode("utf-8")).hexdigest()[:24]
             token_paths[token] = resolved
             tracks.append({
-                "name": path.name,
+                # Görünüm için metadata kullanılır; gerçek dosya adı/token
+                # korunur, dolayısıyla eski arşiv dosyalarına dokunulmaz.
+                "name": _library_track_label(path),
+                "source_name": path.name,
+                "duration_seconds": duration_seconds_for_path(path),
                 "size_mb": round(path.stat().st_size / 1024 / 1024, 1),
                 "token": token,
                 "format": path.suffix.lower().lstrip(".").upper(),
@@ -1227,6 +1307,7 @@ class Mp3WebCore:
             "parent": "" if parent == folder else str(parent),
             "folders": [{"name": path.name, "path": str(path)} for path in folders],
             "tracks": tracks,
+            "saved_locations": list(self.cfg.get("winamp_saved_locations") or []),
         }
 
     def winamp_path(self, index: int, token: str = "") -> Path:
@@ -1238,6 +1319,55 @@ class Mp3WebCore:
         if not paths:
             raise FileNotFoundError("Önce Winamp klasörü seç.")
         return paths[max(0, min(int(index), len(paths) - 1))]
+
+    def search_winamp_library(self, query: str, root_value: str = "") -> dict[str, Any]:
+        """Fast local Artist/Title search in the selected saved library root."""
+        needle = _catalog_key(str(query or ""))
+        if len(needle) < 2:
+            raise ValueError("Arama için en az 2 harf yaz.")
+        root = Path(str(root_value or self.winamp_folder or self.cfg.get("winamp_folder") or Path.home() / "Music")).expanduser()
+        if not root.is_dir():
+            raise ValueError("Müzik arşivi bulunamadı.")
+        root = root.resolve()
+        cache_key = f"{str(root).casefold()}|{needle}"
+        with self.lock:
+            matches = self.winamp_search_cache.get(cache_key)
+        if matches is None:
+            excluded = {"$recycle.bin", "recycler", "recycled", "system volume information", "cover", "covers", "artwork", "album art", "albumart", "folder art", "scans"}
+            matches = []
+            # Önce yalnız dosya ve klasör adına bakılır. Bu, büyük arşivlerde
+            # her FLAC etiketini açmaktan çok daha hızlıdır. Metadata yalnız
+            # eşleşen sonucu kullanıcıya gerçek Sanatçı - Şarkı adıyla sunmak
+            # için okunur.
+            try:
+                for directory, folders, files in os.walk(root):
+                    folders[:] = [name for name in folders if name.casefold().strip() not in excluded]
+                    for filename in files:
+                        path = Path(directory) / filename
+                        if path.suffix.lower() not in self._supported_audio_suffixes():
+                            continue
+                        raw_key = _catalog_key(f"{path.parent.name} {filename}")
+                        if needle not in raw_key:
+                            continue
+                        matches.append((path.resolve(), _library_track_label(path), duration_seconds_for_path(path)))
+                        if len(matches) >= 250:
+                            break
+                    if len(matches) >= 250:
+                        break
+            except (OSError, PermissionError) as exc:
+                raise RuntimeError("Müzik arşivi taranamadı.") from exc
+            with self.lock:
+                self.winamp_search_cache[cache_key] = matches
+        token_paths: dict[str, Path] = {}
+        tracks: list[dict[str, Any]] = []
+        for path, label, seconds in matches:
+            token = hashlib.sha256(str(path).casefold().encode("utf-8")).hexdigest()[:24]
+            token_paths[token] = path
+            tracks.append({"name": label, "source_name": path.name, "duration_seconds": seconds, "size_mb": round(path.stat().st_size / 1024 / 1024, 1), "token": token, "format": path.suffix.lstrip(".").upper()})
+        with self.lock:
+            self.winamp_paths = [path for path, _, _ in matches]
+            self.winamp_stream_paths.update(token_paths)
+        return {"folder": str(root), "parent": "", "folders": [], "tracks": tracks, "saved_locations": list(self.cfg.get("winamp_saved_locations") or []), "search": needle, "search_total": len(matches)}
 
     @staticmethod
     def _supported_audio_suffixes() -> set[str]:
@@ -2247,6 +2377,15 @@ def winamp_browse_folder():
     try:
         data = request.get_json(silent=True) or {}
         return jsonify({"ok": True, **core.browse_winamp_folder(str(data.get("path") or ""))})
+    except Exception as exc:
+        return _json_error(str(exc))
+
+
+@app.post("/api/winamp/search")
+def winamp_search():
+    try:
+        data = request.get_json(silent=True) or {}
+        return jsonify({"ok": True, **core.search_winamp_library(str(data.get("query") or ""), str(data.get("root") or ""))})
     except Exception as exc:
         return _json_error(str(exc))
 

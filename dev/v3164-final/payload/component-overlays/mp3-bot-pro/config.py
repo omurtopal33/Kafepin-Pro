@@ -16,6 +16,7 @@ DEFAULTS = {
     "customer_root": str(Path.home() / "Music" / "Musteriler"),
     "favorites_root": str(Path.home() / "Music" / "KafePin Favorilerim"),
     "winamp_folder": str(Path.home() / "Music"),
+    "winamp_saved_locations": [],
     "download_method": "native",
     "direct_bitrate_kbps": 320,
     "normalize_audio": True,
