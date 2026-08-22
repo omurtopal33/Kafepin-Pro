@@ -1,16 +1,16 @@
 {
-  "version": "3.1.64",
+  "version": "3.1.65",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "3.1.60",
   "baseVersion": "3.1.60",
   "futureUpdateBase": "3.1.64",
   "cumulative": true,
-  "sourceVersion": "3.1.63",
-  "sourceSha256": "e0b24eb364f9ed5a988e17681ec75b2269d469459bc2c8870b13637965e10427",
-  "desktopVersion": "1.1.10",
-  "publishedAt": "2026-08-22T12:45:00+03:00",
-  "notes": "v3.1.64 FINAL / STABLE: onaylanan Admin kart mimarisi ve PRO Servisleri yeniden başlatma davranışı kilitlendi. Toplam Varlık ile Bankaya Geçecek Kart yalnız Anlık Finans'ta; 20:00–20:00 Kafe Günü kartları Kasa & Muhasebe'dedir. Gizli eski kartların yeniden görünmesi ve kart satırlarında boşluk oluşması regresyon testleriyle engellenir. PRO Servisleri düğmesi dört bağımsız PRO servisini gerçekten yeniden başlatır. KafePin çekirdeği, finans, spin/session, EveryCafe salt-okunur erişimi, Telegram ve 20:00 gün sonu değiştirilmedi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.64.zip",
-  "sha256": "0fd3cfdc45d214f6feb277c9c27ced7005babf1fa02bcfcb85bbe94347ab7428"
+  "sourceVersion": "3.1.64",
+  "sourceSha256": "503b0f301e4f4f866dba83a2df3cc65e77be7a82ed34c1d1fdb8fbeaa448056c",
+  "publishedAt": "2026-08-22T18:00:00+03:00",
+  "notes": "v3.1.65 KÜMÜLATİF STABLE: çalışan MP3/Winamp, Favori Listem ve USB MP3-Film-Oyun arşiv gezgini kalıcı olarak yayınlandı. Sanatçı - Şarkı metadata eşleştirmesi, FLAC/WMA dahil medya görünürlüğü, büyük arşivde Türkçe hızlı arama, klavye gezintisi, seçili/çalan parça vurgusu, güvenli kısayol kaldırma ve USB aktarım hazırlığı güncellendi. KafePin çekirdeği, finans, spin/session, EveryCafe salt-okunur erişimi, Telegram ve 20:00 gün sonu değiştirilmedi.",
+  "files": [],
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.65.zip",
+  "sha256": "a96e0c926b7768d849f134b8672b51da00d9a2e396b90a55b562c376e5fc1b4b"
 }

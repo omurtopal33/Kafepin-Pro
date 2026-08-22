@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>KafePin MP3 Bot PRO</title>
+  <link rel="stylesheet" href="/web/style.css?v=23428">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">KAFEPIN PRO • YEREL MODÜL</div>
+        <h1>🎵 KafePin MP3 Bot PRO</h1>
+        <p>v2.34.30 USB SATIŞ PAKETİ • v2.26 işlev tabanı • KafePin çekirdeğinden bağımsız web motoru</p>
+      </div>
+      <div class="health" id="healthBadge">Servis kontrol ediliyor…</div>
+    </header>
+
+    <nav class="mode-tabs">
+      <button id="downloadModeBtn" class="tab active">⬇ İNDİRME MODU</button>
+      <button id="listenModeBtn" class="tab">♫ DİNLEME MODU</button>
+      <button id="winampModeBtn" class="tab">🎧 WINAMP MODU</button>
+      <button id="favoritesModeBtn" class="tab">⭐ FAVORİ LİSTEM</button>
+      <button id="usbModeBtn" class="tab">💾 USB SATIŞ MP3</button>
+      <button id="usbFilmModeBtn" class="tab">🎬 USB SATIŞ FİLM</button>
+      <button id="usbGameModeBtn" class="tab">🎮 USB SATIŞ OYUN</button>
+      <div class="spacer"></div>
+      <button class="btn ghost" id="refreshStateBtn">↻ PANELİ YENİLE</button>
+      <button class="btn danger" id="stopAllBtn">■ DURDUR</button>
+    </nav>
+
+    <div id="statusBar" class="status-bar">Hazır</div>
+    <div id="winampDock"></div>
+
+    <main>
+      <section id="downloadMode" class="mode visible">
+        <div class="grid two">
+          <section class="card">
+            <div class="card-title">Müşteri / Kayıt Yeri</div>
+            <div class="form-row">
+              <label>Müşteri adı</label>
+              <input id="customerName" placeholder="Örn: ömür">
+            </div>
+            <div class="form-row wide">
+              <label>Müşteri müzik kökü</label>
+              <input id="customerRoot" readonly placeholder="GÖZ AT ile müşteri müzik ana klasörünü seçin">
+            </div>
+            <div class="form-row wide">
+              <label>Favori Listem kayıt yeri</label>
+              <input id="favoriteRoot" readonly placeholder="GÖZ AT ile istediğiniz klasörü seçin">
+            </div>
+            <div class="target-preview" id="targetPreview">Müşteri klasörü: -</div>
+            <div class="playlist-actions">
+              <button class="btn" id="chooseCustomerRootBtn" type="button">🔎 GÖZ AT — MÜŞTERİ KLASÖR YERİ</button>
+              <button class="btn ghost" id="openDownloadCustomerFolderBtn" type="button">📁 MÜŞTERİ KLASÖRÜNÜ AÇ</button>
+              <button class="btn danger" id="deleteDownloadCustomerFolderBtn" type="button">🗑 MÜŞTERİ KLASÖRÜNÜ SİL</button>
+              <button class="btn" id="chooseFavoriteFolderBtn" type="button">🔎 GÖZ AT — FAVORİ KLASÖRÜ</button>
+              <button class="btn ghost" id="openFavoriteFolderBtn" type="button">📁 FAVORİ KLASÖRÜNÜ AÇ</button>
+            </div>
+            <p class="note">Her yeni kafede müşteri müzik yeri ve Favori Listem yeri ayrı ayrı GÖZ AT ile seçilir ve kalıcı kaydedilir.</p>
+          </section>
+
+          <section class="card">
+            <div class="card-title">İndirme Ayarları</div>
+            <div class="compact-grid">
+              <div class="form-row">
+                <label>Motor</label>
+                <div class="target-preview">KafePin MP3 Motoru • doğrudan YouTube → MP3</div>
+              </div>
+              <div class="form-row">
+                <label>Kalite</label>
+                <select id="bitrate">
+                  <option value="320">320 kbps</option>
+                  <option value="128">128 kbps</option>
+                </select>
+              </div>
+              <div class="form-row">
+                <label>Final EQ</label>
+                <select id="eqPreset"></select>
+              </div>
+              <div class="form-row">
+                <label>Ön Dinleme Sesi</label>
+                <div class="inline-volume"><input id="previewVolume" type="range" min="0" max="100" step="1" value="85"><span id="previewVolumeText">85%</span></div>
+              </div>
+            </div>
+            <div class="note">Hızlı ve kararlı akış: güncel yt-dlp profilleri → kaynak ses → final MP3 → seçili EQ → -14 LUFS → -2.0 dBTP</div>
+          </section>
+        </div>
+
+        <section class="card toolbar-card">
+          <div class="toolbar wrap">
+            <button class="btn accent" id="youtubeSearchBtn">▶ YouTube'da Ara / Seç</button>
+            <button class="btn" id="resolveBtn">🔎 Listedekileri Çöz</button>
+            <button class="btn" id="phoneBtn">📱 TELEFONDAN FOTOĞRAF AL</button>
+            <button class="btn" id="chatgptLoadBtn">CHATGPT LİSTESİNİ YÜKLE</button>
+            <button class="btn ghost" id="clearBtn">Listeyi Temizle</button>
+          </div>
+        </section>
+
+        <div class="grid list-layout">
+          <section class="card raw-card">
+            <div class="card-title">Ham Liste</div>
+            <textarea id="rawText" placeholder="SANATÇI - ŞARKI\nSANATÇI - ŞARKI"></textarea>
+            <button class="btn full" id="loadTextBtn">METNİ LİSTEYE AL</button>
+            <div class="mini-actions">
+              <button class="btn ghost" id="copyPromptBtn">ChatGPT Talimatını Kopyala</button>
+              <button class="btn ghost" id="openChatgptBtn">ChatGPT Aç</button>
+            </div>
+          </section>
+
+          <section class="card table-card">
+            <div class="card-title row-title">
+              <span>İndirme Listesi</span>
+              <span id="rowCount" class="pill">0 şarkı</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Aranan / Seçilen</th><th>YouTube Sonucu</th><th>Durum</th><th></th></tr></thead>
+                <tbody id="songRows"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        <button id="downloadBtn" class="download-main">▼ İNDİR ▼</button>
+      </section>
+
+      <section id="listenMode" class="mode">
+        <div class="grid listen-grid">
+          <section class="card customer-list-card">
+            <div class="card-title row-title"><span>Müşteriler / Hazır Listeler</span><div class="playlist-actions"><button class="mini-btn danger" id="deleteCustomerFolderBtn">🗑 MÜŞTERİ KLASÖRÜNÜ SİL</button><button class="mini-btn" id="refreshCustomersBtn">↻</button></div></div>
+            <div id="customerList" class="customer-list"></div>
+          </section>
+
+          <section class="card customer-playlist-card">
+            <div class="card-title row-title"><span>İndirilen Şarkılar</span><div class="playlist-actions"><button class="mini-btn danger" id="deleteTrackBtn">🗑 SEÇİLİ ŞARKIYI SİL</button><button class="mini-btn" id="refreshTracksBtn">↻ ŞARKILARI YENİLE</button><span id="trackCount" class="pill">0 MP3</span></div></div>
+            <div class="table-wrap playlist-wrap">
+              <table>
+                <thead><tr><th>#</th><th>MP3</th><th>MB</th></tr></thead>
+                <tbody id="trackRows"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="card player-card">
+            <div class="now-playing">
+              <div>
+                <div class="eyebrow">ŞİMDİ ÇALIYOR</div>
+                <div id="nowPlaying" class="track-title">Hazır — müşteri ve şarkı seç.</div>
+              </div>
+              <div id="playerTime" class="time">00:00 / 00:00</div>
+            </div>
+
+            <input id="playerSeek" class="seek" type="range" min="0" max="1" step="0.1" value="0">
+
+            <div class="transport">
+              <button class="btn" id="prevBtn">⏮ ÖNCEKİ</button>
+              <button class="btn" id="back10Btn">◀◀ 10 sn</button>
+              <button class="btn accent" id="playBtn">▶ OYNAT</button>
+              <button class="btn" id="pauseBtn">⏸ DURAKLAT</button>
+              <button class="btn" id="playerStopBtn">■ DURDUR</button>
+              <button class="btn" id="forward10Btn">10 sn ▶▶</button>
+              <button class="btn" id="nextBtn">SONRAKİ ⏭</button>
+              <button class="btn" id="shuffleBtn" aria-pressed="false">🔀 KARIŞIK: KAPALI</button>
+            </div>
+
+            <div class="listen-eq-row">
+              <label for="listenEqPreset">🎚 DİNLEME EQ</label>
+              <select id="listenEqPreset"></select>
+              <span id="listenEqStatus" class="pill">Canlı EQ • kesintisiz</span>
+            </div>
+
+            <div class="volume-row">
+              <button class="btn volume-btn" id="volumeDownBtn" title="Sesi 5 azalt">🔉 −5</button>
+              <input id="playerVolume" type="range" min="0" max="100" step="1" value="85">
+              <span id="playerVolumeText" class="volume-text">85%</span>
+              <button class="btn volume-btn" id="volumeUpBtn" title="Sesi 5 artır">+5 🔊</button>
+              <button class="btn ghost" id="openCustomerFolderBtn">KLASÖRÜ AÇ</button>
+            </div>
+
+            <audio id="webPlayer" preload="metadata"></audio>
+          </section>
+        </div>
+      </section>
+
+      <section id="winampMode" class="mode"><section class="card"><div class="card-title row-title"><span>🎧 WINAMP MODU • Bilgisayardan Müzik Gezgini</span><button class="btn accent" id="winampFolderBtn">📁 BAŞKA KLASÖR SEÇ</button><button class="btn" id="winampFavoriteBtn">⭐ SEÇİLENİ FAVORİYE EKLE</button></div><div class="playlist-actions"><button class="btn ghost" id="winampUpBtn" type="button">⬆ ÜST KLASÖR</button><button class="btn ghost" id="winampRefreshFolderBtn" type="button">↻ KLASÖRÜ YENİLE</button><div class="target-preview mono" id="winampCurrentFolder">Klasör: -</div></div><p class="note">Klasöre çift tıklayarak gir; ÜST KLASÖR ile geri çık. Son konum hatırlanır. MP3, FLAC, WAV, M4A, AAC, OGG ve WMA desteklenir.</p><div class="table-wrap"><table><thead><tr><th></th><th>Alt klasörler</th></tr></thead><tbody id="winampFolderRows"></tbody></table></div><div class="table-wrap playlist-wrap"><table><thead><tr><th>#</th><th>Parça</th><th>Tür</th><th>MB</th><th>Favori</th></tr></thead><tbody id="winampRows"></tbody></table></div></section></section>
+      <section id="favoritesMode" class="mode"><section class="card"><div class="card-title">⭐ FAVORİ LİSTEM • Kalıcı Müzik Klasörü</div><div class="table-wrap playlist-wrap"><table><thead><tr><th>#</th><th>Parça</th><th>MB</th><th>Favori</th></tr></thead><tbody id="favoriteRows"></tbody></table></div></section></section>
+
+      <section id="usbMode" class="mode">
+        <div class="grid two usb-grid">
+          <section class="card">
+            <div class="card-title">💾 USB ve Müşteri Klasörleri</div>
+            <div class="form-row"><label>Takılı USB</label><select id="usbDrive"></select></div>
+            <div class="form-row"><label>USB ana klasörü</label><input id="usbFolderName" value="Muzikler" maxlength="80"></div>
+            <div class="form-row"><label>Klasör düzeni</label><select id="usbLayout"><option value="customer">Müşteri ve alt klasörleri koru</option><option value="artist">Sanatçı adına göre klasörle</option><option value="flat">Tüm MP3'leri tek klasöre koy</option></select></div>
+            <div class="form-row"><label>MP3 uyumluluğu</label><select id="usbBitrate"><option value="192">192 kbps CBR — önerilen araç profili</option><option value="128">128 kbps CBR — eski sistem / çok şarkı</option><option value="320">320 kbps CBR — yüksek kalite</option><option value="0">Orijinali koru — en hızlı</option></select></div>
+            <label class="usb-check"><input id="usbShuffle" type="checkbox" checked> 🔀 Karışık Çalma hazırla — klasörlerin tamamını karıştır + M3U/M3U8 liste oluştur</label>
+            <label class="usb-list-label">Aktarılacak müşteri klasörleri</label>
+            <select id="usbCustomers" class="usb-customers" multiple></select>
+            <p class="note">Bu liste ayrı çalışır ve aynen kalır. Ctrl ile birden fazla müşteri klasörü seçebilirsin.</p>
+            <div class="usb-browser">
+              <div class="card-title row-title"><span>📂 Bilgisayardan Klasör / Şarkı Ekle</span><button class="mini-btn" id="usbBrowserUpBtn" type="button">⬆ ÜST KLASÖR</button></div>
+              <div id="usbBrowserRoots" class="usb-root-buttons"></div>
+              <div id="usbBrowserPath" class="target-preview mono">Klasör: -</div>
+              <div class="usb-browser-columns">
+                <div class="table-wrap usb-browser-table"><table><thead><tr><th>Alt klasörler — çift tıkla aç</th></tr></thead><tbody id="usbBrowserFolderRows"></tbody></table></div>
+                <div class="table-wrap usb-browser-table"><table><thead><tr><th class="usb-check-cell"></th><th>MP3 dosyaları</th><th>MB</th></tr></thead><tbody id="usbBrowserFileRows"></tbody></table></div>
+              </div>
+              <div class="toolbar wrap usb-source-actions"><button class="btn accent" id="usbAddFolderBtn" type="button">📁 BU KLASÖRÜ EKLE</button><button class="btn accent" id="usbAddFilesBtn" type="button">🎵 SEÇİLİ MP3'LERİ EKLE</button><button class="btn" id="usbClearSourcesBtn" type="button">SEÇİMLERİ TEMİZLE</button></div>
+              <div class="usb-source-title">Eklenen klasör ve tek şarkılar</div>
+              <div id="usbSourceList" class="usb-source-list"><div class="usb-empty">Henüz ek kaynak yok.</div></div>
+            </div>
+            <p class="note">Müşteri klasörleri ile buradan eklediklerin birlikte aktarılır. Aynı Sanatçı + Şarkı USB'nin başka klasöründe olsa bile tekrar atılmaz.</p>
+            <div class="toolbar wrap"><button class="btn" id="usbRefreshBtn">↻ USB / KLASÖRLERİ YENİLE</button><button class="btn accent" id="usbPreviewBtn">HESAPLA</button></div>
+          </section>
+
+          <section class="card">
+            <div class="card-title">💳 Adet, Fiyat ve KafePin Satışı</div>
+            <div class="form-row"><label>Şarkı başı</label><input id="usbUnitPrice" type="number" min="0" step="0.5" value="10"></div>
+            <div class="form-row"><label>Ödeme</label><select id="usbPayment"><option value="CASH">Nakit</option><option value="CARD">Kart</option></select></div>
+            <div id="usbPlan" class="usb-summary">Önce USB ve klasörleri seçip HESAPLA'ya bas.</div>
+            <button class="download-main usb-copy" id="usbTransferBtn">💾 USB'YE AKTAR</button>
+            <p class="note">Yalnız başarıyla kopyalanan şarkılar ücretlendirilir. Tekrarlar ve hatalı dosyalar fiyata girmez.</p>
+            <div id="usbTransaction" class="usb-transaction hidden-row"></div>
+          </section>
+        </div>
+
+        <section class="card usb-format-card">
+          <div class="card-title">⚠ USB'Yİ BİÇİMLENDİR — TÜM DOSYALAR SİLİNİR</div>
+          <div class="compact-grid">
+            <div class="form-row"><label>Disk biçimi</label><select id="usbFilesystem"><option value="FAT32">FAT32 — araç/hoparlör için en uyumlu</option><option value="EXFAT">exFAT — büyük USB / yeni cihazlar</option><option value="NTFS">NTFS — yalnız cihaz destekliyorsa</option></select></div>
+            <div class="form-row"><label>USB etiketi</label><input id="usbLabel" value="KAFEPIN" maxlength="11"></div>
+          </div>
+          <p class="note danger-note">MP3 dosya biçimidir; FAT32/exFAT/NTFS USB disk biçimidir. Eski araç teybi ve USB hoparlörlerde önce FAT32 kullan. Biçimlendirme geri alınamaz ve her seferinde ayrıca onay ister.</p>
+          <button class="btn danger" id="usbFormatBtn">⚠ SEÇİLİ USB'Yİ BİÇİMLENDİR</button>
+        </section>
+      </section>
+
+      <section id="usbFilmMode" class="mode">
+        <div class="grid two usb-grid">
+          <section class="card"><div class="card-title">🎬 Film Arşivi Gezgini</div>
+            <div class="form-row"><label>Takılı USB</label><select id="filmDrive"></select></div><div class="form-row"><label>USB ana klasörü</label><input id="filmFolderName" value="Filmler"></div>
+            <div class="form-row"><label>Klasör düzeni</label><select id="filmLayout"><option value="folders">Seçilen film klasörlerini koru</option><option value="flat">Tüm filmleri tek klasöre koy</option></select></div>
+            <div class="form-row"><label>Video profili</label><select id="filmProfile"><option value="original">Orijinali koru — en hızlı</option><option value="mp4_720">MP4 H.264 720p — geniş uyumluluk</option><option value="mp4_1080">MP4 H.264 1080p — yüksek kalite</option></select></div>
+            <div class="usb-browser"><div class="card-title row-title"><span>📂 Klasör / Film Seç</span><button class="mini-btn" id="filmUpBtn">⬆ ÜST KLASÖR</button></div><div id="filmRoots" class="usb-root-buttons"></div><div id="filmPath" class="target-preview mono">Klasör: -</div>
+              <div class="usb-browser-columns"><div class="table-wrap usb-browser-table"><table><thead><tr><th>Alt klasörler — çift tıkla aç</th></tr></thead><tbody id="filmFolderRows"></tbody></table></div><div class="table-wrap usb-browser-table"><table><thead><tr><th></th><th>Video</th><th>MB</th></tr></thead><tbody id="filmFileRows"></tbody></table></div></div>
+              <div class="toolbar wrap usb-source-actions"><button class="btn accent" id="filmAddFolderBtn">📁 BU KLASÖRÜ EKLE</button><button class="btn accent" id="filmAddFilesBtn">🎬 SEÇİLİ FİLMLERİ EKLE</button><button class="btn" id="filmClearBtn">TEMİZLE</button></div><div id="filmSourceList" class="usb-source-list"></div>
+            </div><div class="toolbar wrap"><button class="btn" id="filmRefreshBtn">↻ YENİLE</button><button class="btn accent" id="filmPreviewBtn">HESAPLA</button></div>
+          </section>
+          <section class="card"><div class="card-title">💳 Film Fiyatı ve Satış</div><div class="form-row"><label>Film başı</label><input id="filmUnitPrice" type="number" min="0" step="1" value="50"></div><div class="form-row"><label>Ödeme</label><select id="filmPayment"><option value="CASH">Nakit</option><option value="CARD">Kart</option></select></div><div id="filmPlan" class="usb-summary">Film klasörü veya dosya seçip HESAPLA'ya bas.</div><button class="download-main usb-copy" id="filmTransferBtn">🎬 USB'YE FİLMLERİ AKTAR</button><div id="filmTransaction" class="usb-transaction hidden-row"></div></section>
+        </div>
+        <section class="card usb-format-card"><div class="card-title">⚠ FİLM USB'SİNİ BİÇİMLENDİR</div><div class="compact-grid"><div class="form-row"><label>Disk biçimi</label><select id="filmFilesystem"><option value="NTFS">NTFS — film/TV için önerilen, 4 GB sınırı yok</option><option value="EXFAT">exFAT — yeni TV ve cihazlar</option><option value="FAT32">FAT32 — eski cihaz, tek dosya en fazla 4 GB</option></select></div><div class="form-row"><label>USB etiketi</label><input id="filmLabel" value="KAFEPIN-FILM" maxlength="11"></div></div><p class="note">LG, FAT32/NTFS desteğini; güncel Samsung modelleri FAT/exFAT/NTFS desteğini bildirir. Eski ve yeni TV ortak paydası ile büyük film desteği için NTFS varsayılandır. TV modelin NTFS okumuyorsa exFAT dene.</p><button class="btn danger" id="filmFormatBtn">⚠ FİLM USB'SİNİ BİÇİMLENDİR</button></section>
+      </section>
+
+      <section id="usbGameMode" class="mode">
+        <div class="grid two usb-grid"><section class="card"><div class="card-title">🎮 Oyun Arşivi Gezgini</div><div class="form-row"><label>Takılı USB</label><select id="gameDrive"></select></div><div class="form-row"><label>USB ana klasörü</label><input id="gameFolderName" value="Oyunlar"></div>
+          <div class="usb-browser"><div class="card-title row-title"><span>📂 Oyun Klasörü / Paket Seç</span><button class="mini-btn" id="gameUpBtn">⬆ ÜST KLASÖR</button></div><div id="gameRoots" class="usb-root-buttons"></div><div id="gamePath" class="target-preview mono">Klasör: -</div><div class="usb-browser-columns"><div class="table-wrap usb-browser-table"><table><thead><tr><th>Alt klasörler — çift tıkla aç</th></tr></thead><tbody id="gameFolderRows"></tbody></table></div><div class="table-wrap usb-browser-table"><table><thead><tr><th></th><th>EXE / MSI / ISO / ZIP / RAR / 7Z</th><th>MB</th></tr></thead><tbody id="gameFileRows"></tbody></table></div></div><div class="toolbar wrap usb-source-actions"><button class="btn accent" id="gameAddFolderBtn">📁 BU OYUN KLASÖRÜNÜ EKLE</button><button class="btn accent" id="gameAddFilesBtn">🎮 SEÇİLİ PAKETLERİ EKLE</button><button class="btn" id="gameClearBtn">TEMİZLE</button></div><div id="gameSourceList" class="usb-source-list"></div></div><div class="toolbar wrap"><button class="btn" id="gameRefreshBtn">↻ YENİLE</button><button class="btn accent" id="gamePreviewBtn">HESAPLA</button></div></section>
+          <section class="card"><div class="card-title">💳 Oyun Fiyatı ve Satış</div><div class="form-row"><label>Oyun/paket başı</label><input id="gameUnitPrice" type="number" min="0" step="1" value="100"></div><div class="form-row"><label>Ödeme</label><select id="gamePayment"><option value="CASH">Nakit</option><option value="CARD">Kart</option></select></div><div id="gamePlan" class="usb-summary">Oyun klasörü veya paket seçip HESAPLA'ya bas.</div><button class="download-main usb-copy" id="gameTransferBtn">🎮 USB'YE OYUNLARI AKTAR</button><div id="gameTransaction" class="usb-transaction hidden-row"></div></section></div>
+        <section class="card usb-format-card"><div class="card-title">⚠ OYUN USB'SİNİ BİÇİMLENDİR</div><div class="compact-grid"><div class="form-row"><label>Disk biçimi</label><select id="gameFilesystem"><option value="NTFS">NTFS — Windows oyunları için önerilen</option><option value="EXFAT">exFAT — Windows/macOS arasında taşınabilir</option><option value="FAT32">FAT32 — 4 GB sınırı, oyun için önerilmez</option></select></div><div class="form-row"><label>USB etiketi</label><input id="gameLabel" value="KAFEPIN-OYUN" maxlength="11"></div></div><p class="note">Oyun kurulumlarında 4 GB üstü dosyalar yaygındır. NTFS büyük dosyaları ve Windows kullanımını destekler; FAT32’de 4 GB üstü tek dosya aktarımdan önce otomatik engellenir.</p><button class="btn danger" id="gameFormatBtn">⚠ OYUN USB'SİNİ BİÇİMLENDİR</button></section>
+      </section>
+    </main>
+  </div>
+
+  <div id="searchModal" class="modal hidden">
+    <div class="modal-card large">
+      <div class="modal-head"><h2>YouTube'da Ara ve Şarkı Seç</h2><button class="close" data-close="searchModal">×</button></div>
+      <div class="search-row"><input id="youtubeQuery" placeholder="YouTube'a ne yazacaksan aynısını yaz • Örn: Tarkan Kuzu Kuzu"><button class="btn accent" id="youtubeRunBtn">ARA</button></div>
+      <div class="note">▶ DİNLE = sonucu indirmeden önce kontrol et. Sonuca çift tık = direkt ana listeye ekle. Ctrl/Shift ile çoklu seçebilirsin.</div>
+      <div class="table-wrap modal-table search-results-table"><table><thead><tr><th>#</th><th>YouTube sonucu</th><th>Kanal / Sanatçı</th><th><button id="youtubeDurationSortBtn" class="sort-head" title="Süreye göre sırala">Süre ↕</button></th><th>Eşleşme</th><th>Dinle</th><th>Sanatçı</th></tr></thead><tbody id="youtubeRows"></tbody></table></div>
+      <div class="toolbar end">
+        <button class="btn" id="artistListsBtn">🎵 SEÇİLİ SANATÇININ YOUTUBE LİSTELERİ</button>
+        <button class="btn accent" id="addSelectedYoutubeBtn">SEÇİLENLERİ LİSTEYE EKLE</button>
+      </div>
+      <section id="artistListsPanel" class="artist-lists-panel hidden-row">
+        <div class="card-title row-title"><span id="artistListsTitle">Sanatçı Listeleri</span><span id="artistListsCount" class="pill">0 liste</span></div>
+        <div id="artistCollections" class="artist-collections"></div>
+        <div id="collectionTracksPanel" class="collection-tracks hidden-row">
+          <div class="card-title row-title"><span id="collectionTitle">Liste Şarkıları</span><div class="playlist-actions"><button class="mini-btn" id="selectAllCollectionBtn">TÜMÜNÜ SEÇ</button><span id="collectionCount" class="pill">0 şarkı</span></div></div>
+          <div class="table-wrap collection-table"><table><thead><tr><th>#</th><th>Şarkı</th><th>Sanatçı</th><th>Süre</th><th>Dinle</th></tr></thead><tbody id="collectionTrackRows"></tbody></table></div>
+          <div class="toolbar end"><button class="btn accent" id="addCollectionTracksBtn">SEÇİLEN ŞARKILARI ANA LİSTEYE EKLE</button></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="phoneModal" class="modal hidden">
+    <div class="modal-card phone-card">
+      <div class="modal-head"><h2>📱 Telefondan Fotoğraf Al</h2><button class="close" data-close="phoneModal">×</button></div>
+      <p>Telefon ve bilgisayar aynı Wi‑Fi / yerel ağda olsun. QR'ı okut ve müşteri listesinin fotoğrafını gönder.</p>
+      <img id="phoneQr" class="qr" alt="QR">
+      <div id="phoneUrl" class="mono"></div>
+      <div id="phoneState" class="status-box">Fotoğraf bekleniyor…</div>
+      <div class="toolbar wrap">
+        <button class="btn" id="copyPhotoBtn">1 FOTOĞRAFI PANOYA KOPYALA</button>
+        <button class="btn" id="copyPromptPhoneBtn">2 TALİMATI KOPYALA</button>
+        <button class="btn accent" id="loadClipboardPhoneBtn">3 CHATGPT CEVABINI LİSTEYE YÜKLE</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/web/app.js?v=23432"></script>
+</body>
+</html>

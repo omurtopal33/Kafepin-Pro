@@ -1,0 +1,15 @@
+{
+  "product": "KafePin MP3 Bot PRO",
+  "version": "2.34.31-winamp-queue-library",
+  "functionalBaseline": "2.26",
+  "host": "127.0.0.1",
+  "port": 17890,
+  "architecture": "separate-loopback-service",
+  "displayVersion": "v2.34.31 WINAMP KUYRUK + KALICI KLASÖRLER",
+  "notes": [
+    "Winamp ve Favori Listem aktif çalma kuyruğu Önceki, Sonraki, Karışık ve otomatik geçişte ortak kullanılır",
+    "Müzik klasörleri kalıcı kısayol olarak kaydedilir; son konum ve geri/ileri geçmişi hatırlanır",
+    "Klasör kısayolunu kaldırmak gerçek müzik dosyalarını silmez",
+    "MP3, FLAC, WAV, M4A, AAC, OGG ve WMA desteği korunur"
+  ]
+}
