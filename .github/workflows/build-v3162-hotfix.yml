@@ -1,4 +1,4 @@
-name: Build v3.1.62 Hotfix
+name: Build v3.1.62 v3.1.60 Final Preservation
 
 on:
   pull_request:
@@ -46,26 +46,50 @@ jobs:
           Write-Host "V3162_SHA=$u2"
           Write-Host "CLIENT_SHA=$c2"
 
-      - name: Validate hotfix markers
+      - name: Validate v3.1.60 FINAL is preserved
         shell: pwsh
         run: |
-          $tmp=Join-Path $env:RUNNER_TEMP 'v3162-check'
-          if(Test-Path $tmp){Remove-Item $tmp -Recurse -Force}
-          Expand-Archive 'KafePin-Pro-Update-v3.1.62.zip' $tmp
-          $cs=Get-Content (Join-Path $tmp 'desktop-app\KafePinProDesktop.cs') -Raw
-          foreach($m in @('PRO Servisleri Yenile','ProServicesRefreshButton_Click','MP3 Bot PRO: hazır','Yazıcı PRO: hazır','Teknik Servis PRO: hazır')){if($cs -notmatch [regex]::Escape($m)){throw "Desktop hotfix marker missing: $m"}}
-          $mgr=Get-Content (Join-Path $tmp 'KafePin_Manager_Ensure.ps1') -Raw
-          if($mgr -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'Legacy fatal payload check returned'}
-          if($mgr -notmatch "-AppVersion '1\.1\.8'"){throw 'Desktop v1.1.8 invocation missing'}
-          $server=Get-Content (Join-Path $tmp 'server.js') -Raw
-          if($server -notmatch 'available: compareProVersions\(remote\.version, current\) > 0'){throw 'Update equality guard missing'}
-          $meta=Get-Content (Join-Path $tmp 'update.json') -Raw | ConvertFrom-Json
-          if($meta.version -ne '3.1.62' -or -not $meta.cumulative -or $meta.baseVersion -ne '3.1.60'){throw 'Metadata invalid'}
+          $base=Join-Path $env:RUNNER_TEMP 'v3160-base'
+          $out=Join-Path $env:RUNNER_TEMP 'v3162-out'
+          if(Test-Path $base){Remove-Item $base -Recurse -Force}
+          if(Test-Path $out){Remove-Item $out -Recurse -Force}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.60.zip' $base
+          Expand-Archive 'KafePin-Pro-Update-v3.1.62.zip' $out
+
+          $meta=Get-Content (Join-Path $out 'update.json') -Raw | ConvertFrom-Json
+          if($meta.version -ne '3.1.62' -or -not $meta.cumulative -or $meta.baseVersion -ne '3.1.60' -or -not $meta.v3160ExactUiPreserved){throw 'v3.1.62 metadata invalid'}
+
+          $mgr=Get-Content (Join-Path $out 'KafePin_Manager_Ensure.ps1') -Raw
+          if($mgr -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'Legacy fatal Yazici payload check returned'}
+          if($mgr -notmatch 'v3\.1\.60 FINAL desktop korunuyor'){throw 'v3.1.60 desktop preservation marker missing'}
+
+          $textFiles=Get-ChildItem $out -Recurse -File | Where-Object { $_.Extension -in @('.cs','.html','.js','.ps1','.cmd','.txt','.json') }
+          $allText=($textFiles | ForEach-Object { try { Get-Content $_.FullName -Raw -ErrorAction Stop } catch { '' } }) -join "`n"
+          foreach($m in @('PRO Servisleri Yenile','MP3 Bot PRO','Yazıcı PRO','Teknik Servis PRO')){if($allText -notmatch [regex]::Escape($m)){throw "v3.1.60 FINAL identity marker missing: $m"}}
+
+          foreach($same in @('server.js','KafePin_Desktop_App_Setup.ps1')){
+            $a=(Get-FileHash (Join-Path $base $same) -Algorithm SHA256).Hash
+            $b=(Get-FileHash (Join-Path $out $same) -Algorithm SHA256).Hash
+            if($a -ne $b){throw "$same changed from v3.1.60 FINAL"}
+          }
+
+          $allowed=@('KafePin_Manager_Ensure.ps1','update.json','kafepin-pro-version.json')
+          $baseFiles=Get-ChildItem $base -Recurse -File
+          foreach($f in $baseFiles){
+            $rel=$f.FullName.Substring($base.Length).TrimStart('\')
+            $other=Join-Path $out $rel
+            if(-not (Test-Path $other)){throw "File removed from v3.1.60 FINAL: $rel"}
+            if($allowed -contains ($rel -replace '\\','/')){continue}
+            $a=(Get-FileHash $f.FullName -Algorithm SHA256).Hash
+            $b=(Get-FileHash $other -Algorithm SHA256).Hash
+            if($a -ne $b){throw "Unexpected v3.1.60 file change: $rel"}
+          }
+
           if(-not (Test-Path 'KafePin-Client-v3.1.62.zip')){throw 'Client v3.1.62 missing'}
           $ctmp=Join-Path $env:RUNNER_TEMP 'client3162'
           if(Test-Path $ctmp){Remove-Item $ctmp -Recurse -Force}
           Expand-Archive 'KafePin-Client-v3.1.62.zip' $ctmp
-          if(-not (Test-Path (Join-Path $ctmp 'CLIENT-VERSION.txt'))){throw 'Client version marker missing'}
+          if(-not (Test-Path (Join-Path $ctmp 'CLIENT-OKU-BENI.txt'))){throw 'Client readme missing'}
 
       - name: Publish v3.1.62 STABLE on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -79,8 +103,9 @@ jobs:
             baseVersion='3.1.60'
             futureUpdateBase='3.1.60'
             cumulative=$true
+            v3160ExactUiPreserved=$true
             publishedAt=(Get-Date).ToUniversalTime().ToString('o')
-            notes='v3.1.62 STABLE — PRO Servisleri Yenile düğmesi geri getirildi. Çalışan servisler korunur; düşmüş MP3 Bot PRO, Yazıcı PRO ve Teknik Servis PRO güvenli biçimde yeniden ayağa kaldırılır. Desktop v1.1.8. v3.1.61 Manager/payload düzeltmeleri ve çekirdek davranışlar korunur.'
+            notes="v3.1.62 STABLE — doğrudan v3.1.60 FINAL'dan üretilmiştir. v3.1.60'taki kartlar, PRO Servisleri Yenile, MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO, masaüstü arayüzü ve çekirdek davranışlar korunur. Yalnız eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL kaynaklarından aynen paketlenir."
             downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.62.zip'
             sha256=$sha
           }
@@ -88,13 +113,13 @@ jobs:
           git config user.name 'KafePin Release Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add KafePin-Pro-Update-v3.1.62.zip KafePin-Pro-Update-v3.1.62.sha256.txt KafePin-Client-v3.1.62.zip RELEASE_NOTES-v3.1.62.md latest.json
-          git commit -m 'release: publish v3.1.62 stable hotfix and client'
+          git commit -m 'release: publish v3.1.62 v3.1.60-preserving stable and client'
           git push
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: KafePin-v3.1.62
+          name: KafePin-v3.1.62-v3160-final
           path: |
             KafePin-Pro-Update-v3.1.62.zip
             KafePin-Pro-Update-v3.1.62.sha256.txt
