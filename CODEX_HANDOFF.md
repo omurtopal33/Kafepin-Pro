@@ -4,7 +4,8 @@
 
 - **v3.1.60 FINAL / STABLE** değişmeyen yeni-kafe kurulum tabanıdır.
 - **v3.1.64 FINAL / STABLE** onaylanan güncel saha davranışının kilitli kümülatif güncellemesidir.
-- Yeni kafede v3.1.60 temel kurulur ve ardından yalnız `latest.json` içindeki en güncel kümülatif STABLE uygulanır.
+- Yeni kafeye `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` verilir; paket v3.1.64'ü çevrimdışı doğrudan kurar ve ardından yalnız `latest.json` içindeki daha yeni kümülatif STABLE sürümü uygular.
+- v3.1.60 tarihsel bootstrap paketi yerinde değiştirilmez.
 - Sonraki değişiklikler v3.1.65+ olur; v3.1.64 yerinde değiştirilmez.
 
 ## v3.1.64 kilidi
@@ -16,6 +17,7 @@
 - PRO Servisleri düğmesi MP3, Yazıcı, Teknik Servis ve Client Yönetim servislerini gerçekten yeniden başlatır.
 - KafePin çekirdek Node süreci ve WhatsApp/Telegram WebView2 oturumları yeniden başlatma kapsamı dışındadır.
 - Paket kilidi: `dev/v3164-final/verify_v3164.py`.
+- Yeni-kafe/Client kilidi: `dev/v3164-final/verify_new_cafe_v3164.py`.
 
 ## Korunan çekirdek
 

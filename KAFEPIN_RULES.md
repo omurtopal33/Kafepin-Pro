@@ -7,7 +7,7 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 - **v3.1.60 = kilitli yeni-kafe FINAL taban sürümüdür.** Yerinde değiştirilmez.
 - **v3.1.64 = kilitli güncel saha FINAL / STABLE referansıdır.** Onaylanan Admin kart yapısı ve PRO servis yeniden başlatma davranışı korunur.
 - Bundan sonraki geliştirmeler **v3.1.65+** yeni kümülatif sürüm numarasıyla, v3.1.60 kurulum tabanı üzerine ve v3.1.64 saha davranışları korunarak çıkar.
-- Yeni kafe kurulumu: doğrudan **v3.1.60 FINAL** paketi; ardından yalnız en güncel kümülatif STABLE UPDATE.
+- v3.1.60 tarihsel bootstrap paketi yerinde değiştirilmez. Yeni kafe kurulumu: **`KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip`** ile çevrimdışı doğrudan v3.1.64; ardından yalnız daha yeni kümülatif STABLE UPDATE.
 - Ara sürümlerin tek tek kurulması gerekmez.
 - Her yeni sürüm önceki gerekli düzeltmeleri ve onaylı davranışları korur.
 
@@ -133,14 +133,14 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 ## 13. Yeni kafe PRO klasör düzeni
 
 - Yeni kafe / temiz kurulum paketlerinde KafePin ana çekirdeği **`C:\KafePin\`** altında kalır.
-- Bağımsız PRO bileşenleri yeni kurulumlarda tek ve derli toplu bir kök altında toplanır: **`C:\KafePinPRO\`**.
+- Bağımsız PRO bileşenleri yeni kurulumlarda tek ve derli toplu bir kök altında toplanır: **`C:\KafePinPro\`**.
 - Hedef klasör yapısı:
-  - `C:\KafePinPRO\MP3BotPRO\`
-  - `C:\KafePinPRO\YaziciPRO\`
-  - `C:\KafePinPRO\TeknikServisPRO\`
-  - `C:\KafePinPRO\ClientYonetimPRO\`
+  - `C:\KafePinPro\MP3BotPRO\`
+  - `C:\KafePinPro\YaziciPRO\`
+  - `C:\KafePinPro\TeknikServisPRO\`
+  - `C:\KafePinPro\ClientYonetimPRO\`
 - Bu bileşenler aynı kök altında bulunsa da **servis/proses, config, log, runtime, güncelleme ve veri sınırları bağımsız kalır**; ortak DB/session/runtime oluşturulmaz.
-- Yeni kafe ZIP'i hazırlanırken installer, servis `ImagePath`/çalıştırma yolu, başlatıcılar, updater, yeniden kurulum/onarım akışı, kısayollar ve mutlak yol kullanan config/scriptler yeni `C:\KafePinPRO\...` düzenine göre güncellenir ve test edilir.
+- Yeni kafe ZIP'i hazırlanırken installer, servis `ImagePath`/çalıştırma yolu, başlatıcılar, updater, yeniden kurulum/onarım akışı, kısayollar ve mutlak yol kullanan config/scriptler yeni `C:\KafePinPro\...` düzenine göre güncellenir ve test edilir.
 - Mevcut çalışan kafeler sırf klasör düzeni için zorla taşınmaz. Eski yollar legacy kurulum olarak çalışmaya devam edebilir; taşıma ancak ayrı bir migration/onarım planı ve kullanıcı onayıyla yapılır.
 - Yeni kurulum paketi eski bir kurulum tespit ederse veri/config kaybına yol açmadan legacy yolu korumalı veya kontrollü migration sunmalıdır; sessizce dosya silme/taşıma yapılmaz.
 - Bu klasör düzeni **yalnız paketleme/kurulum organizasyonudur**; KafePin çekirdeği ile PRO servislerinin teknik izolasyon kurallarını gevşetmez.

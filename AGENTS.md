@@ -33,7 +33,7 @@ Bu repoda herhangi bir kod değişikliği yapmadan önce aşağıdaki dosyaları
 - **v3.1.60 kilitli yeni-kafe FINAL tabanıdır; yerinde değiştirilmez.**
 - **v3.1.64 kilitli güncel saha FINAL / STABLE referansıdır; kart mimarisi ve PRO servis davranışı yerinde değiştirilmez.**
 - Bundan sonraki değişiklikler v3.1.65+ yeni kümülatif sürüm numarasıyla, doğrudan v3.1.60 tabanından ve v3.1.64 saha davranışları korunarak çıkar.
-- Yeni kafe kurulumu doğrudan v3.1.60 FINAL paketiyle yapılır; sonrasındaki güncellemeler bu kurulumun üstüne uygulanır.
+- v3.1.60 tarihsel bootstrap paketi yerinde değiştirilmez. Güncel yeni-kafe dağıtımı `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` olup v3.1.64'ü çevrimdışı doğrudan kurar; ardından yalnız daha yeni STABLE güncellemeler uygulanır.
 - Paketlemeden önce syntax, finans formülleri, spin tarifeleri, 45 dakika yaşam döngüsü, EveryCafe read-only, 20:00 sınırı, UI tema bütünlüğü, sürüm metadata'sı ve Sürüm Notları ekranı test edilir.
 - Test sonuçlarını kullanıcıya açıkla; kullanıcı paketleme istediyse paketle.
 

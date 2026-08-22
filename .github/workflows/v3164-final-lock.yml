@@ -7,6 +7,10 @@ on:
       - "latest.json"
       - "KafePin-Pro-Update-v3.1.64.zip"
       - "KafePin-Pro-Update-v3.1.64.sha256.txt"
+      - "KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip"
+      - "KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.sha256.txt"
+      - "KafePin-Client-v3.1.64.zip"
+      - "KafePin-Client-v3.1.64.sha256.txt"
       - "dev/v3164-final/**"
       - "AGENTS.md"
       - "KAFEPIN_RULES.md"
@@ -16,6 +20,10 @@ on:
       - "latest.json"
       - "KafePin-Pro-Update-v3.1.64.zip"
       - "KafePin-Pro-Update-v3.1.64.sha256.txt"
+      - "KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip"
+      - "KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.sha256.txt"
+      - "KafePin-Client-v3.1.64.zip"
+      - "KafePin-Client-v3.1.64.sha256.txt"
       - "dev/v3164-final/**"
 
 jobs:
@@ -28,3 +36,5 @@ jobs:
           python-version: "3.12"
       - name: Verify v3.1.64 FINAL invariants
         run: python dev/v3164-final/verify_v3164.py
+      - name: Verify v3.1.64 new-cafe and Client invariants
+        run: python dev/v3164-final/verify_new_cafe_v3164.py
