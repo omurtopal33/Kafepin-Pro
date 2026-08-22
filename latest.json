@@ -1,12 +1,14 @@
 {
-  "version": "3.1.61",
+  "version": "3.1.62",
   "channel": "stable",
   "stableBase": "3.1.60",
   "baseVersion": "3.1.60",
   "futureUpdateBase": "3.1.60",
   "cumulative": true,
-  "publishedAt": "2026-08-22T07:55:10.3443658Z",
-  "notes": "v3.1.61 STABLE — v3.1.60 FINAL tabanında Server Manager eski Yazıcı payload blokajı kaldırıldı; KafePin Pro masaüstü v1.1.7 ile yeniden kurulur ve PRO menüleri doğrulanır. Client paketi v3.1.60 FINAL kaynaklarından yeniden oluşturuldu. Finans, spin, EveryCafe read-only, session ve 20:00 işletme günü çekirdeği korunur.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.61.zip",
-  "sha256": "03925949bf7bee838ced6129b466afa9e5db1a19bb3dd563a8d751aa96ac0aa9"
+  "v3160FinalPairPreserved": true,
+  "desktopVersion": "1.1.8",
+  "publishedAt": "2026-08-22T08:24:25.4519047Z",
+  "notes": "v3.1.62 STABLE — release/v3.1.60-stable kilitli FINAL paket çiftinden üretilmiştir. v3.1.60 web kartları ve çekirdek dosyaları byte-for-byte korunur. Sahadaki v3.1.60 kullanımında bulunan PRO Servisleri Yenile eylemi mevcut Yenile menüsüne geri eklenir; çalışan PRO servisler kapatılmaz. Eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL YENİ KAFE kaynaklarından aynen paketlenir.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.62.zip",
+  "sha256": "7757ae6406549849b23e36b60a88ea3e13aa803231b406092a2da673e1114b89"
 }
