@@ -13,7 +13,7 @@
 
 Yeni bir kafede kurulum sırası sabittir:
 
-1. `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` içindeki `KURULUMU_BASLAT.cmd` veya ana sunucu EXE çalıştırılır.
+1. `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` içindeki `KURULUMU_BASLAT.cmd` çalıştırılır; soru/servis kurulumları bu CMD akışında ilerler.
 2. Kurucu internet olmasa da **v3.1.64 FINAL / STABLE** sürümünü doğrudan kurar; internet varsa önce yalnız `latest.json` içindeki daha yeni **STABLE UPDATE** kontrol edilir ve varsa tek seferde uygulanır.
 3. Ara sürümlerin tek tek kurulması gerekmez.
 4. Sistem zaten `latest.json` sürümündeyse başlangıçta tekrar “güncelleme var” uyarısı gösterilmez.

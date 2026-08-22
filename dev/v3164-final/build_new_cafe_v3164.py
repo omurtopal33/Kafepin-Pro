@@ -51,6 +51,21 @@ def replace_required(text: str, old: str, new: str, label: str) -> str:
 
 def patch_install_script(path: Path) -> None:
     text = path.read_text(encoding="utf-8-sig")
+    is_gui = "$AutoImportEveryCafe" in text
+    if is_gui:
+        text = replace_required(
+            text,
+            "  [switch]$AutoImportEveryCafe\n)",
+            "  [switch]$AutoImportEveryCafe,\n  [switch]$ValidateOnly\n)",
+            path.name,
+        )
+    else:
+        text = replace_required(
+            text,
+            "  [string]$InstallRoot = 'C:\\KafePin'\n)",
+            "  [string]$InstallRoot = 'C:\\KafePin',\n  [switch]$ValidateOnly\n)",
+            path.name,
+        )
     text = replace_required(text, "$BaseVersion='3.1.29'", "$BaseVersion='3.1.64'", path.name)
     text = replace_required(
         text,
@@ -116,6 +131,14 @@ if(Test-Path -LiteralPath $componentInstaller){
     if marker not in text:
         raise RuntimeError(f"{path.name}: PRO bileşen ekleme noktası bulunamadı")
     text = text.replace(marker, component_block + marker, 1)
+    integrity_marker = "Test-PackageIntegrity\n"
+    if integrity_marker not in text:
+        raise RuntimeError(f"{path.name}: bütünlük kontrolü ekleme noktası bulunamadı")
+    text = text.replace(
+        integrity_marker,
+        integrity_marker + "if($ValidateOnly){Write-Host 'KafePin yeni-kafe paket kontrolü başarılı.' -ForegroundColor Green;exit 0}\n",
+        1,
+    )
     path.write_text(text, encoding="utf-8-sig", newline="\r\n")
 
 
@@ -140,6 +163,45 @@ def patch_component_installer(path: Path) -> None:
     old_choice = "  client = Ask-Component 'KafePin Client Yönetim PRO' 'Client Yönetim PRO kurulsun mu?`n`nCanlı masa durumunu salt okunur gösterir; uyandırma, yeniden başlatma, süreli/süresiz/ücretsiz oturum açma, açık oturuma süre ekleme ve onaylı çalışan uygulamaları sonlandırma araçlarını sağlar. Bilgisayar/hesap/masa kapatma ve tahsilat yapmaz.'"
     new_choice = "  client = $(if ($EveryCafeEnabled) { Ask-Component 'KafePin Client Yönetim PRO' 'Client Yönetim PRO kurulsun mu?`n`nCanlı masa durumunu salt okunur gösterir; uyandırma, yeniden başlatma, süreli/süresiz/ücretsiz oturum açma, açık oturuma süre ekleme ve onaylı çalışan uygulamaları sonlandırma araçlarını sağlar. Bilgisayar/hesap/masa kapatma ve tahsilat yapmaz.' } else { $false })"
     text = replace_required(text, old_choice, new_choice, path.name)
+    python_bootstrap = r'''
+function Ensure-Python3 {
+  $py = Get-Command py.exe -ErrorAction SilentlyContinue
+  if ($py) { return $py }
+  $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
+  if (-not $winget) { throw 'Python 3 gerekli ancak Windows Paket Yöneticisi (winget) bulunamadı.' }
+  Write-ComponentLog 'Python 3 bulunamadı; winget ile kuruluyor.'
+  $process = Start-Process -FilePath $winget.Source -ArgumentList @('install','--id','Python.Python.3.13','--exact','--silent','--accept-package-agreements','--accept-source-agreements') -Wait -PassThru
+  if ($process.ExitCode -ne 0) { throw ('Python 3 kurulumu başarısız. Çıkış kodu: ' + $process.ExitCode) }
+  $py = Get-Command py.exe -ErrorAction SilentlyContinue
+  if (-not $py) {
+    $candidate = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'
+    if (Test-Path -LiteralPath $candidate) { return [pscustomobject]@{ Source = $candidate; IsPythonExe = $true } }
+    throw 'Python 3 kurulumu tamamlandı ancak py.exe/python.exe bulunamadı.'
+  }
+  return $py
+}
+
+'''
+    marker = "$result = [ordered]@{ version = '3.1.64'; installedAt = (Get-Date).ToString('o'); choices = $choices; results = [ordered]@{} }"
+    text = replace_required(text, marker, python_bootstrap + marker, path.name)
+    text = replace_required(
+        text,
+        "    } else {\n      if ($name -eq 'client') {",
+        "    } else {\n      $null = Ensure-Python3\n      if ($name -eq 'client') {",
+        path.name,
+    )
+    text = replace_required(
+        text,
+        "  $py = Get-Command py.exe -ErrorAction SilentlyContinue\n  if (-not $py) { throw 'Teknik Servis PRO için Python 3 (py.exe) bulunamadı.' }\n  Start-Process -FilePath $py.Source -ArgumentList @('-3', '-B', 'web_service.py') -WorkingDirectory $Root -WindowStyle Hidden | Out-Null",
+        "  $py = Ensure-Python3\n  $args = if ([IO.Path]::GetFileName($py.Source) -ieq 'py.exe') { @('-3', '-B', 'web_service.py') } else { @('-B', 'web_service.py') }\n  Start-Process -FilePath $py.Source -ArgumentList $args -WorkingDirectory $Root -WindowStyle Hidden | Out-Null",
+        path.name,
+    )
+    text = replace_required(
+        text,
+        "  $py = Get-Command py.exe -ErrorAction SilentlyContinue\n  $service = Join-Path $Root 'web_service.py'\n  if (-not $py) { throw 'Client Yönetim PRO için Python 3 (py.exe) bulunamadı.' }\n  if (-not (Test-Path -LiteralPath $service)) { throw 'Client Yönetim PRO web servisi bulunamadı.' }\n  $pythonw = Join-Path (Split-Path -Parent $py.Source) 'pythonw.exe'\n  if (-not (Test-Path -LiteralPath $pythonw)) { throw 'Client Yönetim PRO için pythonw.exe bulunamadı.' }\n  $taskName = 'KafePin Client Yonetim PRO'\n  $action = New-ScheduledTaskAction -Execute $pythonw -Argument ('-B \"' + $service + '\"') -WorkingDirectory $Root",
+        "  $py = Ensure-Python3\n  $service = Join-Path $Root 'web_service.py'\n  if (-not (Test-Path -LiteralPath $service)) { throw 'Client Yönetim PRO web servisi bulunamadı.' }\n  $taskName = 'KafePin Client Yonetim PRO'\n  $runArgs = if ([IO.Path]::GetFileName($py.Source) -ieq 'py.exe') { '-3 -B \"' + $service + '\"' } else { '-B \"' + $service + '\"' }\n  $action = New-ScheduledTaskAction -Execute $py.Source -Argument $runArgs -WorkingDirectory $Root",
+        path.name,
+    )
     path.write_text(text, encoding="utf-8-sig", newline="\r\n")
 
 
@@ -267,14 +329,32 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
         )
         build_manifest(payload)
 
-        new_exe = new_outer / f"KafePin-Pro-Ana-Sunucu-Kurulum-v{VERSION}.exe"
-        build_sfx(source_exe, payload, new_exe)
+        # Yeni kafe kurulumu doğrudan CMD -> PowerShell akışıyla ilerler.
+        # Eski EXE/SFX başlatıcısı farklı Windows sistemlerinde Go runtime
+        # 0xc0000005 üretiyordu; payload içindeki kurulum mantığı ise aynen
+        # korunarak güvenilir CMD başlangıcına bağlanır.
+        main_dir = new_outer / "ANA-SUNUCU"
+        client_dir = new_outer / "CLIENT"
+        shutil.copytree(payload, main_dir)
+        client_dir.mkdir()
         client_name = f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe"
-        shutil.copy2(client_exe, new_outer / client_name)
+        shutil.copy2(client_exe, client_dir / client_name)
         (new_outer / "KURULUMU_BASLAT.cmd").write_text(
-            "@echo off\r\nchcp 65001 >nul\r\ntitle KafePin Pro v3.1.64 FINAL Yeni Kafe Kurulumu\r\n"
-            f"\"%~dp0KafePin-Pro-Ana-Sunucu-Kurulum-v{VERSION}.exe\"\r\n"
-            "set RC=%ERRORLEVEL%\r\nif not \"%RC%\"==\"0\" pause\r\nexit /b %RC%\r\n",
+            "@echo off\r\n"
+            "chcp 65001 >nul\r\n"
+            "title KafePin Pro v3.1.64 FINAL Yeni Kafe Kurulumu\r\n"
+            "net session >nul 2>&1\r\n"
+            "if not \"%errorlevel%\"==\"0\" (\r\n"
+            "  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"Start-Process -FilePath 'cmd.exe' -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs\"\r\n"
+            "  exit /b\r\n"
+            ")\r\n"
+            "set EXTRA=\r\n"
+            "if /I \"%KAFEPIN_VALIDATE_ONLY%\"==\"1\" set EXTRA=-ValidateOnly\r\n"
+            "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"%~dp0ANA-SUNUCU\\KafePin-Pro-Yeni-Kafe-Kur-GUI.ps1\" %EXTRA%\r\n"
+            "set RC=%ERRORLEVEL%\r\n"
+            "if not \"%RC%\"==\"0\" echo Kurulum hata kodu: %RC%\r\n"
+            "pause\r\n"
+            "exit /b %RC%\r\n",
             encoding="utf-8",
         )
         (new_outer / "VERSIYON.txt").write_text(
@@ -283,8 +363,8 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
         )
         (new_outer / "OKU-BENI.txt").write_text((payload / "OKU-BENI.txt").read_text(encoding="utf-8"), encoding="utf-8")
         hashes = {
-            new_exe.name: sha256(new_exe),
-            client_name: sha256(new_outer / client_name),
+            "ANA-SUNUCU/KafePin-Pro-Yeni-Kafe-Kur-GUI.ps1": sha256(main_dir / "KafePin-Pro-Yeni-Kafe-Kur-GUI.ps1"),
+            f"CLIENT/{client_name}": sha256(client_dir / client_name),
         }
         (new_outer / "SHA256SUMS.txt").write_text(
             "".join(f"{digest}  {name}\n" for name, digest in hashes.items()), encoding="ascii"
@@ -296,10 +376,11 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
                     "channel": "stable",
                     "finalStable": True,
                     "offline": True,
-                    "mainInstaller": new_exe.name,
-                    "clientInstaller": client_name,
-                    "mainInstallerSha256": hashes[new_exe.name],
-                    "clientInstallerSha256": hashes[client_name],
+                    "mainInstaller": "KURULUMU_BASLAT.cmd",
+                    "mainPayloadDirectory": "ANA-SUNUCU",
+                    "clientInstaller": f"CLIENT/{client_name}",
+                    "mainScriptSha256": hashes["ANA-SUNUCU/KafePin-Pro-Yeni-Kafe-Kur-GUI.ps1"],
+                    "clientInstallerSha256": hashes[f"CLIENT/{client_name}"],
                 },
                 ensure_ascii=False,
                 indent=2,
