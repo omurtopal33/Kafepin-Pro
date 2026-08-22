@@ -6,6 +6,11 @@ on:
     paths:
       - 'dev/v3161-candidate/**'
       - '.github/workflows/build-v3161-final-repair.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dev/v3161-candidate/**'
+      - '.github/workflows/build-v3161-final-repair.yml'
   workflow_dispatch:
 
 permissions:
@@ -57,6 +62,30 @@ jobs:
           $meta=Get-Content (Join-Path $tmp 'update.json') -Raw | ConvertFrom-Json
           if($meta.version -ne '3.1.61' -or -not $meta.cumulative -or $meta.baseVersion -ne '3.1.60'){throw 'Metadata invalid'}
           if(-not (Test-Path 'KafePin-Client-v3.1.61.zip')){throw 'Client package missing'}
+
+      - name: Publish v3.1.61 STABLE on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.61.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $latest=[ordered]@{
+            version='3.1.61'
+            channel='stable'
+            stableBase='3.1.60'
+            baseVersion='3.1.60'
+            futureUpdateBase='3.1.60'
+            cumulative=$true
+            publishedAt=(Get-Date).ToUniversalTime().ToString('o')
+            notes='v3.1.61 STABLE — v3.1.60 FINAL tabanında Server Manager eski Yazıcı payload blokajı kaldırıldı; KafePin Pro masaüstü v1.1.7 ile yeniden kurulur ve PRO menüleri doğrulanır. Client paketi v3.1.60 FINAL kaynaklarından yeniden oluşturuldu. Finans, spin, EveryCafe read-only, session ve 20:00 işletme günü çekirdeği korunur.'
+            downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.61.zip'
+            sha256=$sha
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content 'latest.json' -Encoding utf8
+          git config user.name 'KafePin Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add KafePin-Pro-Update-v3.1.61.zip KafePin-Pro-Update-v3.1.61.sha256.txt KafePin-Client-v3.1.61.zip RELEASE_NOTES-v3.1.61.md latest.json
+          git commit -m 'release: publish v3.1.61 stable update and client'
+          git push
 
       - name: Upload candidate artifacts
         uses: actions/upload-artifact@v4
