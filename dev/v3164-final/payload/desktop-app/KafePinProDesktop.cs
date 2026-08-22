@@ -715,13 +715,17 @@ namespace KafePinProDesktop
             try
             {
                 string statePath = Path.Combine(GetKafePinRoot(), "config", "pro-components.json");
-                if (!File.Exists(statePath)) return false;
-                string state = File.ReadAllText(statePath);
-                return System.Text.RegularExpressions.Regex.IsMatch(
-                    state,
-                    "\\\"client\\\"\\s*:\\s*true",
-                    System.Text.RegularExpressions.RegexOptions.IgnoreCase
-                );
+                if (File.Exists(statePath))
+                {
+                    string state = File.ReadAllText(statePath);
+                    if (System.Text.RegularExpressions.Regex.IsMatch(
+                        state,
+                        "\\\"client\\\"\\s*:\\s*true",
+                        System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                    )) return true;
+                }
+                string proRoot = Path.Combine(Path.GetPathRoot(GetKafePinRoot()) ?? "C:\\", "KafePinPro", "ClientYonetimPRO");
+                return File.Exists(Path.Combine(proRoot, "web_service.py"));
             }
             catch { return false; }
         }
@@ -731,19 +735,22 @@ namespace KafePinProDesktop
             try
             {
                 string envPath = Path.Combine(GetKafePinRoot(), ".env");
-                if (!File.Exists(envPath)) return false;
-                foreach (string rawLine in File.ReadAllLines(envPath))
+                if (File.Exists(envPath))
                 {
-                    string line = (rawLine ?? string.Empty).Trim();
-                    if (line.Length == 0 || line.StartsWith("#")) continue;
-                    int equalsIndex = line.IndexOf('=');
-                    if (equalsIndex <= 0) continue;
-                    string key = line.Substring(0, equalsIndex).Trim();
-                    if (!key.Equals("EVERYCAFE_DB_PATH", StringComparison.OrdinalIgnoreCase)) continue;
-                    string value = line.Substring(equalsIndex + 1).Trim().Trim('"');
-                    if (string.IsNullOrWhiteSpace(value)) return false;
-                    return value.IndexOf("everycafe-disabled.ecm", StringComparison.OrdinalIgnoreCase) < 0;
+                    foreach (string rawLine in File.ReadAllLines(envPath))
+                    {
+                        string line = (rawLine ?? string.Empty).Trim();
+                        if (line.Length == 0 || line.StartsWith("#")) continue;
+                        int equalsIndex = line.IndexOf('=');
+                        if (equalsIndex <= 0) continue;
+                        string key = line.Substring(0, equalsIndex).Trim();
+                        if (!key.Equals("EVERYCAFE_DB_PATH", StringComparison.OrdinalIgnoreCase)) continue;
+                        string value = line.Substring(equalsIndex + 1).Trim().Trim('"');
+                        if (string.IsNullOrWhiteSpace(value)) return false;
+                        return value.IndexOf("everycafe-disabled.ecm", StringComparison.OrdinalIgnoreCase) < 0;
+                    }
                 }
+                return File.Exists(@"C:\Program Files (x86)\EveryCafeManager\ecmdata.ecm");
             }
             catch { }
             return false;

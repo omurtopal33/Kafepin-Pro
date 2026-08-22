@@ -10,14 +10,14 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 BASE = ROOT / "KafePin-Pro-Update-v3.1.64.zip"
-OUT = ROOT / "KafePin-Pro-Update-v3.1.65.zip"
-SHA_OUT = ROOT / "KafePin-Pro-Update-v3.1.65.sha256.txt"
+OUT = ROOT / "KafePin-Pro-Update-v3.1.66.zip"
+SHA_OUT = ROOT / "KafePin-Pro-Update-v3.1.66.sha256.txt"
 LATEST = ROOT / "latest.json"
-NOTES = ROOT / "RELEASE_NOTES-v3.1.65.md"
+NOTES = ROOT / "RELEASE_NOTES-v3.1.66.md"
 OVERLAYS = ROOT / "dev" / "v3164-final" / "payload" / "component-overlays"
 COMPONENT_UPDATER = HERE / "KafePin_Pro_Component_Update.ps1"
 WORK = HERE / ".build-work"
-VERSION = "3.1.65"
+VERSION = "3.1.66"
 FIXED_DT = (2026, 8, 22, 18, 0, 0)
 
 
@@ -68,7 +68,7 @@ def metadata(files: list[str], base_sha: str) -> dict[str, object]:
         "sourceVersion": "3.1.64",
         "sourceSha256": base_sha,
         "publishedAt": "2026-08-22T18:00:00+03:00",
-        "notes": "v3.1.65 KÜMÜLATİF STABLE: çalışan MP3/Winamp, Favori Listem ve USB MP3-Film-Oyun arşiv gezgini kalıcı olarak yayınlandı. Sanatçı - Şarkı metadata eşleştirmesi, FLAC/WMA dahil medya görünürlüğü, büyük arşivde Türkçe hızlı arama, klavye gezintisi, seçili/çalan parça vurgusu, güvenli kısayol kaldırma ve USB aktarım hazırlığı güncellendi. KafePin çekirdeği, finans, spin/session, EveryCafe salt-okunur erişimi, Telegram ve 20:00 gün sonu değiştirilmedi.",
+        "notes": "v3.1.66 KÜMÜLATİF STABLE: mevcut EveryCafe kullanan kafelerde kurulu varsayılan kaynak otomatik korunur; EveryCafe ve Client Yönetim PRO menüleri eksik yerel seçim kaydı yüzünden gizlenmez. Yeni kafe kurulumunda seçimli yapı aynen korunur; seçilmeyen EveryCafe/Client görünmez. MP3/Winamp ve USB aktarım geliştirmeleri v3.1.65 ile birlikte korunur. EveryCafe DB yalnız okunur; çekirdek, finans, spin/session, Telegram ve 20:00 gün sonu değiştirilmedi.",
         "files": files,
     }
 
@@ -86,11 +86,12 @@ def main() -> None:
         base_sha = sha256(BASE)
         for component in ("mp3-bot-pro", "yazici-pro", "teknik-servis-pro"):
             overlay_component(stage, component)
+        shutil.copy2(ROOT / "dev" / "v3164-final" / "payload" / "desktop-app" / "KafePinProDesktop.cs", stage / "desktop-app" / "KafePinProDesktop.cs")
         shutil.copy2(COMPONENT_UPDATER, stage / "KafePin_Pro_Component_Update.ps1")
         manager = stage / "KafePin_Manager_Ensure.ps1"
         manager_text = manager.read_text(encoding="utf-8-sig")
         manager_text += (
-            "\n# v3.1.65: yalnız önceden seçilmiş bağımsız PRO program dosyalarını eşitle.\n"
+            "\n# v3.1.66: yalnız önceden seçilmiş bağımsız PRO program dosyalarını eşitle.\n"
             "$proUpdater = Join-Path $InstallRoot 'KafePin_Pro_Component_Update.ps1'\n"
             "if (Test-Path -LiteralPath $proUpdater) { & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $proUpdater -InstallRoot $InstallRoot -ProRoot 'C:\\KafePinPro' }\n"
         )
@@ -112,12 +113,12 @@ def main() -> None:
     SHA_OUT.write_text(f"{digest}  {OUT.name}\n", encoding="ascii")
     latest = metadata([], base_sha)
     latest.update({
-        "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.65.zip",
+        "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.66.zip",
         "sha256": digest,
     })
     LATEST.write_text(json.dumps(latest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     NOTES.write_text(
-        "# KafePin Pro v3.1.65 — KÜMÜLATİF STABLE\n\n"
+        "# KafePin Pro v3.1.66 — KÜMÜLATİF STABLE\n\n"
         "## Kilitlenen çalışma\n\n"
         "- MP3 Bot PRO: Winamp kalıcı klasör gezgini, klavye kontrolü, seçili/çalan parça vurgusu, FLAC/WMA görünümü ve Türkçe hızlı arama.\n"
         "- Favori Listem: gerçek dosya kopyası ile yıldız ekle/çıkar davranışı korunur.\n"
