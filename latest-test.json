@@ -1,9 +1,9 @@
 {
   "channel": "test",
   "stableVersion": "3.1.60",
-  "version": null,
   "available": false,
-  "notes": "TEST kanalı şu anda boş. Sonraki TEST paketleri yalnız bu dosyada duyurulur; latest.json yalnız STABLE kanalı için v3.1.60'ı gösterir.",
+  "version": null,
+  "notes": "TEST kanalı şu anda boş. Sonraki TEST paketleri yalnız bu dosyada duyurulur; latest.json yalnız v3.1.60 FINAL / STABLE kanalını gösterir.",
   "downloadUrl": "",
   "sha256": ""
 }

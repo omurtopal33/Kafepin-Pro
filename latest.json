@@ -1,10 +1,11 @@
 {
   "version": "3.1.60",
   "channel": "stable",
-  "baseVersion": "3.1.29",
+  "finalStable": true,
+  "futureUpdateBase": "3.1.60",
   "cumulative": true,
-  "publishedAt": "2026-08-21T13:00:00+03:00",
-  "notes": "v3.1.60 STABLE / KÜMÜLATİF — v3.1.29 kurulum tabanından doğrudan uygulanır. Yazıcı PRO'nun iki bağımsız servisinin 3.1.60 sağlık doğrulaması düzeltildi; Client Yönetim PRO bağımsız loopback paneli seçmeli kurulum bileşeni olarak eklendi. Client paneli EveryCafe'yi yalnız okunur kullanır ve yalnız uyandırma, bilgisayarı kapatma, yeniden başlatma araçlarını sağlar; hesap/masa kapatma veya oturum açma yapmaz. MP3 Bot PRO, Yazıcı PRO ve Teknik Servis PRO bağımsız kalır. KafePin çekirdeği, server.js, finans, session, spin, EveryCafe yazımı, Telegram ve gün sonu davranışları değiştirilmemiştir.",
+  "publishedAt": "2026-08-22T12:00:00+03:00",
+  "notes": "v3.1.60 FINAL / STABLE — kilitli yeni kafe ve güncelleme referansıdır. Sonraki tüm sürümler v3.1.60 üzerine kümülatif güncelleme olarak yayınlanır. Yeni kafe kurulumu EveryCafe (salt-okunur DB yolu), masa sayısı, yedek klasörü ve isteğe bağlı Telegram ayarlarını sorar; ardından MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO ve Client Yönetim PRO ayrı ayrı sorulur. EveryCafe veritabanına SQL yazılmaz; hesap/masa kapatma ve tahsilat yapılmaz. KafePin ücret, spin, session, finans, Telegram sağlık raporu ve 20:00 gün sonu mantığı korunmuştur.",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.60.zip",
-  "sha256": "b4beebea5bddafff593be2c8cd6269462f2d4cd60df536e8b342fa6599c3751e"
+  "sha256": "1976d0377739f2c866c4faee1d11c9623c659c8ab743db3871fece1d81f2ba2b"
 }

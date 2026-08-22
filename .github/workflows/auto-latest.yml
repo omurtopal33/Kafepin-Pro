@@ -1,10 +1,8 @@
-name: KafePin STABLE latest.json kilitle
+name: KafePin FINAL/STABLE yayınla
 
-# Eski guvenli yayin duzeni:
-# - Aday guncelleme ZIP'leri repoya eklenebilir.
-# - ZIP push edilmesi latest.json'u ASLA otomatik degistirmez.
-# - Kullanici sahada dogrulayip "kitle" dedikten sonra bu workflow elle calistirilir.
-# - Böylece mevcut STABLE, aday paket test edilirken korunur.
+# v3.1.60 kilitli FINAL/STABLE referansıdır.
+# Sonraki paketler bu sürümün üzerine kümülatif güncelleme olarak çıkar.
+# Workflow yalnız elle çalıştırılır; ZIP push edilmesi latest.json'u değiştirmez.
 
 on:
   workflow_dispatch:
@@ -26,7 +24,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: En yeni aday ZIP'ten STABLE latest.json olustur
+      - name: En yeni kümülatif ZIP'ten STABLE latest.json olustur
         shell: bash
         run: |
           python3 - <<'PY'
@@ -58,23 +56,26 @@ jobs:
           sha256 = hashlib.sha256(zip_path.read_bytes()).hexdigest()
           published = datetime.now(ZoneInfo('Europe/Istanbul')).isoformat(timespec='seconds')
 
+          metadata = {}
           notes = f'KafePin Pro v{version} STABLE olarak kilitlendi.'
           try:
               with zipfile.ZipFile(zip_path) as zf:
-                  update = json.loads(zf.read('update.json').decode('utf-8-sig'))
-                  detailed = str(update.get('notes') or '').strip()
+                  metadata = json.loads(zf.read('update.json').decode('utf-8-sig'))
+                  detailed = str(metadata.get('notes') or '').strip()
                   if detailed:
                       notes = detailed
           except Exception as exc:
               print(f'update.json notlari okunamadi, yedek not kullaniliyor: {exc}')
 
-          data = {
+          data = dict(metadata)
+          data.update({
               'version': version,
+              'channel': 'stable',
               'publishedAt': published,
               'notes': notes,
               'downloadUrl': f'https://raw.githubusercontent.com/{repo}/main/{zip_path.name}',
               'sha256': sha256,
-          }
+          })
 
           Path('latest.json').write_text(
               json.dumps(data, ensure_ascii=False, indent=2) + '\n',

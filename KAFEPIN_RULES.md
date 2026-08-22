@@ -4,10 +4,9 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 
 ## 1. Sürüm ve kurulum kuralları
 
-- **v3.1.45 = kilitli FINAL STABLE referans sürümüdür.** Yerinde değiştirilmez.
-- v3.1.44 sahada/testte doğrulanan ve v3.1.45'e temel olan önceki geliştirme sürümüdür.
-- Bundan sonraki geliştirmeler **v3.1.46+** yeni kümülatif sürüm numarasıyla çıkar.
-- Yeni kafe kurulumu: **v3.1.29 STABLE taban → doğrudan en güncel kümülatif STABLE UPDATE**.
+- **v3.1.60 = kilitli FINAL / STABLE referans sürümüdür.** Yerinde değiştirilmez.
+- Bundan sonraki geliştirmeler **v3.1.61+** yeni kümülatif sürüm numarasıyla, doğrudan v3.1.60 üzerine çıkar.
+- Yeni kafe kurulumu: doğrudan **v3.1.60 FINAL** paketi; ardından yalnız en güncel kümülatif STABLE UPDATE.
 - Ara sürümlerin tek tek kurulması gerekmez.
 - Her yeni sürüm önceki gerekli düzeltmeleri ve onaylı davranışları korur.
 
@@ -141,6 +140,6 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
   - `C:\KafePinPRO\ClientYonetim\`
 - Bu bileşenler aynı kök altında bulunsa da **servis/proses, config, log, runtime, güncelleme ve veri sınırları bağımsız kalır**; ortak DB/session/runtime oluşturulmaz.
 - Yeni kafe ZIP'i hazırlanırken installer, servis `ImagePath`/çalıştırma yolu, başlatıcılar, updater, yeniden kurulum/onarım akışı, kısayollar ve mutlak yol kullanan config/scriptler yeni `C:\KafePinPRO\...` düzenine göre güncellenir ve test edilir.
-- Mevcut çalışan kafeler sırf klasör düzeni için zorla taşınmaz. Eski yollar (`C:\KafePinMp3BotPRO\` vb.) legacy kurulum olarak çalışmaya devam edebilir; taşıma ancak ayrı bir migration/onarım planı ve kullanıcı onayıyla yapılır.
+- Mevcut çalışan kafeler sırf klasör düzeni için zorla taşınmaz. Eski yollar legacy kurulum olarak çalışmaya devam edebilir; taşıma ancak ayrı bir migration/onarım planı ve kullanıcı onayıyla yapılır.
 - Yeni kurulum paketi eski bir kurulum tespit ederse veri/config kaybına yol açmadan legacy yolu korumalı veya kontrollü migration sunmalıdır; sessizce dosya silme/taşıma yapılmaz.
 - Bu klasör düzeni **yalnız paketleme/kurulum organizasyonudur**; KafePin çekirdeği ile PRO servislerinin teknik izolasyon kurallarını gevşetmez.
