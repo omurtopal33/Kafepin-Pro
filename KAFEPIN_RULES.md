@@ -129,3 +129,18 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 - Paketlemeden önce Node/HTML JS syntax, ZIP bütünlüğü, finans formülleri, spin tarifeleri, **45 dakika yaşam döngüsü**, read-only EveryCafe erişimleri, 20:00 gün sınırı, sürüm metadata'sı ve Sürüm Notları ekranı kontrol edilir.
 - Ana UI/Monitor tema ve kart düzeninin istemeden değişmediği ayrıca kontrol edilir.
 - Test sonucu kullanıcıya paketlemeden önce açıklanır; kullanıcı isterse ondan sonra paketlenir.
+
+## 13. Yeni kafe PRO klasör düzeni
+
+- Yeni kafe / temiz kurulum paketlerinde KafePin ana çekirdeği **`C:\KafePin\`** altında kalır.
+- Bağımsız PRO bileşenleri yeni kurulumlarda tek ve derli toplu bir kök altında toplanır: **`C:\KafePinPRO\`**.
+- Hedef klasör yapısı:
+  - `C:\KafePinPRO\MP3Bot\`
+  - `C:\KafePinPRO\Yazici\`
+  - `C:\KafePinPRO\TeknikServis\`
+  - `C:\KafePinPRO\ClientYonetim\`
+- Bu bileşenler aynı kök altında bulunsa da **servis/proses, config, log, runtime, güncelleme ve veri sınırları bağımsız kalır**; ortak DB/session/runtime oluşturulmaz.
+- Yeni kafe ZIP'i hazırlanırken installer, servis `ImagePath`/çalıştırma yolu, başlatıcılar, updater, yeniden kurulum/onarım akışı, kısayollar ve mutlak yol kullanan config/scriptler yeni `C:\KafePinPRO\...` düzenine göre güncellenir ve test edilir.
+- Mevcut çalışan kafeler sırf klasör düzeni için zorla taşınmaz. Eski yollar (`C:\KafePinMp3BotPRO\` vb.) legacy kurulum olarak çalışmaya devam edebilir; taşıma ancak ayrı bir migration/onarım planı ve kullanıcı onayıyla yapılır.
+- Yeni kurulum paketi eski bir kurulum tespit ederse veri/config kaybına yol açmadan legacy yolu korumalı veya kontrollü migration sunmalıdır; sessizce dosya silme/taşıma yapılmaz.
+- Bu klasör düzeni **yalnız paketleme/kurulum organizasyonudur**; KafePin çekirdeği ile PRO servislerinin teknik izolasyon kurallarını gevşetmez.
