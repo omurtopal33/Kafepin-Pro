@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import importlib.util
 import re
+import sys
 from pathlib import Path
+
+# Windows GitHub runners otherwise default stdout to cp1252 and can fail only
+# while printing Turkish diagnostic marker names even after a successful build.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 HERE = Path(__file__).resolve().parent
 BUILD_PATH = HERE / "build_v3162.py"
@@ -17,9 +25,6 @@ spec.loader.exec_module(mod)
 def robust_patch_manager(path: Path) -> None:
     text = path.read_text(encoding="utf-8-sig")
 
-    # Some v3.1.60 package variants contain the old Yazici payload fatal throw,
-    # while the dedicated release/v3.1.60-stable pair does not. Neutralize it
-    # only when it actually exists; do not depend on an old candidate comment.
     fatal_re = re.compile(
         r"(?m)^(?P<indent>\s*)throw\s+['\"]v3\.1\.57 Yazici payload klasoru bulunamadi\.?['\"]\s*;?\s*$"
     )
