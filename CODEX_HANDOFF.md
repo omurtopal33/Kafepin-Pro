@@ -1,23 +1,35 @@
 # KafePin Pro — Güncel Devir Notu
 
-## Kilitli referans
+## Kilitli referanslar
 
-- **v3.1.60 FINAL / STABLE** tek kilitli dağıtım referansıdır.
-- `KafePin-Pro-Update-v3.1.60.zip` mevcut v3.1.60 kurulumunu doğrulamak veya onarmak için kullanılır.
-- `KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip` yeni kafeyi doğrudan kurar.
-- Sonraki her değişiklik v3.1.61+ sürüm numarasıyla, v3.1.60 üzerine kümülatif STABLE güncelleme olarak çıkar. Final paketi yerinde değiştirilmez.
+- **v3.1.60 FINAL / STABLE** değişmeyen yeni-kafe kurulum tabanıdır.
+- **v3.1.64 FINAL / STABLE** onaylanan güncel saha davranışının kilitli kümülatif güncellemesidir.
+- Yeni kafede v3.1.60 temel kurulur ve ardından yalnız `latest.json` içindeki en güncel kümülatif STABLE uygulanır.
+- Sonraki değişiklikler v3.1.65+ olur; v3.1.64 yerinde değiştirilmez.
 
-## Yeni kafe kurulumu
+## v3.1.64 kilidi
 
-Ana KafePin kurulumu ile PRO hizmetleri ayrıdır. Ana çekirdek `C:\KafePin` altında kalır; yeni kurulumdaki PRO hizmetleri `C:\KafePinPRO` altında birbirinden bağımsız kurulur. Yeni kurulumda önce EveryCafe kullanımı ve varsa salt-okunur `ecmdata.ecm` yolu, masa sayısı, yedek klasörü ve isteğe bağlı Telegram ayarları sorulur. Sonra aşağıdaki PRO hizmetleri ayrı ayrı seçilir:
+- Admin kart mimarisi dört panelde tekildir ve boşluksuz otomatik dizilir.
+- Toplam Varlık ve Bankaya Geçecek Kart yalnız Anlık Finans'tadır.
+- 20:00–20:00 Kafe Günü kartları yalnız Kasa & Muhasebe'dedir.
+- Gizli eski kart grupları görünmez.
+- PRO Servisleri düğmesi MP3, Yazıcı, Teknik Servis ve Client Yönetim servislerini gerçekten yeniden başlatır.
+- KafePin çekirdek Node süreci ve WhatsApp/Telegram WebView2 oturumları yeniden başlatma kapsamı dışındadır.
+- Paket kilidi: `dev/v3164-final/verify_v3164.py`.
 
-- MP3 Bot PRO
-- Yazıcı PRO
-- Teknik Servis PRO
-- Client Yönetim PRO
+## Korunan çekirdek
 
-Paket hiçbir kafe veritabanı, token, IP ayarı, Telegram bilgisi veya yedek içermez. EveryCafe bağlantısı her zaman salt-okunurdur.
+- `server.js`, finans formülleri, spin/session, EveryCafe salt-okunur erişimi, Telegram ve 20:00 gün sonu v3.1.63 ile byte-for-byte korunmuştur.
+- EveryCafe DB'ye yazılmaz.
+- Monitor ve Yönetim arayüzleri değiştirilmemiştir.
 
-## Yayın kontrolü
+## PRO klasörleri
 
-Her sonraki sürümde JavaScript/PowerShell/Python sözdizimi, ZIP bütünlüğü, SHA-256 ile `latest.json` eşleşmesi, dört PRO bileşeni, EveryCafe read-only erişimi, 45 dakika çark yaşam döngüsü, finans ve 20:00 gün sınırı doğrulanır. Yönetim panelindeki sürüm notu görünür olmadan paket yayınlanmaz.
+Sahada doğrulanan bağımsız klasörler:
+
+- `C:\KafePinPro\MP3BotPRO`
+- `C:\KafePinPro\YaziciPRO`
+- `C:\KafePinPro\TeknikServisPRO`
+- `C:\KafePinPro\ClientYonetimPRO`
+
+Bu klasörler aynı üst dizinde olsa da proses, config, veri ve runtime sınırları bağımsızdır.

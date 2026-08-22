@@ -1,0 +1,30 @@
+name: v3.1.64 FINAL Lock
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "latest.json"
+      - "KafePin-Pro-Update-v3.1.64.zip"
+      - "KafePin-Pro-Update-v3.1.64.sha256.txt"
+      - "dev/v3164-final/**"
+      - "AGENTS.md"
+      - "KAFEPIN_RULES.md"
+      - "CODEX_HANDOFF.md"
+  pull_request:
+    paths:
+      - "latest.json"
+      - "KafePin-Pro-Update-v3.1.64.zip"
+      - "KafePin-Pro-Update-v3.1.64.sha256.txt"
+      - "dev/v3164-final/**"
+
+jobs:
+  verify-final-lock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify v3.1.64 FINAL invariants
+        run: python dev/v3164-final/verify_v3164.py

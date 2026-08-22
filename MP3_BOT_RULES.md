@@ -53,8 +53,8 @@ Bu dosya KafePin MP3 Bot PRO entegrasyonu ve sonraki MP3 geliştirmeleri için d
 
 ## 7. Sürüm ve test disiplini
 
-- **KafePin v3.1.45 kilitli FINAL STABLE referansıdır; MP3 çalışması nedeniyle yerinde değiştirilmez.**
-- KafePin tarafında entegrasyon gerekiyorsa yeni kümülatif test sürümünde, minimum navigasyon değişikliği olarak yapılır.
+- **KafePin v3.1.60 kilitli yeni-kafe FINAL tabanıdır; v3.1.64 kilitli güncel saha FINAL / STABLE referansıdır.** MP3 çalışması nedeniyle bu referansların çekirdek davranışı değiştirilmez.
+- KafePin tarafında entegrasyon gerekiyorsa v3.1.65+ yeni kümülatif sürümde, minimum navigasyon değişikliği olarak yapılır.
 - MP3 Bot kendi sürüm çizgisini ayrı tutabilir ve MP3 motoru bağımsız güncellenebilir.
 - Her MP3 entegrasyon testinde özellikle şu izolasyon kontrolleri yapılır:
   - MP3 Bot kapalıyken KafePin normal çalışıyor mu?

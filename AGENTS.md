@@ -30,10 +30,18 @@ Bu repoda herhangi bir kod değişikliği yapmadan önce aşağıdaki dosyaları
 
 ## Sürüm disiplini
 
-- **v3.1.60 kilitli FINAL / STABLE referansıdır; yerinde değiştirilmez.**
-- Bundan sonraki değişiklikler v3.1.61+ yeni kümülatif sürüm numarasıyla, doğrudan v3.1.60 tabanından çıkar.
+- **v3.1.60 kilitli yeni-kafe FINAL tabanıdır; yerinde değiştirilmez.**
+- **v3.1.64 kilitli güncel saha FINAL / STABLE referansıdır; kart mimarisi ve PRO servis davranışı yerinde değiştirilmez.**
+- Bundan sonraki değişiklikler v3.1.65+ yeni kümülatif sürüm numarasıyla, doğrudan v3.1.60 tabanından ve v3.1.64 saha davranışları korunarak çıkar.
 - Yeni kafe kurulumu doğrudan v3.1.60 FINAL paketiyle yapılır; sonrasındaki güncellemeler bu kurulumun üstüne uygulanır.
 - Paketlemeden önce syntax, finans formülleri, spin tarifeleri, 45 dakika yaşam döngüsü, EveryCafe read-only, 20:00 sınırı, UI tema bütünlüğü, sürüm metadata'sı ve Sürüm Notları ekranı test edilir.
 - Test sonuçlarını kullanıcıya açıkla; kullanıcı paketleme istediyse paketle.
+
+## v3.1.64 FINAL regresyon kilidi
+
+- `Kafe & Çark`, `EveryCafe`, `Anlık Finans` ve `Kasa & Muhasebe` kart grupları `dev/v3164-final/verify_v3164.py` doğrulamasını geçmeden yayın yapılamaz.
+- Toplam Varlık ve Bankaya Geçecek Kart yalnız Anlık Finans'ta; 20:00–20:00 Kafe Günü kartları yalnız Kasa & Muhasebe'de bulunur.
+- Gizli eski kaynak kart grupları görünemez ve otomatik kart dizilimi satır sonunda boş alan bırakamaz.
+- `PRO Servisleri` düğmesi yalnız durum raporu vermez; dört bağımsız PRO servisini gerçekten durdurup yeniden başlatır. KafePin çekirdek Node süreci ile WhatsApp/Telegram WebView2 profilleri bu işlemden etkilenmez.
 
 Bir kural ile kullanıcı isteği çelişirse kod yazmadan önce çelişkiyi kullanıcıya açıkça bildir ve onay iste.

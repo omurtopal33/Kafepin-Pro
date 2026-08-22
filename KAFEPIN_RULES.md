@@ -4,8 +4,9 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 
 ## 1. Sürüm ve kurulum kuralları
 
-- **v3.1.60 = kilitli FINAL / STABLE referans sürümüdür.** Yerinde değiştirilmez.
-- Bundan sonraki geliştirmeler **v3.1.61+** yeni kümülatif sürüm numarasıyla, doğrudan v3.1.60 üzerine çıkar.
+- **v3.1.60 = kilitli yeni-kafe FINAL taban sürümüdür.** Yerinde değiştirilmez.
+- **v3.1.64 = kilitli güncel saha FINAL / STABLE referansıdır.** Onaylanan Admin kart yapısı ve PRO servis yeniden başlatma davranışı korunur.
+- Bundan sonraki geliştirmeler **v3.1.65+** yeni kümülatif sürüm numarasıyla, v3.1.60 kurulum tabanı üzerine ve v3.1.64 saha davranışları korunarak çıkar.
 - Yeni kafe kurulumu: doğrudan **v3.1.60 FINAL** paketi; ardından yalnız en güncel kümülatif STABLE UPDATE.
 - Ara sürümlerin tek tek kurulması gerekmez.
 - Her yeni sürüm önceki gerekli düzeltmeleri ve onaylı davranışları korur.
@@ -134,12 +135,21 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 - Yeni kafe / temiz kurulum paketlerinde KafePin ana çekirdeği **`C:\KafePin\`** altında kalır.
 - Bağımsız PRO bileşenleri yeni kurulumlarda tek ve derli toplu bir kök altında toplanır: **`C:\KafePinPRO\`**.
 - Hedef klasör yapısı:
-  - `C:\KafePinPRO\MP3Bot\`
-  - `C:\KafePinPRO\Yazici\`
-  - `C:\KafePinPRO\TeknikServis\`
-  - `C:\KafePinPRO\ClientYonetim\`
+  - `C:\KafePinPRO\MP3BotPRO\`
+  - `C:\KafePinPRO\YaziciPRO\`
+  - `C:\KafePinPRO\TeknikServisPRO\`
+  - `C:\KafePinPRO\ClientYonetimPRO\`
 - Bu bileşenler aynı kök altında bulunsa da **servis/proses, config, log, runtime, güncelleme ve veri sınırları bağımsız kalır**; ortak DB/session/runtime oluşturulmaz.
 - Yeni kafe ZIP'i hazırlanırken installer, servis `ImagePath`/çalıştırma yolu, başlatıcılar, updater, yeniden kurulum/onarım akışı, kısayollar ve mutlak yol kullanan config/scriptler yeni `C:\KafePinPRO\...` düzenine göre güncellenir ve test edilir.
 - Mevcut çalışan kafeler sırf klasör düzeni için zorla taşınmaz. Eski yollar legacy kurulum olarak çalışmaya devam edebilir; taşıma ancak ayrı bir migration/onarım planı ve kullanıcı onayıyla yapılır.
 - Yeni kurulum paketi eski bir kurulum tespit ederse veri/config kaybına yol açmadan legacy yolu korumalı veya kontrollü migration sunmalıdır; sessizce dosya silme/taşıma yapılmaz.
 - Bu klasör düzeni **yalnız paketleme/kurulum organizasyonudur**; KafePin çekirdeği ile PRO servislerinin teknik izolasyon kurallarını gevşetmez.
+
+## 14. v3.1.64 FINAL Admin ve PRO servis kilidi
+
+- Admin kartları dört anlamlı panelde tekil tutulur; aynı özgün finans kartı farklı panellerde kopyalanmaz.
+- Toplam Varlık, nakit/banka/POS, Bankaya Geçecek Kart, şahsi kart borcu ve başlangıç bakiyesi yalnız `Anlık Finans` panelindedir.
+- 20:00–20:00 Kafe Günü ciro, gider, kart komisyonu ve net sonuç kartları yalnız `Kasa & Muhasebe` panelindedir.
+- `[hidden]` kaynak kart grupları CSS tarafından yeniden görünür yapılamaz; kart satırları ekran genişliğini boşluksuz doldurur.
+- `PRO Servisleri` komutu MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO ve Client Yönetim PRO süreçlerini gerçekten yeniden başlatır; KafePin çekirdek sunucusu ile WhatsApp/Telegram oturumlarına dokunmaz.
+- Bu maddeler `dev/v3164-final/verify_v3164.py` ile paket seviyesinde doğrulanmadan yeni sürüm yayınlanmaz.
