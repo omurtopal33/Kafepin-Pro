@@ -171,10 +171,10 @@ def build_manifest(payload: Path) -> None:
 def build_sfx(source_exe: Path, payload: Path, output: Path) -> None:
     with zipfile.ZipFile(source_exe) as archive:
         prefix_size = min(item.header_offset for item in archive.infolist())
+    # Çalışan eski kurucunun Windows tarafından yüklenen EXE gövdesi birebir
+    # korunur. Gövdedeki sürüm metnini ham bayt olarak değiştirmek PE/Go
+    # çalıştırıcısını bazı makinelerde 0xc0000005 ile bozuyordu.
     prefix = source_exe.read_bytes()[:prefix_size]
-    if prefix.count(b"v3.1.29") != 2:
-        raise RuntimeError("Ana kurucu başlığındaki v3.1.29 işaretleri beklenen sayıda değil")
-    prefix = prefix.replace(b"v3.1.29", b"v3.1.64")
     archive_path = BUILD_TEMP_ROOT / "installer-payload.zip"
     zip_tree(payload, archive_path)
     output.write_bytes(prefix + archive_path.read_bytes())
@@ -269,7 +269,8 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
 
         new_exe = new_outer / f"KafePin-Pro-Ana-Sunucu-Kurulum-v{VERSION}.exe"
         build_sfx(source_exe, payload, new_exe)
-        shutil.copy2(client_exe, new_outer / f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe")
+        client_name = f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe"
+        shutil.copy2(client_exe, new_outer / client_name)
         (new_outer / "KURULUMU_BASLAT.cmd").write_text(
             "@echo off\r\nchcp 65001 >nul\r\ntitle KafePin Pro v3.1.64 FINAL Yeni Kafe Kurulumu\r\n"
             f"\"%~dp0KafePin-Pro-Ana-Sunucu-Kurulum-v{VERSION}.exe\"\r\n"
@@ -283,7 +284,7 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
         (new_outer / "OKU-BENI.txt").write_text((payload / "OKU-BENI.txt").read_text(encoding="utf-8"), encoding="utf-8")
         hashes = {
             new_exe.name: sha256(new_exe),
-            f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe": sha256(new_outer / f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe"),
+            client_name: sha256(new_outer / client_name),
         }
         (new_outer / "SHA256SUMS.txt").write_text(
             "".join(f"{digest}  {name}\n" for name, digest in hashes.items()), encoding="ascii"
@@ -296,9 +297,9 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
                     "finalStable": True,
                     "offline": True,
                     "mainInstaller": new_exe.name,
-                    "clientInstaller": f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe",
+                    "clientInstaller": client_name,
                     "mainInstallerSha256": hashes[new_exe.name],
-                    "clientInstallerSha256": hashes[f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe"],
+                    "clientInstallerSha256": hashes[client_name],
                 },
                 ensure_ascii=False,
                 indent=2,

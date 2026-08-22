@@ -36,6 +36,8 @@ def verify() -> None:
         client_name = f"KafePin-Pro-Client-Kurulum-v{VERSION}.exe"
         for name in (main_name, client_name, "KURULUMU_BASLAT.cmd", "kurulum.json", "SHA256SUMS.txt"):
             require(name in names, f"Yeni kafe dış paketi eksik: {name}")
+        cmd = outer.read("KURULUMU_BASLAT.cmd").decode("utf-8-sig")
+        require(main_name in cmd, "CMD ana sunucu EXE'sini başlatmıyor")
         main_bytes = outer.read(main_name)
         embedded_client = outer.read(client_name)
         meta = json.loads(outer.read("kurulum.json").decode("utf-8-sig"))
