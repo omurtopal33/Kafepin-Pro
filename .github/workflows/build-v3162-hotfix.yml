@@ -57,7 +57,7 @@ jobs:
           Write-Host "V3162_SHA=$u2"
           Write-Host "CLIENT_SHA=$c2"
 
-      - name: Validate v3.1.60 FINAL pair is preserved
+      - name: Validate v3.1.60 FINAL byte preservation
         shell: pwsh
         run: |
           $upd=Join-Path $env:RUNNER_TEMP 'v3160-update'
@@ -70,7 +70,6 @@ jobs:
           Copy-Item $upd $canon -Recurse
           $canonRoot=Join-Path $canon (Split-Path $upd -Leaf)
           if(-not (Test-Path $canonRoot)){ $canonRoot=$canon }
-
           Get-ChildItem $canonRoot -Recurse -File | ForEach-Object {
             $rel=$_.FullName.Substring($canonRoot.Length).TrimStart('\')
             $src=Join-Path $new $rel
@@ -80,33 +79,16 @@ jobs:
           Expand-Archive 'KafePin-Pro-Update-v3.1.62.zip' $out
           $meta=Get-Content (Join-Path $out 'update.json') -Raw | ConvertFrom-Json
           if($meta.version -ne '3.1.62' -or -not $meta.cumulative -or $meta.baseVersion -ne '3.1.60' -or -not $meta.v3160FinalPairPreserved){throw 'v3.1.62 metadata invalid'}
+          if($meta.desktopVersion -ne '1.1.8'){throw 'desktop version metadata invalid'}
 
           $mgr=Get-Content (Join-Path $out 'KafePin_Manager_Ensure.ps1') -Raw
           if($mgr -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'Legacy fatal Yazici payload check returned'}
-          if($mgr -notmatch 'v3\.1\.60 FINAL desktop korunuyor'){throw 'v3.1.60 desktop preservation marker missing'}
+          if($mgr -notmatch "-AppVersion '1\.1\.8'"){throw 'desktop v1.1.8 force rebuild marker missing'}
 
-          @'
-          from pathlib import Path
-          import sys
-          root = Path(r"__OUT__")
-          markers = ["PRO Servisleri Yenile", "MP3 Bot PRO", "Yazıcı PRO", "Teknik Servis PRO"]
-          for marker in markers:
-              needles = [marker.encode("utf-8"), marker.encode("utf-16le"), marker.encode("utf-16be")]
-              found = []
-              for p in root.rglob("*"):
-                  if not p.is_file():
-                      continue
-                  try:
-                      data = p.read_bytes()
-                  except Exception:
-                      continue
-                  if any(n in data for n in needles):
-                      found.append(p.relative_to(root).as_posix())
-              if not found:
-                  raise SystemExit("v3.1.60 FINAL identity marker missing: " + marker)
-              print("MARKER", marker, "=>", ";".join(found))
-          '@.Replace('__OUT__',$out) | python -
-          if($LASTEXITCODE -ne 0){throw 'binary UI marker validation failed'}
+          $cs=Get-Content (Join-Path $out 'desktop-app\KafePinProDesktop.cs') -Raw
+          foreach($m in @('PRO Servisleri Yenile','Ekranı Yenile','ProServicesRefreshMenuItem_Click','MP3 Bot PRO','Yazıcı PRO','Teknik Servis PRO')){
+            if($cs -notmatch [regex]::Escape($m)){throw "Desktop marker missing: $m"}
+          }
 
           foreach($same in @('server.js','KafePin_Desktop_App_Setup.ps1')){
             $a=(Get-FileHash (Join-Path $canonRoot $same) -Algorithm SHA256).Hash
@@ -114,7 +96,7 @@ jobs:
             if($a -ne $b){throw "$same changed from canonical v3.1.60 FINAL"}
           }
 
-          $allowed=@('KafePin_Manager_Ensure.ps1','update.json','kafepin-pro-version.json')
+          $allowed=@('KafePin_Manager_Ensure.ps1','desktop-app/KafePinProDesktop.cs','update.json','kafepin-pro-version.json')
           $canonFiles=Get-ChildItem $canonRoot -Recurse -File
           foreach($f in $canonFiles){
             $rel=$f.FullName.Substring($canonRoot.Length).TrimStart('\')
@@ -127,10 +109,43 @@ jobs:
             if($a -ne $b){throw "Unexpected v3.1.60 FINAL file change: $rel"}
           }
 
+          $outFiles=Get-ChildItem $out -Recurse -File
+          foreach($f in $outFiles){
+            $rel=$f.FullName.Substring($out.Length).TrimStart('\')
+            $base=Join-Path $canonRoot $rel
+            if(-not (Test-Path $base) -and -not ($allowed -contains ($rel -replace '\\','/'))){throw "Unexpected file added to v3.1.62: $rel"}
+          }
+
+      - name: Syntax and desktop compile smoke test
+        shell: pwsh
+        run: |
+          $out=Join-Path $env:RUNNER_TEMP 'v3162-compile'
+          if(Test-Path $out){Remove-Item $out -Recurse -Force}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.62.zip' $out
+
+          $tokens=$null; $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $out 'KafePin_Manager_Ensure.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count -gt 0){$errors | Format-List | Out-String | Write-Host; throw 'Manager PowerShell syntax failed'}
+          $tokens=$null; $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $out 'KafePin_Desktop_App_Setup.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count -gt 0){$errors | Format-List | Out-String | Write-Host; throw 'Desktop setup PowerShell syntax failed'}
+
+          node --check (Join-Path $out 'server.js')
+          if($LASTEXITCODE -ne 0){throw 'server.js syntax failed'}
+
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $out 'KafePin_Desktop_App_Setup.ps1') -InstallRoot $out -AppVersion '1.1.8'
+          if($LASTEXITCODE -ne 0){throw 'Desktop v1.1.8 compile/setup smoke test failed'}
+
+      - name: Validate client v3.1.62
+        shell: pwsh
+        run: |
           $ctmp=Join-Path $env:RUNNER_TEMP 'client3162'
           if(Test-Path $ctmp){Remove-Item $ctmp -Recurse -Force}
           Expand-Archive 'KafePin-Client-v3.1.62.zip' $ctmp
           if(-not (Test-Path (Join-Path $ctmp 'CLIENT-OKU-BENI.txt'))){throw 'Client readme missing'}
+          $files=Get-ChildItem $ctmp -Recurse -File | Where-Object {$_.Name -ne 'CLIENT-OKU-BENI.txt'}
+          if($files.Count -lt 1){throw 'Client runtime empty'}
+          Write-Host "CLIENT_RUNTIME_FILES=$($files.Count)"
 
       - name: Publish v3.1.62 STABLE on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -145,8 +160,9 @@ jobs:
             futureUpdateBase='3.1.60'
             cumulative=$true
             v3160FinalPairPreserved=$true
+            desktopVersion='1.1.8'
             publishedAt=(Get-Date).ToUniversalTime().ToString('o')
-            notes="v3.1.62 STABLE — release/v3.1.60-stable dalındaki kilitli v3.1.60 FINAL paket çiftinden üretilmiştir. Kartlar, PRO Servisleri Yenile, MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO ve çekirdek davranışlar 3.1.60'taki gibi kalır. Yalnız eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL YENİ KAFE kaynaklarından aynen paketlenir."
+            notes="v3.1.62 STABLE — release/v3.1.60-stable kilitli FINAL paket çiftinden üretilmiştir. v3.1.60 web kartları ve çekirdek dosyaları byte-for-byte korunur. Sahadaki v3.1.60 kullanımında bulunan PRO Servisleri Yenile eylemi mevcut Yenile menüsüne geri eklenir; çalışan PRO servisler kapatılmaz. Eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL YENİ KAFE kaynaklarından aynen paketlenir."
             downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.62.zip'
             sha256=$sha
           }
@@ -154,7 +170,7 @@ jobs:
           git config user.name 'KafePin Release Bot'
           git config user.email 'actions@users.noreply.github.com'
           git add KafePin-Pro-Update-v3.1.62.zip KafePin-Pro-Update-v3.1.62.sha256.txt KafePin-Client-v3.1.62.zip RELEASE_NOTES-v3.1.62.md latest.json
-          git commit -m 'release: publish v3.1.62 v3.1.60-final-preserving stable and client'
+          git commit -m 'release: publish v3.1.62 v3.1.60-preserving stable and client'
           git push
 
       - name: Upload artifacts
