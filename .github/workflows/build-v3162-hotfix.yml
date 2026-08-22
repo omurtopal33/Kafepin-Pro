@@ -25,6 +25,17 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Pin original v3.1.60 stable package pair
+        shell: pwsh
+        run: |
+          git fetch origin release/v3.1.60-stable --depth=1
+          if($LASTEXITCODE -ne 0){throw 'release/v3.1.60-stable fetch failed'}
+          $source=(git rev-parse FETCH_HEAD).Trim()
+          Write-Host "V3160_SOURCE_COMMIT=$source"
+          git checkout FETCH_HEAD -- KafePin-Pro-Update-v3.1.60.zip KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip
+          if($LASTEXITCODE -ne 0){throw 'v3.1.60 stable packages could not be checked out'}
+          Get-Item KafePin-Pro-Update-v3.1.60.zip,KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip | Select-Object Name,Length
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -116,7 +127,7 @@ jobs:
             cumulative=$true
             v3160FinalPairPreserved=$true
             publishedAt=(Get-Date).ToUniversalTime().ToString('o')
-            notes="v3.1.62 STABLE — kilitli v3.1.60 FINAL UPDATE + YENİ KAFE paket çiftinden üretilmiştir. Ortak runtime dosyalarında YENİ KAFE FINAL kopyası korunur; kartlar, PRO Servisleri Yenile, MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO ve çekirdek davranışlar 3.1.60'taki gibi kalır. Yalnız eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL YENİ KAFE kaynaklarından aynen paketlenir."
+            notes="v3.1.62 STABLE — release/v3.1.60-stable dalındaki kilitli v3.1.60 FINAL paket çiftinden üretilmiştir. Kartlar, PRO Servisleri Yenile, MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO ve çekirdek davranışlar 3.1.60'taki gibi kalır. Yalnız eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL YENİ KAFE kaynaklarından aynen paketlenir."
             downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.62.zip'
             sha256=$sha
           }
