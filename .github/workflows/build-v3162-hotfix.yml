@@ -1,0 +1,211 @@
+name: Build v3.1.62 v3.1.60 Final Preservation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v3162-hotfix/**'
+      - '.github/workflows/build-v3162-hotfix.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'dev/v3162-hotfix/**'
+      - '.github/workflows/build-v3162-hotfix.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Pin original v3.1.60 stable package pair
+        shell: pwsh
+        run: |
+          git fetch origin release/v3.1.60-stable --depth=1
+          if($LASTEXITCODE -ne 0){throw 'release/v3.1.60-stable fetch failed'}
+          $source=(git rev-parse FETCH_HEAD).Trim()
+          Write-Host "V3160_SOURCE_COMMIT=$source"
+          git checkout FETCH_HEAD -- KafePin-Pro-Update-v3.1.60.zip KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip
+          if($LASTEXITCODE -ne 0){throw 'v3.1.60 stable packages could not be checked out'}
+          Get-Item KafePin-Pro-Update-v3.1.60.zip,KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip | Select-Object Name,Length
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build deterministic v3.1.62 and client
+        shell: pwsh
+        run: |
+          python -m py_compile dev/v3162-hotfix/build_v3162.py dev/v3162-hotfix/run_v3162.py
+          python dev/v3162-hotfix/run_v3162.py
+          if($LASTEXITCODE -ne 0){throw 'v3.1.62 build failed'}
+          $u1=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c1=(Get-FileHash 'KafePin-Client-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          python dev/v3162-hotfix/run_v3162.py
+          if($LASTEXITCODE -ne 0){throw 'v3.1.62 second build failed'}
+          $u2=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $c2=(Get-FileHash 'KafePin-Client-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($u1 -ne $u2){throw 'Update deterministic SHA mismatch'}
+          if($c1 -ne $c2){throw 'Client deterministic SHA mismatch'}
+          Write-Host "V3162_SHA=$u2"
+          Write-Host "CLIENT_SHA=$c2"
+
+      - name: Validate v3.1.60 FINAL byte preservation
+        shell: pwsh
+        run: |
+          $upd=Join-Path $env:RUNNER_TEMP 'v3160-update'
+          $new=Join-Path $env:RUNNER_TEMP 'v3160-new-cafe'
+          $canon=Join-Path $env:RUNNER_TEMP 'v3160-canonical'
+          $out=Join-Path $env:RUNNER_TEMP 'v3162-out'
+          foreach($p in @($upd,$new,$canon,$out)){if(Test-Path $p){Remove-Item $p -Recurse -Force}}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.60.zip' $upd
+          Expand-Archive 'KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip' $new
+          Copy-Item $upd $canon -Recurse
+          $canonRoot=Join-Path $canon (Split-Path $upd -Leaf)
+          if(-not (Test-Path $canonRoot)){ $canonRoot=$canon }
+          Get-ChildItem $canonRoot -Recurse -File | ForEach-Object {
+            $rel=$_.FullName.Substring($canonRoot.Length).TrimStart('\')
+            $src=Join-Path $new $rel
+            if(Test-Path $src -PathType Leaf){Copy-Item $src $_.FullName -Force}
+          }
+
+          Expand-Archive 'KafePin-Pro-Update-v3.1.62.zip' $out
+          $meta=Get-Content (Join-Path $out 'update.json') -Raw | ConvertFrom-Json
+          if($meta.version -ne '3.1.62' -or -not $meta.cumulative -or $meta.baseVersion -ne '3.1.60' -or -not $meta.v3160FinalPairPreserved){throw 'v3.1.62 metadata invalid'}
+          if($meta.desktopVersion -ne '1.1.8'){throw 'desktop version metadata invalid'}
+
+          $mgr=Get-Content (Join-Path $out 'KafePin_Manager_Ensure.ps1') -Raw
+          if($mgr -match 'v3\.1\.57 Yazici payload klasoru bulunamadi'){throw 'Legacy fatal Yazici payload check returned'}
+          if($mgr -notmatch "-AppVersion '1\.1\.8'"){throw 'desktop v1.1.8 force rebuild marker missing'}
+
+          $cs=Get-Content (Join-Path $out 'desktop-app\KafePinProDesktop.cs') -Raw
+          foreach($m in @('PRO Servisleri Yenile','Ekranı Yenile','ProServicesRefreshMenuItem_Click','MP3 Bot PRO','Yazıcı PRO','Teknik Servis PRO')){
+            if($cs -notmatch [regex]::Escape($m)){throw "Desktop marker missing: $m"}
+          }
+
+          foreach($same in @('server.js','KafePin_Desktop_App_Setup.ps1')){
+            $a=(Get-FileHash (Join-Path $canonRoot $same) -Algorithm SHA256).Hash
+            $b=(Get-FileHash (Join-Path $out $same) -Algorithm SHA256).Hash
+            if($a -ne $b){throw "$same changed from canonical v3.1.60 FINAL"}
+          }
+
+          $allowed=@('KafePin_Manager_Ensure.ps1','desktop-app/KafePinProDesktop.cs','update.json','kafepin-pro-version.json')
+          $canonFiles=Get-ChildItem $canonRoot -Recurse -File
+          foreach($f in $canonFiles){
+            $rel=$f.FullName.Substring($canonRoot.Length).TrimStart('\')
+            $other=Join-Path $out $rel
+            if(-not (Test-Path $other)){throw "File removed from canonical v3.1.60 FINAL: $rel"}
+            $norm=$rel -replace '\\','/'
+            if($allowed -contains $norm){continue}
+            $a=(Get-FileHash $f.FullName -Algorithm SHA256).Hash
+            $b=(Get-FileHash $other -Algorithm SHA256).Hash
+            if($a -ne $b){throw "Unexpected v3.1.60 FINAL file change: $rel"}
+          }
+
+          $outFiles=Get-ChildItem $out -Recurse -File
+          foreach($f in $outFiles){
+            $rel=$f.FullName.Substring($out.Length).TrimStart('\')
+            $base=Join-Path $canonRoot $rel
+            if(-not (Test-Path $base) -and -not ($allowed -contains ($rel -replace '\\','/'))){throw "Unexpected file added to v3.1.62: $rel"}
+          }
+
+      - name: Syntax and desktop compile smoke test
+        shell: pwsh
+        run: |
+          $out=Join-Path $env:RUNNER_TEMP 'v3162-compile'
+          if(Test-Path $out){Remove-Item $out -Recurse -Force}
+          Expand-Archive 'KafePin-Pro-Update-v3.1.62.zip' $out
+
+          $tokens=$null; $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $out 'KafePin_Manager_Ensure.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count -gt 0){$errors | Format-List | Out-String | Write-Host; throw 'Manager PowerShell syntax failed'}
+          $tokens=$null; $errors=$null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Join-Path $out 'KafePin_Desktop_App_Setup.ps1'),[ref]$tokens,[ref]$errors)
+          if($errors.Count -gt 0){$errors | Format-List | Out-String | Write-Host; throw 'Desktop setup PowerShell syntax failed'}
+
+          node --check (Join-Path $out 'server.js')
+          if($LASTEXITCODE -ne 0){throw 'server.js syntax failed'}
+
+          $nugetCmd=Get-Command nuget.exe -ErrorAction SilentlyContinue
+          if($null -eq $nugetCmd){
+            $nugetExe=Join-Path $env:RUNNER_TEMP 'nuget.exe'
+            Invoke-WebRequest 'https://dist.nuget.org/win-x86-commandline/latest/nuget.exe' -OutFile $nugetExe
+          } else {
+            $nugetExe=$nugetCmd.Source
+          }
+          $pkg=Join-Path $env:RUNNER_TEMP 'webview2-sdk'
+          if(Test-Path $pkg){Remove-Item $pkg -Recurse -Force}
+          & $nugetExe install Microsoft.Web.WebView2 -OutputDirectory $pkg -ExcludeVersion -NonInteractive -Source 'https://api.nuget.org/v3/index.json'
+          if($LASTEXITCODE -ne 0){throw 'WebView2 NuGet restore failed'}
+
+          $core=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.Core.dll' | Where-Object {$_.FullName -match 'net462|net48'} | Select-Object -First 1
+          $forms=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.WinForms.dll' | Where-Object {$_.FullName -match 'net462|net48'} | Select-Object -First 1
+          if($null -eq $core -or $null -eq $forms){
+            $core=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.Core.dll' | Select-Object -First 1
+            $forms=Get-ChildItem $pkg -Recurse -File -Filter 'Microsoft.Web.WebView2.WinForms.dll' | Select-Object -First 1
+          }
+          if($null -eq $core -or $null -eq $forms){throw 'WebView2 NuGet compile references missing'}
+
+          $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          if(-not (Test-Path $csc)){ $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework\v4.0.30319\csc.exe' }
+          if(-not (Test-Path $csc)){throw 'C# compiler missing'}
+          $exe=Join-Path $env:RUNNER_TEMP 'KafePinProDesktop-v1.1.8-smoke.exe'
+          $coreRef="/reference:$($core.FullName)"
+          $formsRef="/reference:$($forms.FullName)"
+          & $csc /nologo /target:winexe /out:$exe /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll $coreRef $formsRef (Join-Path $out 'desktop-app\KafePinProDesktop.cs')
+          if($LASTEXITCODE -ne 0 -or -not (Test-Path $exe)){throw 'Desktop v1.1.8 C# compile smoke test failed'}
+          Write-Host "DESKTOP_COMPILE_OK=$exe"
+
+      - name: Validate client v3.1.62
+        shell: pwsh
+        run: |
+          $ctmp=Join-Path $env:RUNNER_TEMP 'client3162'
+          if(Test-Path $ctmp){Remove-Item $ctmp -Recurse -Force}
+          Expand-Archive 'KafePin-Client-v3.1.62.zip' $ctmp
+          if(-not (Test-Path (Join-Path $ctmp 'CLIENT-OKU-BENI.txt'))){throw 'Client readme missing'}
+          $files=Get-ChildItem $ctmp -Recurse -File | Where-Object {$_.Name -ne 'CLIENT-OKU-BENI.txt'}
+          if($files.Count -lt 1){throw 'Client runtime empty'}
+          Write-Host "CLIENT_RUNTIME_FILES=$($files.Count)"
+
+      - name: Publish v3.1.62 STABLE on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        run: |
+          $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          $latest=[ordered]@{
+            version='3.1.62'
+            channel='stable'
+            stableBase='3.1.60'
+            baseVersion='3.1.60'
+            futureUpdateBase='3.1.60'
+            cumulative=$true
+            v3160FinalPairPreserved=$true
+            desktopVersion='1.1.8'
+            publishedAt=(Get-Date).ToUniversalTime().ToString('o')
+            notes="v3.1.62 STABLE — release/v3.1.60-stable kilitli FINAL paket çiftinden üretilmiştir. v3.1.60 web kartları ve çekirdek dosyaları byte-for-byte korunur. Sahadaki v3.1.60 kullanımında bulunan PRO Servisleri Yenile eylemi mevcut Yenile menüsüne geri eklenir; çalışan PRO servisler kapatılmaz. Eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL YENİ KAFE kaynaklarından aynen paketlenir."
+            downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.62.zip'
+            sha256=$sha
+          }
+          $latest | ConvertTo-Json -Depth 5 | Set-Content 'latest.json' -Encoding utf8
+          git config user.name 'KafePin Release Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add KafePin-Pro-Update-v3.1.62.zip KafePin-Pro-Update-v3.1.62.sha256.txt KafePin-Client-v3.1.62.zip RELEASE_NOTES-v3.1.62.md latest.json
+          git commit -m 'release: publish v3.1.62 v3.1.60-preserving stable and client'
+          git push
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v3.1.62-v3160-final
+          path: |
+            KafePin-Pro-Update-v3.1.62.zip
+            KafePin-Pro-Update-v3.1.62.sha256.txt
+            KafePin-Client-v3.1.62.zip
+            RELEASE_NOTES-v3.1.62.md
