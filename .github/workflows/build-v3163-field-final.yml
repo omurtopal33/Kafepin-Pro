@@ -28,8 +28,8 @@ jobs:
       - name: Pin exact original v3.1.60 FIELD FINAL source
         shell: pwsh
         run: |
-          git fetch origin release/v3.1.60-stable --depth=1
-          if($LASTEXITCODE -ne 0){throw 'release/v3.1.60-stable fetch failed'}
+          git fetch origin a120bb332b1f613638c21e00874be214e04ecf12 --depth=1
+          if($LASTEXITCODE -ne 0){throw 'immutable v3.1.60 lock commit fetch failed'}
           git checkout FETCH_HEAD -- KafePin-Pro-Update-v3.1.60.zip KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip
           if($LASTEXITCODE -ne 0){throw 'v3.1.60 FIELD FINAL sources could not be checked out'}
           $sha=(Get-FileHash 'KafePin-Pro-Update-v3.1.60.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
