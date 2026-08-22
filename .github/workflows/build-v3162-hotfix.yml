@@ -43,12 +43,12 @@ jobs:
       - name: Build deterministic v3.1.62 and client
         shell: pwsh
         run: |
-          python -m py_compile dev/v3162-hotfix/build_v3162.py
-          python dev/v3162-hotfix/build_v3162.py
+          python -m py_compile dev/v3162-hotfix/build_v3162.py dev/v3162-hotfix/run_v3162.py
+          python dev/v3162-hotfix/run_v3162.py
           if($LASTEXITCODE -ne 0){throw 'v3.1.62 build failed'}
           $u1=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
           $c1=(Get-FileHash 'KafePin-Client-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
-          python dev/v3162-hotfix/build_v3162.py
+          python dev/v3162-hotfix/run_v3162.py
           if($LASTEXITCODE -ne 0){throw 'v3.1.62 second build failed'}
           $u2=(Get-FileHash 'KafePin-Pro-Update-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
           $c2=(Get-FileHash 'KafePin-Client-v3.1.62.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
