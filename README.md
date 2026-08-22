@@ -18,7 +18,7 @@ Yeni bir kafede kurulum sırası sabittir:
 3. Ara sürümlerin tek tek kurulması gerekmez.
 4. Sistem zaten `latest.json` sürümündeyse başlangıçta tekrar “güncelleme var” uyarısı gösterilmez.
 
-Kurulum ekranı **“KafePin Pro v3.1.64 FINAL / STABLE — tam kurulum”** ifadesini gösterir. Ana Sunucu kurulumu önce EveryCafe kullanımı ve varsa salt-okunur `ecmdata.ecm` yolu, masa sayısı, yedek klasörü ve isteğe bağlı Telegram bilgilerini sorar. Ardından PRO hizmetleri ayrı ayrı sorulur:
+Kurulum ekranı **“KafePin Pro v3.1.64 FINAL / STABLE — tam kurulum”** ifadesini gösterir. Ana Sunucu kurulumu önce EveryCafe kullanımı ve varsa salt-okunur `ecmdata.ecm` yolu, masa sayısı ve yedek klasörünü Türkçe CMD akışında sorar. Telegram bu kurulumda sorulmaz; sonradan KafePin Pro panelinden ayarlanır. Ardından PRO hizmetleri ayrı ayrı sorulur:
 
 - MP3 Bot PRO (`C:\KafePinPro\MP3BotPRO`)
 - Yazıcı PRO (`C:\KafePinPro\YaziciPRO`)

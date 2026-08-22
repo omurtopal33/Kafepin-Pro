@@ -73,64 +73,127 @@ def patch_install_script(path: Path) -> None:
         "$InstallerBuild='2026.08.22-FINAL-3164-OFFLINE'",
         path.name,
     )
-    validation_marker = "if($masaCount -lt 1"
-    if validation_marker not in text:
-        raise RuntimeError(f"{path.name}: Telegram ekleme noktası bulunamadı")
-    if "$NonInteractive" in text:
-        telegram_block = r"""if($NonInteractive){
-  $telegramEnabled=$false;$telegramToken='';$telegramChatId=''
-}else{
-  $telegramEnabled=Ask-Yes 'Telegram sağlık ve gün sonu bildirimleri etkinleştirilsin mi?' $false
-  $telegramToken='';$telegramChatId=''
-  if($telegramEnabled){
-    $telegramToken=Ask 'Telegram bot token' ''
-    $telegramChatId=Ask 'Telegram chat ID' ''
-    if([string]::IsNullOrWhiteSpace($telegramToken) -or [string]::IsNullOrWhiteSpace($telegramChatId)){throw 'Telegram etkinse bot token ve chat ID zorunludur.'}
-  }
-}
-"""
-    else:
-        telegram_block = r"""$telegramEnabled=Ask-Yes 'Telegram sağlık ve gün sonu bildirimleri etkinleştirilsin mi?' $false
-$telegramToken='';$telegramChatId=''
-if($telegramEnabled){
-  $telegramToken=Ask 'Telegram bot token' ''
-  $telegramChatId=Ask 'Telegram chat ID' ''
-  if([string]::IsNullOrWhiteSpace($telegramToken) -or [string]::IsNullOrWhiteSpace($telegramChatId)){throw 'Telegram etkinse bot token ve chat ID zorunludur.'}
-}
-"""
-    text = text.replace(validation_marker, telegram_block + validation_marker, 1)
-    text = replace_required(
-        text,
-        "  'TELEGRAM_ENABLED=0',\n  'TELEGRAM_BOT_TOKEN=',\n  'TELEGRAM_CHAT_ID='",
-        "  'TELEGRAM_ENABLED='+$(if($telegramEnabled){'1'}else{'0'}),\n  'TELEGRAM_BOT_TOKEN='+$telegramToken,\n  'TELEGRAM_CHAT_ID='+$telegramChatId",
-        path.name,
-    )
+    # Telegram bu kurucunun konusu değildir. Yeni kafede kapalı gelir;
+    # işletme daha sonra KafePin Pro panelinden kendi bilgileriyle açar.
+    # Böylece token/chat-id CMD'de sorulmaz ve pakete yazılmaz.
     text = replace_required(
         text,
         "KafePin Pro v3.1.49 STABLE — kurulum tabanı v3.1.29",
         "KafePin Pro v3.1.64 FINAL / STABLE — tam kurulum",
         path.name,
     )
-    # Önce STABLE kanal güncellemesi uygulanır; böylece yeni kafede seçilecek
-    # PRO bileşenleri de varsa gelecekteki en son kararlı paketlerden kurulur.
-    marker = "Write-Step 'Node.js x64 runtime'"
+    # PRO bileşenleri, özellikle MP3 Bot, Node.js çalışma zamanına ihtiyaç
+    # duyabilir. Ana KafePin servisi sağlıklı duruma geldikten sonra CMD'den
+    # sorulur ve kurulurlar; böylece temiz makinede eksik runtime yüzünden
+    # ilk açılışta hata vermezler.
     component_block = r"""Write-Step 'İsteğe bağlı PRO bileşenleri'
+$env:Path=$nodeDir+';'+$env:Path
 $componentInstaller=Join-Path $InstallRoot 'KafePin_Pro_Bilesen_Kurulum.ps1'
+$script:ProInstallProblem=$false
+$script:ProInstallResult=$null
 if(Test-Path -LiteralPath $componentInstaller){
   try{
     if($useEc){
-      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $componentInstaller -InstallRoot $InstallRoot -ProRoot 'C:\KafePinPro' -InitialSetup -EveryCafeEnabled
+      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $componentInstaller -InstallRoot $InstallRoot -ProRoot 'C:\KafePinPro' -InitialSetup -ForceInitialSetup -EveryCafeEnabled
     }else{
-      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $componentInstaller -InstallRoot $InstallRoot -ProRoot 'C:\KafePinPro' -InitialSetup
+      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $componentInstaller -InstallRoot $InstallRoot -ProRoot 'C:\KafePinPro' -InitialSetup -ForceInitialSetup
     }
-    if($LASTEXITCODE -ne 0){Write-Warning ('PRO bileşen kurucusu çıkış kodu: '+$LASTEXITCODE)}
-  }catch{Write-Warning ('PRO bileşen seçimi tamamlanamadı; çekirdek kurulum devam ediyor. '+$_.Exception.Message)}
-}
+    if($LASTEXITCODE -ne 0){$script:ProInstallProblem=$true;Write-Warning ('PRO bileşen kurucusu çıkış kodu: '+$LASTEXITCODE)}
+  }catch{$script:ProInstallProblem=$true;Write-Warning ('PRO bileşen seçimi tamamlanamadı. '+$_.Exception.Message)}
+  $proState=Join-Path $InstallRoot 'config\pro-components.json'
+  if(Test-Path -LiteralPath $proState){
+    try{
+      $script:ProInstallResult=Get-Content -LiteralPath $proState -Raw -Encoding UTF8|ConvertFrom-Json
+      foreach($entry in $script:ProInstallResult.results.psobject.Properties){if([string]$entry.Value -like 'failed:*'){$script:ProInstallProblem=$true}}
+    }catch{$script:ProInstallProblem=$true}
+  }else{$script:ProInstallProblem=$true}
+}else{$script:ProInstallProblem=$true;Write-Warning 'PRO bileşen kurucusu pakette bulunamadı.'}
 
 """
+    marker = (
+        "Write-Host 'Sunucu hazir.' -ForegroundColor Green\nSet-InstallProgress 85 'SERVER'\n"
+        if is_gui
+        else "Write-Host 'Sunucu hazir.' -ForegroundColor Green\n"
+    )
     if marker not in text:
         raise RuntimeError(f"{path.name}: PRO bileşen ekleme noktası bulunamadı")
-    text = text.replace(marker, component_block + marker, 1)
+    text = text.replace(marker, marker + "\n" + component_block, 1)
+    python_marker = (
+        "Set-InstallProgress 60 'NODE_DONE'\n"
+        if is_gui
+        else "if(-not(Test-Path $nodeExe)){throw 'Node runtime kurulumu dogrulanamadi.'}\n"
+    )
+    python_progress_start = "Set-InstallProgress 61 'PYTHON'\n" if is_gui else ""
+    python_progress_done = "Set-InstallProgress 62 'PYTHON_DONE'\n" if is_gui else ""
+    python_block = r"""
+Write-Step 'Python 3 runtime'
+""" + python_progress_start + r"""$pythonCommand=Get-Command py.exe -ErrorAction SilentlyContinue
+if(-not $pythonCommand){
+  foreach($pythonCandidate in @(
+    (Join-Path $env:ProgramFiles 'Python313\python.exe'),
+    (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe')
+  )){if(Test-Path -LiteralPath $pythonCandidate){$pythonCommand=[pscustomobject]@{Source=$pythonCandidate};break}}
+}
+if(-not $pythonCommand){
+  $pythonVersion='3.13.15'
+  $pythonUrl='https://www.python.org/ftp/python/3.13.15/python-3.13.15-amd64.exe'
+  $pythonSha='edec09c4853aeae9ac36efb8c9f95b6b8e2fee65eee56d9767a8b7c69c574403'
+  $pythonTemp=Join-Path $env:TEMP ('KafePin-Python-'+[guid]::NewGuid().ToString('N')+'.exe')
+  try{
+    Write-Host 'Python 3 bulunamadı; resmi Python kurucusu indiriliyor...' -ForegroundColor Yellow
+    Invoke-WebRequest -UseBasicParsing -Uri $pythonUrl -OutFile $pythonTemp
+    $pythonActual=(Get-FileHash -Algorithm SHA256 -LiteralPath $pythonTemp).Hash.ToLowerInvariant()
+    if($pythonActual -ne $pythonSha){throw 'Python indirilen dosya SHA-256 doğrulamasını geçemedi.'}
+    $pythonInstall=Start-Process -FilePath $pythonTemp -ArgumentList @('/quiet','InstallAllUsers=1','PrependPath=1','Include_test=0') -Wait -PassThru
+    if($pythonInstall.ExitCode -ne 0){throw ('Python 3 kurulum çıkış kodu: '+$pythonInstall.ExitCode)}
+  }finally{Remove-Item -LiteralPath $pythonTemp -Force -ErrorAction SilentlyContinue}
+  $pythonCommand=Get-Command py.exe -ErrorAction SilentlyContinue
+  if(-not $pythonCommand){
+    foreach($pythonCandidate in @(
+      (Join-Path $env:ProgramFiles 'Python313\python.exe'),
+      (Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe')
+    )){if(Test-Path -LiteralPath $pythonCandidate){$pythonCommand=[pscustomobject]@{Source=$pythonCandidate};break}}
+  }
+}
+if(-not $pythonCommand){throw 'Python 3 kurulumu doğrulanamadı.'}
+""" + python_progress_done + r"""
+
+"""
+    if python_marker not in text:
+        raise RuntimeError(f"{path.name}: Python ekleme noktası bulunamadı")
+    text = text.replace(python_marker, python_marker + python_block, 1)
+    final_marker = (
+        "Write-Host 'KafePin Pro.exe acildi; masaustu kisayolu hazir.' -ForegroundColor Green\n\nWrite-Step 'Kurulum tamamlandi'"
+        if is_gui else "Write-Step 'Kurulum tamamlandi'"
+    )
+    launch_confirmation = "Write-Host 'KafePin Pro.exe acildi; masaustu kisayolu hazir.' -ForegroundColor Green\n\n" if is_gui else ""
+    final_summary = launch_confirmation + r"""Write-Host ''
+Write-Host '================ KURULUM DURUMU ================' -ForegroundColor Cyan
+$allReady=$true
+function Write-SetupCheck([bool]$Ready,[string]$Name){
+  if($Ready){Write-Host ('✓ '+$Name) -ForegroundColor Green}else{Write-Host ('✗ '+$Name) -ForegroundColor Red;$script:allReady=$false}
+}
+Write-SetupCheck (Test-Path -LiteralPath $nodeExe) 'Node.js runtime hazır'
+Write-SetupCheck ($null -ne $pythonCommand) 'Python 3 runtime hazır'
+Write-SetupCheck ($null -ne (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue)) 'KafePin Windows servisi hazır'
+Write-SetupCheck $true 'KafePin ana sunucusu sağlık kontrolünü geçti'
+if($null -ne $script:ProInstallResult){
+  foreach($entry in $script:ProInstallResult.results.psobject.Properties){
+    $label=@{mp3='MP3 Bot PRO';printer='Yazıcı PRO';technical='Teknik Servis PRO';client='Client Yönetim PRO'}[$entry.Name]
+    $state=[string]$entry.Value
+    if($state -eq 'installed'){Write-SetupCheck $true ($label+' kuruldu')}
+    elseif($state -eq 'skipped'){Write-Host ('• '+$label+' seçilmedi') -ForegroundColor DarkYellow}
+    else{Write-SetupCheck $false ($label+' kurulamadı: '+$state)}
+  }
+}else{Write-SetupCheck $false 'PRO bileşen kurulum sonucu okunamadı'}
+if($script:ProInstallProblem){$allReady=$false}
+if($allReady){Write-Host '✓ İŞLEM BAŞARILI — seçilen servisler hazır.' -ForegroundColor Green}
+else{Write-Host '✗ KURULUM TAMAMLANMADI — kırmızı satırı kontrol edin.' -ForegroundColor Red;throw 'Seçilen PRO bileşenlerinden biri kurulamadı.'}
+
+Write-Step 'Kurulum tamamlandi'"""
+    if final_marker not in text:
+        raise RuntimeError(f"{path.name}: final durum özeti ekleme noktası bulunamadı")
+    text = text.replace(final_marker, final_summary, 1)
     integrity_marker = "Test-PackageIntegrity\n"
     if integrity_marker not in text:
         raise RuntimeError(f"{path.name}: bütünlük kontrolü ekleme noktası bulunamadı")
@@ -144,6 +207,12 @@ if(Test-Path -LiteralPath $componentInstaller){
 
 def patch_component_installer(path: Path) -> None:
     text = path.read_text(encoding="utf-8-sig")
+    text = replace_required(
+        text,
+        "$ErrorActionPreference = 'Stop'\n",
+        "$ErrorActionPreference = 'Stop'\ntry{$utf8=New-Object System.Text.UTF8Encoding($false);[Console]::OutputEncoding=$utf8;$OutputEncoding=$utf8}catch{}\n",
+        path.name,
+    )
     replacements = {
         "[string]$ProRoot = 'C:\\KafePinPRO'": "[string]$ProRoot = 'C:\\KafePinPro'",
         "Join-Path $ProRoot 'MP3Bot'": "Join-Path $ProRoot 'MP3BotPRO'",
@@ -157,25 +226,139 @@ def patch_component_installer(path: Path) -> None:
     text = replace_required(
         text,
         "[switch]$InitialSetup\n)",
-        "[switch]$InitialSetup,\n  [switch]$EveryCafeEnabled\n)",
+        "[switch]$InitialSetup,\n  [switch]$EveryCafeEnabled,\n  [switch]$ForceInitialSetup\n)",
         path.name,
     )
     old_choice = "  client = Ask-Component 'KafePin Client Yönetim PRO' 'Client Yönetim PRO kurulsun mu?`n`nCanlı masa durumunu salt okunur gösterir; uyandırma, yeniden başlatma, süreli/süresiz/ücretsiz oturum açma, açık oturuma süre ekleme ve onaylı çalışan uygulamaları sonlandırma araçlarını sağlar. Bilgisayar/hesap/masa kapatma ve tahsilat yapmaz.'"
     new_choice = "  client = $(if ($EveryCafeEnabled) { Ask-Component 'KafePin Client Yönetim PRO' 'Client Yönetim PRO kurulsun mu?`n`nCanlı masa durumunu salt okunur gösterir; uyandırma, yeniden başlatma, süreli/süresiz/ücretsiz oturum açma, açık oturuma süre ekleme ve onaylı çalışan uygulamaları sonlandırma araçlarını sağlar. Bilgisayar/hesap/masa kapatma ve tahsilat yapmaz.' } else { $false })"
     text = replace_required(text, old_choice, new_choice, path.name)
+    text = replace_required(
+        text,
+        "if (-not $InitialSetup -or -not $FreshInstall -or (Test-Path -LiteralPath $StatePath)) {\n  exit 0\n}",
+        "if (-not $InitialSetup -or ((-not $FreshInstall) -and (-not $ForceInitialSetup)) -or ((Test-Path -LiteralPath $StatePath) -and (-not $ForceInitialSetup))) {\n  exit 0\n}",
+        path.name,
+    )
+    old_ask_component = """function Ask-Component([string]$Title, [string]$Text) {
+  Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+  $answer = [System.Windows.Forms.MessageBox]::Show(
+    $Text,
+    $Title,
+    [System.Windows.Forms.MessageBoxButtons]::YesNo,
+    [System.Windows.Forms.MessageBoxIcon]::Question,
+    [System.Windows.Forms.MessageBoxDefaultButton]::Button2
+  )
+  return $answer -eq [System.Windows.Forms.DialogResult]::Yes
+}
+"""
+    new_ask_component = """function Ask-Component([string]$Title, [string]$Text) {
+  Write-Host ''
+  Write-Host ('=== ' + $Title + ' ===') -ForegroundColor Cyan
+  Write-Host $Text -ForegroundColor White
+  while ($true) {
+    $answer = (Read-Host 'Kurulsun mu? (E/H) [H]').Trim().ToUpperInvariant()
+    if ([string]::IsNullOrWhiteSpace($answer) -or $answer -in @('H','HAYIR','N','NO')) { return $false }
+    if ($answer -in @('E','EVET','Y','YES')) { return $true }
+    Write-Host 'Lütfen E veya H girin.' -ForegroundColor Yellow
+  }
+}
+"""
+    text = replace_required(text, old_ask_component, new_ask_component, path.name)
+    text = replace_required(
+        text,
+        "function Start-PrinterService([string]$Root) {\n  $host = Join-Path $Root 'KafePin_YaziciPRO_ServiceHost.ps1'\n  if (-not (Test-Path -LiteralPath $host)) { throw 'Yazıcı PRO servis başlatıcısı bulunamadı.' }\n  Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$host,'-InstallRoot',$Root) -WorkingDirectory $Root -WindowStyle Hidden | Out-Null\n}",
+        "function Start-PrinterService([string]$Root) {\n  $serviceHost = Join-Path $Root 'KafePin_YaziciPRO_ServiceHost.ps1'\n  if (-not (Test-Path -LiteralPath $serviceHost)) { throw 'Yazıcı PRO servis başlatıcısı bulunamadı.' }\n  Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$serviceHost,'-InstallRoot',$Root) -WorkingDirectory $Root -WindowStyle Hidden | Out-Null\n}",
+        path.name,
+    )
+    old_silent_cmd = """function Invoke-SilentCmd([string]$FilePath, [string]$Arguments, [string]$WorkingDirectory) {
+  $p = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -Wait -PassThru
+  if ($p.ExitCode -ne 0) { throw \"Kurulum çıkış kodu: $($p.ExitCode)\" }
+}
+"""
+    new_silent_cmd = """function Invoke-ComponentSetup([string]$ComponentName, [string]$FilePath, [string]$Arguments, [string]$WorkingDirectory, [int]$TimeoutSeconds = 600) {
+  $safeName = ($ComponentName -replace '[^a-zA-Z0-9]+','-').Trim('-').ToLowerInvariant()
+  $logDir = Join-Path $InstallRoot 'logs'
+  New-Item -ItemType Directory -Force -Path $logDir | Out-Null
+  $outLog = Join-Path $logDir ('pro-'+$safeName+'-setup.out.log')
+  $errLog = Join-Path $logDir ('pro-'+$safeName+'-setup.err.log')
+  Remove-Item -LiteralPath $outLog,$errLog -Force -ErrorAction SilentlyContinue
+  $p = Start-Process -FilePath $FilePath -ArgumentList $Arguments -WorkingDirectory $WorkingDirectory -WindowStyle Hidden -RedirectStandardOutput $outLog -RedirectStandardError $errLog -PassThru
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  $nextNotice = Get-Date
+  while (-not $p.HasExited) {
+    if ((Get-Date) -ge $deadline) {
+      try { Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue } catch {}
+      throw ($ComponentName+' kurulumu '+$TimeoutSeconds+' saniye içinde tamamlanmadı. Günlük: '+$outLog)
+    }
+    if ((Get-Date) -ge $nextNotice) {
+      $remaining = [math]::Max(0,[int](($deadline-(Get-Date)).TotalSeconds))
+      Write-Host ('… '+$ComponentName+' hazırlanıyor; kalan en fazla '+$remaining+' sn. (günlük: '+$outLog+')') -ForegroundColor DarkCyan
+      $nextNotice = (Get-Date).AddSeconds(5)
+    }
+    Start-Sleep -Milliseconds 500
+    $p.Refresh()
+  }
+  try { $p.WaitForExit(); $exitCode = $p.ExitCode } catch { $exitCode = $null }
+  # Bazı Windows/cmd.exe sürümleri çıkış kodunu Process nesnesine boş
+  # döndürüyor; bağımlılıklar zaten başarıyla kurulduysa bunu sahte hata
+  # sayma. Gerçek sıfır-dışı kodlar yine günlükle birlikte durdurulur.
+  if ($null -ne $exitCode -and $exitCode -ne 0) {
+    $detail = @()
+    foreach($logFile in @($errLog,$outLog)) { if(Test-Path -LiteralPath $logFile){ $detail += @(Get-Content -LiteralPath $logFile -Tail 8 -ErrorAction SilentlyContinue) } }
+    throw ($ComponentName+' kurulum çıkış kodu: '+$exitCode+$(if($detail.Count){' — '+(($detail -join ' ') -replace '\\s+',' ').Trim()}else{''}))
+  }
+  Write-Host ('✓ '+$ComponentName+' bağımlılık kurulumu tamamlandı.') -ForegroundColor Green
+}
+
+function Prepare-Mp3Setup([string]$Root) {
+  $setup = Join-Path $Root 'KURULUM.cmd'
+  if (-not (Test-Path -LiteralPath $setup)) { throw 'MP3 Bot PRO KURULUM.cmd bulunamadı.' }
+  $text = Get-Content -LiteralPath $setup -Raw
+  $text = $text.Replace('--disable-pip-version-check --upgrade pip','--disable-pip-version-check --timeout 30 --retries 2 --upgrade pip')
+  $text = $text.Replace('--disable-pip-version-check -r requirements.txt','--disable-pip-version-check --timeout 30 --retries 2 -r requirements.txt')
+  Set-Content -LiteralPath $setup -Value $text -Encoding ASCII
+}
+"""
+    text = replace_required(text, old_silent_cmd, new_silent_cmd, path.name)
+    text = replace_required(
+        text,
+        "function Start-Mp3Service([string]$Root) {\n  $launcher = Join-Path $Root 'START_WEB.ps1'\n  Invoke-SilentCmd 'powershell.exe' ('-NoProfile -ExecutionPolicy Bypass -File \"' + $launcher + '\"') $Root\n}",
+        "function Start-Mp3Service([string]$Root) {\n  $launcher = Join-Path $Root 'START_WEB.ps1'\n  if (-not (Test-Path -LiteralPath $launcher)) { throw 'MP3 Bot PRO servis başlatıcısı bulunamadı.' }\n  Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile','-ExecutionPolicy','Bypass','-File',$launcher) -WorkingDirectory $Root -WindowStyle Hidden | Out-Null\n}",
+        path.name,
+    )
+    text = replace_required(
+        text,
+        "      Invoke-SilentCmd 'cmd.exe' '/c KURULUM.cmd /silent' $target\n      Start-Mp3Service $target",
+        "      Prepare-Mp3Setup $target\n      Invoke-ComponentSetup 'MP3 Bot PRO' 'cmd.exe' '/d /c KURULUM.cmd /silent' $target 600\n      Start-Mp3Service $target",
+        path.name,
+    )
+    text = replace_required(
+        text,
+        "      Invoke-SilentCmd 'cmd.exe' '/c KURULUM.cmd /silent' $target\n      Start-PrinterService $target",
+        "      Invoke-ComponentSetup 'Yazıcı PRO' 'cmd.exe' '/d /c KURULUM.cmd /silent' $target 600\n      Start-PrinterService $target",
+        path.name,
+    )
     python_bootstrap = r'''
 function Ensure-Python3 {
   $py = Get-Command py.exe -ErrorAction SilentlyContinue
   if ($py) { return $py }
-  $winget = Get-Command winget.exe -ErrorAction SilentlyContinue
-  if (-not $winget) { throw 'Python 3 gerekli ancak Windows Paket Yöneticisi (winget) bulunamadı.' }
-  Write-ComponentLog 'Python 3 bulunamadı; winget ile kuruluyor.'
-  $process = Start-Process -FilePath $winget.Source -ArgumentList @('install','--id','Python.Python.3.13','--exact','--silent','--accept-package-agreements','--accept-source-agreements') -Wait -PassThru
-  if ($process.ExitCode -ne 0) { throw ('Python 3 kurulumu başarısız. Çıkış kodu: ' + $process.ExitCode) }
+  foreach($candidate in @((Join-Path $env:ProgramFiles 'Python313\python.exe'),(Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'))){
+    if(Test-Path -LiteralPath $candidate){return [pscustomobject]@{ Source = $candidate; IsPythonExe = $true }}
+  }
+  $url='https://www.python.org/ftp/python/3.13.15/python-3.13.15-amd64.exe'
+  $expected='edec09c4853aeae9ac36efb8c9f95b6b8e2fee65eee56d9767a8b7c69c574403'
+  $temp=Join-Path $env:TEMP ('KafePin-Python-'+[guid]::NewGuid().ToString('N')+'.exe')
+  try{
+    Write-ComponentLog 'Python 3 bulunamadı; resmi Python kurucusu indiriliyor.'
+    Invoke-WebRequest -UseBasicParsing -Uri $url -OutFile $temp
+    if((Get-FileHash -Algorithm SHA256 -LiteralPath $temp).Hash.ToLowerInvariant() -ne $expected){throw 'Python indirilen dosya SHA-256 doğrulamasını geçemedi.'}
+    $process=Start-Process -FilePath $temp -ArgumentList @('/quiet','InstallAllUsers=1','PrependPath=1','Include_test=0') -Wait -PassThru
+    if($process.ExitCode -ne 0){throw ('Python 3 kurulum çıkış kodu: '+$process.ExitCode)}
+  }finally{Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue}
   $py = Get-Command py.exe -ErrorAction SilentlyContinue
   if (-not $py) {
-    $candidate = Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'
-    if (Test-Path -LiteralPath $candidate) { return [pscustomobject]@{ Source = $candidate; IsPythonExe = $true } }
+    foreach($candidate in @((Join-Path $env:ProgramFiles 'Python313\python.exe'),(Join-Path $env:LOCALAPPDATA 'Programs\Python\Python313\python.exe'))){
+      if (Test-Path -LiteralPath $candidate) { return [pscustomobject]@{ Source = $candidate; IsPythonExe = $true } }
+    }
     throw 'Python 3 kurulumu tamamlandı ancak py.exe/python.exe bulunamadı.'
   }
   return $py
@@ -184,12 +367,54 @@ function Ensure-Python3 {
 '''
     marker = "$result = [ordered]@{ version = '3.1.64'; installedAt = (Get-Date).ToString('o'); choices = $choices; results = [ordered]@{} }"
     text = replace_required(text, marker, python_bootstrap + marker, path.name)
+    progress_marker = "foreach ($name in @('mp3', 'printer', 'technical', 'client')) {\n  if (-not $choices[$name]) { $result.results[$name] = 'skipped'; continue }\n  try {"
+    progress_replacement = """$selectedComponents=@('mp3','printer','technical','client')|Where-Object{$choices[$_]}
+$selectedIndex=0
+foreach ($name in @('mp3', 'printer', 'technical', 'client')) {
+  if (-not $choices[$name]) { $result.results[$name] = 'skipped'; continue }
+  $selectedIndex++
+  $componentLabel=@{mp3='MP3 Bot PRO';printer='Yazıcı PRO';technical='Teknik Servis PRO';client='Client Yönetim PRO'}[$name]
+  $percent=[math]::Floor((($selectedIndex-1)*100)/[math]::Max(1,$selectedComponents.Count))
+  Write-Progress -Activity 'PRO servisleri kuruluyor' -Status ($componentLabel+' kuruluyor ('+$selectedIndex+'/'+$selectedComponents.Count+')') -PercentComplete $percent
+  Write-Host ('['+$selectedIndex+'/'+$selectedComponents.Count+'] '+$componentLabel+' kuruluyor...') -ForegroundColor Cyan
+  try {"""
+    text = replace_required(text, progress_marker, progress_replacement, path.name)
+    finish_progress_marker = "New-Item -ItemType Directory -Force -Path (Split-Path -Parent $StatePath) | Out-Null"
+    text = replace_required(
+        text,
+        finish_progress_marker,
+        "Write-Progress -Activity 'PRO servisleri kuruluyor' -Completed\n" + finish_progress_marker,
+        path.name,
+    )
+    text = replace_required(
+        text,
+        "    $result.results[$name] = 'failed: ' + $_.Exception.Message\n    Write-ComponentLog \"$name kurulamadı: $($_.Exception.Message)\"",
+        "    $result.results[$name] = 'failed: ' + $_.Exception.Message\n    Write-Host ('✗ '+$componentLabel+' kurulamadı: '+$_.Exception.Message) -ForegroundColor Red\n    Write-ComponentLog \"$name kurulamadı: $($_.Exception.Message)\"",
+        path.name,
+    )
     text = replace_required(
         text,
         "    } else {\n      if ($name -eq 'client') {",
         "    } else {\n      $null = Ensure-Python3\n      if ($name -eq 'client') {",
         path.name,
     )
+    old_finish = """if ($failed.Count -gt 0) {
+  Add-Type -AssemblyName System.Windows.Forms -ErrorAction SilentlyContinue
+  [System.Windows.Forms.MessageBox]::Show('Seçilen bazı PRO bileşenleri kurulamadı. Ayrıntı: C:\\KafePin\\logs\\pro-components-install.log', 'KafePin PRO Bileşenleri', 'OK', 'Warning') | Out-Null
+} else {
+  Add-Type -AssemblyName System.Windows.Forms -ErrorAction SilentlyContinue
+  [System.Windows.Forms.MessageBox]::Show('PRO bileşen seçimleri tamamlandı. Seçilen paneller KafePin masaüstü uygulamasında hazırdır.', 'KafePin PRO Bileşenleri', 'OK', 'Information') | Out-Null
+}
+"""
+    new_finish = """Write-Host ''
+if ($failed.Count -gt 0) {
+  Write-Host 'Seçilen bazı PRO bileşenleri kurulamadı.' -ForegroundColor Yellow
+  Write-Host 'Ayrıntı: C:\\KafePin\\logs\\pro-components-install.log' -ForegroundColor Yellow
+} else {
+  Write-Host 'PRO bileşen seçimleri tamamlandı. Seçilen paneller KafePin masaüstü uygulamasında hazırdır.' -ForegroundColor Green
+}
+"""
+    text = replace_required(text, old_finish, new_finish, path.name)
     text = replace_required(
         text,
         "  $py = Get-Command py.exe -ErrorAction SilentlyContinue\n  if (-not $py) { throw 'Teknik Servis PRO için Python 3 (py.exe) bulunamadı.' }\n  Start-Process -FilePath $py.Source -ArgumentList @('-3', '-B', 'web_service.py') -WorkingDirectory $Root -WindowStyle Hidden | Out-Null",
@@ -202,6 +427,28 @@ function Ensure-Python3 {
         "  $py = Ensure-Python3\n  $service = Join-Path $Root 'web_service.py'\n  if (-not (Test-Path -LiteralPath $service)) { throw 'Client Yönetim PRO web servisi bulunamadı.' }\n  $taskName = 'KafePin Client Yonetim PRO'\n  $runArgs = if ([IO.Path]::GetFileName($py.Source) -ieq 'py.exe') { '-3 -B \"' + $service + '\"' } else { '-B \"' + $service + '\"' }\n  $action = New-ScheduledTaskAction -Execute $py.Source -Argument $runArgs -WorkingDirectory $Root",
         path.name,
     )
+    path.write_text(text, encoding="utf-8-sig", newline="\r\n")
+
+
+def patch_desktop_setup(path: Path) -> None:
+    """Yeni-kafe akışındaki eski WinForms sihirbazını devre dışı bırak.
+
+    Ana CMD kurucusu tüm ayarları zaten bir kez toplar; masaüstü kurucunun
+    aynı EveryCafe/Telegram/PRO sorularını tekrar açması hem çift ayar hem de
+    görünür pencere oluşturuyordu.
+    """
+    text = path.read_text(encoding="utf-8-sig")
+    start_marker = "  # Yeni kafede önce temel işletme/EveryCafe/Telegram ayarları, sonra bağımsız\n"
+    end_marker = "  if ($Launch) {"
+    start = text.find(start_marker)
+    end = text.find(end_marker, start)
+    if start < 0 or end < 0:
+        raise RuntimeError(f"{path.name}: eski yeni-kafe sihirbaz bloğu bulunamadı")
+    replacement = (
+        "  # Yeni-kafe ayarları ve PRO seçimleri üstteki CMD kurucusu tarafından\n"
+        "  # bir kez yapılır. Masaüstü kurucusu burada WinForms sihirbazı açmaz.\n\n"
+    )
+    text = text[:start] + replacement + text[end:]
     path.write_text(text, encoding="utf-8-sig", newline="\r\n")
 
 
@@ -228,6 +475,29 @@ def build_manifest(payload: Path) -> None:
     (payload / "kurulum-manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+
+
+def overlay_current_pro_components(update_root: Path, work_root: Path) -> None:
+    """v3.1.64'te çalışan PRO program dosyalarını yeni-kafe ZIP'lerine sabitle.
+
+    Overlay klasöründe yalnız uygulama kodu bulunur; veritabanı, kullanıcı
+    ayarı, log, önbellek ve sanal ortam hiçbir zaman kurulum paketine girmez.
+    """
+    overlays = Path(__file__).resolve().parent / "payload" / "component-overlays"
+    for component in ("mp3-bot-pro", "yazici-pro", "teknik-servis-pro"):
+        overlay = overlays / component
+        archive_path = update_root / "pro-components" / f"{component}.zip"
+        if not overlay.is_dir() or not archive_path.is_file():
+            raise RuntimeError(f"PRO v3.1.64 overlay/paket eksik: {component}")
+        component_root = work_root / f"component-{component}"
+        component_root.mkdir(parents=True)
+        with zipfile.ZipFile(archive_path) as archive:
+            archive.extractall(component_root)
+        for source in sorted(p for p in overlay.rglob("*") if p.is_file()):
+            target = component_root / source.relative_to(overlay)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+        zip_tree(component_root, archive_path)
 
 
 def build_sfx(source_exe: Path, payload: Path, output: Path) -> None:
@@ -267,6 +537,7 @@ def build() -> None:
             archive.extractall(old_outer)
         with zipfile.ZipFile(SOURCE_UPDATE) as archive:
             archive.extractall(update)
+        overlay_current_pro_components(update, temp)
         source_exe = old_outer / "KafePin-Pro-Ana-Sunucu-Kurulum.exe"
         with zipfile.ZipFile(source_exe) as archive:
             archive.extractall(payload)
@@ -287,6 +558,7 @@ def build() -> None:
         shutil.copy2(client_exe, payload / "Diskless-Client-Paketi" / client_exe.name)
 
         patch_component_installer(payload / "server" / "KafePin_Pro_Bilesen_Kurulum.ps1")
+        patch_desktop_setup(payload / "server" / "KafePin_Desktop_App_Setup.ps1")
         patch_install_script(payload / "KafePin-Pro-Yeni-Kafe-Kur.ps1")
         patch_install_script(payload / "KafePin-Pro-Yeni-Kafe-Kur-GUI.ps1")
 
@@ -357,6 +629,35 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
             "exit /b %RC%\r\n",
             encoding="utf-8",
         )
+        (new_outer / "PRO_SERVISLERI_ONAR.cmd").write_text(
+            "@echo off\r\n"
+            "chcp 65001 >nul\r\n"
+            "title KafePin PRO Servisleri Onarimi\r\n"
+            "net session >nul 2>&1\r\n"
+            "if not \"%errorlevel%\"==\"0\" (\r\n"
+            "  powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"Start-Process -FilePath 'cmd.exe' -ArgumentList '/c \"\"%~f0\"\"' -Verb RunAs\"\r\n"
+            "  exit /b\r\n"
+            ")\r\n"
+            "if not exist \"C:\\KafePin\\KafePin_Pro_Bilesen_Kurulum.ps1\" (\r\n"
+            "  echo KafePin ana kurulumu bulunamadi: C:\\KafePin\r\n"
+            "  pause\r\n"
+            "  exit /b 1\r\n"
+            ")\r\n"
+            "set EC=\r\n"
+            "findstr /B /C:\"EVERYCAFE_DB_PATH=\" \"C:\\KafePin\\.env\" >nul 2>&1 && set EC=-EveryCafeEnabled\r\n"
+            "echo.\r\n"
+            "echo KafePin PRO servisleri onarimi basliyor...\r\n"
+            "copy /Y \"%~dp0ANA-SUNUCU\\server\\KafePin_Pro_Bilesen_Kurulum.ps1\" \"C:\\KafePin\\KafePin_Pro_Bilesen_Kurulum.ps1\" >nul\r\n"
+            "if errorlevel 1 ( echo Guncel PRO kurucu kopyalanamadi. & pause & exit /b 1 )\r\n"
+            "xcopy /E /I /Y /Q \"%~dp0ANA-SUNUCU\\server\\pro-components\" \"C:\\KafePin\\pro-components\" >nul\r\n"
+            "if errorlevel 2 ( echo Guncel PRO paketleri kopyalanamadi. & pause & exit /b 1 )\r\n"
+            "powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File \"C:\\KafePin\\KafePin_Pro_Bilesen_Kurulum.ps1\" -InstallRoot \"C:\\KafePin\" -ProRoot \"C:\\KafePinPro\" -InitialSetup -ForceInitialSetup %EC%\r\n"
+            "set RC=%ERRORLEVEL%\r\n"
+            "if not \"%RC%\"==\"0\" echo PRO onarim hata kodu: %RC%\r\n"
+            "pause\r\n"
+            "exit /b %RC%\r\n",
+            encoding="utf-8",
+        )
         (new_outer / "VERSIYON.txt").write_text(
             "KafePin Pro v3.1.64 FINAL / STABLE\nYeni kafe çevrimdışı tam kurulum\n",
             encoding="utf-8",
@@ -377,6 +678,7 @@ Kurulumdan sonra masaüstündeki KafePin Pro kısayolundan açılır.
                     "finalStable": True,
                     "offline": True,
                     "mainInstaller": "KURULUMU_BASLAT.cmd",
+                    "proRepairInstaller": "PRO_SERVISLERI_ONAR.cmd",
                     "mainPayloadDirectory": "ANA-SUNUCU",
                     "clientInstaller": f"CLIENT/{client_name}",
                     "mainScriptSha256": hashes["ANA-SUNUCU/KafePin-Pro-Yeni-Kafe-Kur-GUI.ps1"],

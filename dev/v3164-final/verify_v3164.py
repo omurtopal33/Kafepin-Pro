@@ -83,6 +83,8 @@ def main() -> None:
         '"Yazıcı PRO: yeniden başlatıldı\\n"',
         '"Teknik Servis PRO: yeniden başlatıldı\\n"',
         '"Client Yönetim PRO: yeniden başlatıldı\\n"',
+        "clientProButton.Visible = IsClientProEnabledForThisCafe();",
+        "private bool IsClientProEnabledForThisCafe()",
     ):
         require(desktop, marker, "DESKTOP")
     if "C:\\KafePinPro\\" not in desktop:

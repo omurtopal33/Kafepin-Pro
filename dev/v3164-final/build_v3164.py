@@ -86,6 +86,8 @@ def assert_locked_desktop(desktop: str) -> None:
         '"Yazıcı PRO: yeniden başlatıldı\\n"',
         '"Teknik Servis PRO: yeniden başlatıldı\\n"',
         '"Client Yönetim PRO: yeniden başlatıldı\\n"',
+        "clientProButton.Visible = IsClientProEnabledForThisCafe();",
+        "private bool IsClientProEnabledForThisCafe()",
     )
     for marker in required:
         if marker not in desktop:

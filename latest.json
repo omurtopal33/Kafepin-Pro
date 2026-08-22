@@ -12,5 +12,5 @@
   "publishedAt": "2026-08-22T12:45:00+03:00",
   "notes": "v3.1.64 FINAL / STABLE: onaylanan Admin kart mimarisi ve PRO Servisleri yeniden başlatma davranışı kilitlendi. Toplam Varlık ile Bankaya Geçecek Kart yalnız Anlık Finans'ta; 20:00–20:00 Kafe Günü kartları Kasa & Muhasebe'dedir. Gizli eski kartların yeniden görünmesi ve kart satırlarında boşluk oluşması regresyon testleriyle engellenir. PRO Servisleri düğmesi dört bağımsız PRO servisini gerçekten yeniden başlatır. KafePin çekirdeği, finans, spin/session, EveryCafe salt-okunur erişimi, Telegram ve 20:00 gün sonu değiştirilmedi.",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.64.zip",
-  "sha256": "0fd3cfdc45d214f6feb277c9c27ced7005babf1fa02bcfcb85bbe94347ab7428"
+  "sha256": "803db9c3eb729530634ce7c8c658c9ec974b795907febd12aede224e5d3b5c0d"
 }

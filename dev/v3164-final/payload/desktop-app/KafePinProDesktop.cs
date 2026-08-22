@@ -220,6 +220,10 @@ namespace KafePinProDesktop
             printerProButton = MakeNavButton("🖨️ Yazıcı PRO", 974, 12, 128);
             serviceProButton = MakeNavButton("🛠 Teknik Servis PRO", 1110, 12, 150);
             clientProButton = MakeNavButton("🖥 Client Yönetim PRO", 1268, 12, 152);
+            // Client Yönetim PRO yalnız EveryCafe kullanılan ve kurulumda özellikle
+            // seçilen kafelerde görünür. Eski/yarım bir kurulumdan kalmış klasörün
+            // varlığı tek başına sekmeyi görünür yapamaz.
+            clientProButton.Visible = IsClientProEnabledForThisCafe();
             whatsAppTopButton = MakeNavButton("WA Business", 1428, 12, 112);
             whatsAppPersonalTopButton = MakeNavButton("WA Kişisel", 1548, 12, 106);
             telegramTopButton = MakeNavButton("Telegram", 1662, 12, 90);
@@ -571,14 +575,21 @@ namespace KafePinProDesktop
             int gap = compact ? 2 : 4;
             int[] desired = compact ? compactWidth : fullWidth;
             string[] labels = compact ? compactText : fullText;
+            int visibleCount = 0;
             int desiredTotal = 0;
-            for (int i=0; i<desired.Length; i++) desiredTotal += desired[i];
-            int available = Math.Max(1, totalWidth - x - 4 - gap * (buttons.Length - 1));
+            for (int i=0; i<desired.Length; i++)
+            {
+                if (!buttons[i].Visible) continue;
+                desiredTotal += desired[i];
+                visibleCount++;
+            }
+            int available = Math.Max(1, totalWidth - x - 4 - gap * Math.Max(0, visibleCount - 1));
             double scale = Math.Min(1.0, (double)available / Math.Max(1, desiredTotal));
             float fontSize = compact ? (scale < 0.82 ? 6.5F : 7.5F) : 8.5F;
 
             for (int i=0; i<buttons.Length; i++)
             {
+                if (!buttons[i].Visible) continue;
                 int width = Math.Max(30, (int)Math.Floor(desired[i] * scale));
                 buttons[i].Text = labels[i];
                 buttons[i].Font = new Font("Segoe UI", fontSize, FontStyle.Bold);
@@ -586,6 +597,22 @@ namespace KafePinProDesktop
                 x += width + gap;
             }
             LayoutWhatsAppBadges();
+        }
+
+        private bool IsClientProEnabledForThisCafe()
+        {
+            try
+            {
+                string statePath = Path.Combine(GetKafePinRoot(), "config", "pro-components.json");
+                if (!File.Exists(statePath)) return false;
+                string state = File.ReadAllText(statePath);
+                return System.Text.RegularExpressions.Regex.IsMatch(
+                    state,
+                    "\\\"client\\\"\\s*:\\s*true",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase
+                );
+            }
+            catch { return false; }
         }
 
         private void LayoutWhatsAppBadges()
