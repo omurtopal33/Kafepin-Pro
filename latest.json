@@ -1,14 +1,15 @@
 {
-  "version": "3.1.62",
+  "version": "3.1.63",
   "channel": "stable",
+  "finalStable": false,
   "stableBase": "3.1.60",
   "baseVersion": "3.1.60",
   "futureUpdateBase": "3.1.60",
   "cumulative": true,
-  "v3160FinalPairPreserved": true,
-  "desktopVersion": "1.1.8",
-  "publishedAt": "2026-08-22T08:24:25.4519047Z",
-  "notes": "v3.1.62 STABLE — release/v3.1.60-stable kilitli FINAL paket çiftinden üretilmiştir. v3.1.60 web kartları ve çekirdek dosyaları byte-for-byte korunur. Sahadaki v3.1.60 kullanımında bulunan PRO Servisleri Yenile eylemi mevcut Yenile menüsüne geri eklenir; çalışan PRO servisler kapatılmaz. Eski v3.1.57 Yazıcı payload blokajı kaldırılır. Client runtime v3.1.60 FINAL YENİ KAFE kaynaklarından aynen paketlenir.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.62.zip",
-  "sha256": "7757ae6406549849b23e36b60a88ea3e13aa803231b406092a2da673e1114b89"
+  "fieldFinalSourceSha256": "1976d0377739f2c866c4faee1d11c9623c659c8ab743db3871fece1d81f2ba2b",
+  "desktopVersion": "1.1.9",
+  "publishedAt": "2026-08-22T08:53:25.6868794Z",
+  "notes": "v3.1.63 STABLE: orijinal saha v3.1.60 FINAL kartlari ve cekirdegi birebir korunur; eski v3.1.57 Yazici payload blokaji kaldirilir ve PRO Servisleri Yenile geri gelir. v3.1.60 FINAL paketi degistirilmez.",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.63.zip",
+  "sha256": "e0b24eb364f9ed5a988e17681ec75b2269d469459bc2c8870b13637965e10427"
 }
