@@ -55,9 +55,9 @@ from file_mover import (
 from phone_upload import PhoneUploadServer
 from song_parser import clean_song_lines, parse_text
 from youtube_search import discover_youtube, search_youtube, find_artist_collections, load_artist_collection, split_song
-from usb_sales import UsbSalesManager
-from usb_film_sales import UsbFilmSalesManager
-from usb_game_sales import UsbGameSalesManager
+from usb_sales import AUDIO_EXTENSIONS, UsbSalesManager
+from usb_film_sales import VIDEO_EXTENSIONS, UsbFilmSalesManager
+from usb_game_sales import PACKAGE_EXTENSIONS, UsbGameSalesManager
 
 try:
     from clipboard_image import copy_image, copy_image_and_text
@@ -364,6 +364,7 @@ class Mp3WebCore:
         self.winamp_paths: list[Path] = []
         self.winamp_stream_paths: dict[str, Path] = {}
         self.winamp_search_cache: dict[str, list[tuple[Path, str, int]]] = {}
+        self.winamp_library_index: dict[str, list[Path]] = {}
         self.favorite_paths: list[Path] = []
         self.player_index: int | None = None
         self.player_message = "Hazır — müşteri ve şarkı seç."
@@ -1329,33 +1330,29 @@ class Mp3WebCore:
         if not root.is_dir():
             raise ValueError("Müzik arşivi bulunamadı.")
         root = root.resolve()
-        cache_key = f"{str(root).casefold()}|{needle}"
+        root_key = str(root).casefold()
+        cache_key = f"{root_key}|{needle}"
         with self.lock:
             matches = self.winamp_search_cache.get(cache_key)
         if matches is None:
             excluded = {"$recycle.bin", "recycler", "recycled", "system volume information", "cover", "covers", "artwork", "album art", "albumart", "folder art", "scans"}
-            matches = []
-            # Önce yalnız dosya ve klasör adına bakılır. Bu, büyük arşivlerde
-            # her FLAC etiketini açmaktan çok daha hızlıdır. Metadata yalnız
-            # eşleşen sonucu kullanıcıya gerçek Sanatçı - Şarkı adıyla sunmak
-            # için okunur.
-            try:
-                for directory, folders, files in os.walk(root):
-                    folders[:] = [name for name in folders if name.casefold().strip() not in excluded]
-                    for filename in files:
-                        path = Path(directory) / filename
-                        if path.suffix.lower() not in self._supported_audio_suffixes():
-                            continue
-                        raw_key = _catalog_key(f"{path.parent.name} {filename}")
-                        if needle not in raw_key:
-                            continue
-                        matches.append((path.resolve(), _library_track_label(path), duration_seconds_for_path(path)))
-                        if len(matches) >= 250:
-                            break
-                    if len(matches) >= 250:
-                        break
-            except (OSError, PermissionError) as exc:
-                raise RuntimeError("Müzik arşivi taranamadı.") from exc
+            with self.lock:
+                catalog = self.winamp_library_index.get(root_key)
+            if catalog is None:
+                catalog = []
+                try:
+                    for directory, folders, files in os.walk(root):
+                        folders[:] = [name for name in folders if name.casefold().strip() not in excluded]
+                        for filename in files:
+                            path = Path(directory) / filename
+                            if path.suffix.lower() in self._supported_audio_suffixes():
+                                catalog.append(path.resolve())
+                except (OSError, PermissionError) as exc:
+                    raise RuntimeError("Müzik arşivi taranamadı.") from exc
+                with self.lock:
+                    self.winamp_library_index[root_key] = catalog
+            matched_paths = [path for path in catalog if needle in _catalog_key(f"{path.parent.name} {path.name}")][:250]
+            matches = [(path, _library_track_label(path), duration_seconds_for_path(path)) for path in matched_paths]
             with self.lock:
                 self.winamp_search_cache[cache_key] = matches
         token_paths: dict[str, Path] = {}
@@ -1368,6 +1365,25 @@ class Mp3WebCore:
             self.winamp_paths = [path for path, _, _ in matches]
             self.winamp_stream_paths.update(token_paths)
         return {"folder": str(root), "parent": "", "folders": [], "tracks": tracks, "saved_locations": list(self.cfg.get("winamp_saved_locations") or []), "search": needle, "search_total": len(matches)}
+
+    def rebuild_winamp_library_index(self, root_value: str = "") -> tuple[str, int]:
+        root = Path(str(root_value or self.winamp_folder or self.cfg.get("winamp_folder") or Path.home() / "Music")).expanduser()
+        if not root.is_dir():
+            raise ValueError("Müzik arşivi bulunamadı.")
+        root = root.resolve()
+        excluded = {"$recycle.bin", "recycler", "recycled", "system volume information", "cover", "covers", "artwork", "album art", "albumart", "folder art", "scans"}
+        catalog: list[Path] = []
+        try:
+            for directory, folders, files in os.walk(root):
+                folders[:] = [name for name in folders if name.casefold().strip() not in excluded]
+                catalog.extend((Path(directory) / name).resolve() for name in files if (Path(directory) / name).suffix.lower() in self._supported_audio_suffixes())
+        except (OSError, PermissionError) as exc:
+            raise RuntimeError("Müzik arşivi taranamadı.") from exc
+        root_key = str(root).casefold()
+        with self.lock:
+            self.winamp_library_index[root_key] = catalog
+            self.winamp_search_cache = {key: value for key, value in self.winamp_search_cache.items() if not key.startswith(root_key + "|")}
+        return str(root), len(catalog)
 
     @staticmethod
     def _supported_audio_suffixes() -> set[str]:
@@ -2145,6 +2161,25 @@ def usb_film_browser_api():
         return _json_error(str(exc))
 
 
+@app.get("/api/usb-film/search")
+def usb_film_search_api():
+    try:
+        fallback = Path(str(core.public_config().get("winamp_folder") or Path.home()))
+        return jsonify({"ok": True, **usb_film_sales.search_browser(request.args.get("root", ""), fallback, request.args.get("query", ""), VIDEO_EXTENSIONS)})
+    except Exception as exc:
+        return _json_error(str(exc))
+
+
+@app.post("/api/usb-film/search/refresh")
+def usb_film_search_refresh_api():
+    try:
+        data = request.get_json(silent=True) or {}
+        fallback = Path(str(core.public_config().get("winamp_folder") or Path.home()))
+        return jsonify({"ok": True, "folder": usb_film_sales.refresh_browser_search(str(data.get("root") or ""), fallback, VIDEO_EXTENSIONS)})
+    except Exception as exc:
+        return _json_error(str(exc))
+
+
 @app.get("/api/usb-film/browser/choose")
 def usb_film_browser_choose_api():
     try:
@@ -2252,6 +2287,25 @@ def usb_game_browser_api():
     try:
         fallback = Path(str(core.public_config().get("winamp_folder") or Path.home()))
         return jsonify({"ok": True, **usb_game_sales.browse_sources(request.args.get("path", ""), fallback)})
+    except Exception as exc:
+        return _json_error(str(exc))
+
+
+@app.get("/api/usb-game/search")
+def usb_game_search_api():
+    try:
+        fallback = Path(str(core.public_config().get("winamp_folder") or Path.home()))
+        return jsonify({"ok": True, **usb_game_sales.search_browser(request.args.get("root", ""), fallback, request.args.get("query", ""), PACKAGE_EXTENSIONS)})
+    except Exception as exc:
+        return _json_error(str(exc))
+
+
+@app.post("/api/usb-game/search/refresh")
+def usb_game_search_refresh_api():
+    try:
+        data = request.get_json(silent=True) or {}
+        fallback = Path(str(core.public_config().get("winamp_folder") or Path.home()))
+        return jsonify({"ok": True, "folder": usb_game_sales.refresh_browser_search(str(data.get("root") or ""), fallback, PACKAGE_EXTENSIONS)})
     except Exception as exc:
         return _json_error(str(exc))
 
@@ -2386,6 +2440,43 @@ def winamp_search():
     try:
         data = request.get_json(silent=True) or {}
         return jsonify({"ok": True, **core.search_winamp_library(str(data.get("query") or ""), str(data.get("root") or ""))})
+    except Exception as exc:
+        return _json_error(str(exc))
+
+
+@app.post("/api/winamp/search/refresh")
+def winamp_search_refresh():
+    try:
+        data = request.get_json(silent=True) or {}
+        root = Path(str(data.get("root") or core.winamp_folder or core.cfg.get("winamp_folder") or Path.home() / "Music")).expanduser().resolve()
+        folder, count = core.rebuild_winamp_library_index(str(root))
+        return jsonify({"ok": True, "folder": folder, "count": count})
+    except Exception as exc:
+        return _json_error(str(exc))
+
+
+@app.post("/api/library/sync-all")
+def library_sync_all():
+    try:
+        cfg = core.public_config()
+        result = {"mp3": 0, "usb_mp3": 0, "film": 0, "oyun": 0, "skipped": []}
+        for root in cfg.get("winamp_saved_locations") or []:
+            try:
+                _folder, count = core.rebuild_winamp_library_index(str(root))
+                result["mp3"] += count
+            except Exception:
+                result["skipped"].append(str(root))
+        fallback = Path(str(cfg.get("winamp_folder") or Path.home()))
+        groups = (("usb_mp3", usb_sales, cfg.get("usb_saved_locations") or [], AUDIO_EXTENSIONS), ("film", usb_film_sales, cfg.get("usb_film_saved_locations") or [], VIDEO_EXTENSIONS), ("oyun", usb_game_sales, cfg.get("usb_game_saved_locations") or [], PACKAGE_EXTENSIONS))
+        for key, manager, roots, extensions in groups:
+            for root in roots:
+                try:
+                    manager.refresh_browser_search(str(root), fallback, extensions)
+                    manager.search_browser(str(root), fallback, "aa", extensions)
+                    result[key] += 1
+                except Exception:
+                    result["skipped"].append(str(root))
+        return jsonify({"ok": True, **result})
     except Exception as exc:
         return _json_error(str(exc))
 

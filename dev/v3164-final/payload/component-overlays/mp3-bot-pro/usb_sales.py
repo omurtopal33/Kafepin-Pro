@@ -222,6 +222,50 @@ class UsbSalesManager:
             ],
         }
 
+    def search_browser(self, requested: str, fallback: Path, query: str, extensions: set[str]) -> dict:
+        needle = re.sub(r"[^a-z0-9çğıöşü]+", "", str(query or "").casefold())
+        if len(needle) < 2:
+            raise ValueError("Arama için en az 2 harf yaz.")
+        root = Path(str(requested or self.last_browser_folder or fallback)).expanduser()
+        if not root.is_dir():
+            root = fallback if fallback.is_dir() else Path.home()
+        root = root.resolve()
+        cache_key = f"{str(root).casefold()}|{'/'.join(sorted(extensions))}"
+        with self.lock:
+            cache = getattr(self, "_browser_search_index", {})
+            catalog = cache.get(cache_key)
+        if catalog is None:
+            catalog = []
+            try:
+                for directory, folders, files in os.walk(root):
+                    folders[:] = [name for name in folders if is_visible_browsable_folder(Path(directory) / name)]
+                    for name in files:
+                        item = Path(directory) / name
+                        if item.suffix.lower() in extensions:
+                            catalog.append(item.resolve())
+            except (OSError, PermissionError) as exc:
+                raise RuntimeError("Arşiv taranamadı.") from exc
+            with self.lock:
+                if not hasattr(self, "_browser_search_index"):
+                    self._browser_search_index = {}
+                self._browser_search_index[cache_key] = catalog
+        matches = [item for item in catalog if needle in re.sub(r"[^a-z0-9çğıöşü]+", "", f"{item.parent.name} {item.name}".casefold())][:250]
+        return {
+            "folder": str(root), "parent": "", "roots": self.source_roots(), "folders": [],
+            "files": [{"name": item.name, "source_name": item.name, "path": str(item), "format": item.suffix.lstrip(".").upper(), "size_mb": round(item.stat().st_size / (1024 * 1024), 1)} for item in matches],
+            "search_total": len(matches), "search": needle,
+        }
+
+    def refresh_browser_search(self, requested: str, fallback: Path, extensions: set[str]) -> str:
+        root = Path(str(requested or self.last_browser_folder or fallback)).expanduser()
+        if not root.is_dir():
+            root = fallback if fallback.is_dir() else Path.home()
+        root = root.resolve()
+        cache_key = f"{str(root).casefold()}|{'/'.join(sorted(extensions))}"
+        with self.lock:
+            getattr(self, "_browser_search_index", {}).pop(cache_key, None)
+        return str(root)
+
     def add_sources(self, values: list[str]) -> list[dict]:
         with self.lock:
             for value in values:

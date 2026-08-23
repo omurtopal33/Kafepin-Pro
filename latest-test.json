@@ -1,9 +1,16 @@
 {
+  "version": "3.1.67",
   "channel": "test",
-  "stableVersion": "3.1.64",
-  "available": false,
-  "version": null,
-  "notes": "TEST kanalı şu anda boş. Sonraki TEST paketleri yalnız bu dosyada duyurulur; latest.json v3.1.64 FINAL / STABLE kümülatif güncellemesini gösterir.",
-  "downloadUrl": "",
-  "sha256": ""
+  "finalStable": false,
+  "stableBase": "3.1.66",
+  "baseVersion": "3.1.66",
+  "cumulative": true,
+  "sourceVersion": "3.1.66",
+  "sourceSha256": "c32eaef2c1bdb9093b5a23f2a8162cd574c94b0af9e23d9d5f58c3e440004812",
+  "publishedAt": "2026-08-23T12:00:00+03:00",
+  "notes": "v3.1.67 TEST: MP3/Winamp araması yalnız aktif yeşil klasör için istek sürümüyle korunur; eski arama cevabı yeni klasör ekranını ezemez. USB MP3, Film ve Oyun gezginlerinde yalnız etkin klasörde kısa gecikmeli yerel filtre ve geç yanıt koruması eklendi. STABLE kanalına dokunulmadı.",
+  "files": [],
+  "available": true,
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/test/v3.1.67-mp3-search/KafePin-Pro-Update-v3.1.67-TEST.zip",
+  "sha256": "e3ac166e5c2d84ff4df1a3d4427d51efe319603c192fee4f72b7a27ff75f16fe"
 }
