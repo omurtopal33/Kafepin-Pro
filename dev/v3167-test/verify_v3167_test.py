@@ -29,9 +29,23 @@ def main() -> None:
         if package.testzip():
             raise SystemExit("TEST ZIP CRC hatası")
         current = {item.filename: package.read(item) for item in package.infolist() if not item.is_dir()}
-        for name in ("server.js", "services/spinService.js", "utils/fee.js", "public/monitor.html", "public/admin.html", "public/kafepin-pro-yonetim.html"):
+        # Yönetim Merkezi, yalnız bağımsız PRO bileşen yönetimi için değişebilir.
+        # Finans/çark/EveryCafe çekirdeği taban paketten byte-for-byte korunur.
+        for name in ("services/spinService.js", "utils/fee.js", "public/monitor.html", "public/admin.html"):
             if current[name] != base.read(name):
                 raise SystemExit("Korunan çekirdek değişti: " + name)
+        manager = current.get("KafePin_Pro_Component_Manager.ps1", b"").decode("utf-8-sig")
+        server = current["server.js"].decode("utf-8-sig")
+        panel = current["public/kafepin-pro-yonetim.html"].decode("utf-8-sig")
+        for marker in ("KAFEPIN_PRO_COMPONENT_MANAGER", "/admin/pro/components", "OPEN_READONLY"):
+            if marker not in server:
+                raise SystemExit("Sunucu PRO yönetim / EveryCafe güvenlik marker eksik: " + marker)
+        for marker in ("Move-Item", "_kaldirilanlar", "client-yonetim-pro' -and -not $info.everyCafePresent"):
+            if marker not in manager:
+                raise SystemExit("PRO bileşen yöneticisi güvenlik marker eksik: " + marker)
+        for marker in ("PRO Bileşen Yönetimi", "proComponentsBtn", "geri alınabilir"):
+            if marker not in panel:
+                raise SystemExit("Yönetim Merkezi PRO kartı marker eksik: " + marker)
         app = zipfile.ZipFile(io.BytesIO(current["pro-components/mp3-bot-pro.zip"])).read("web/app.js").decode("utf-8-sig")
         for marker in ("winampSearchRequest", "Yalnız seçili klasörde", "usbBrowserRequest", "rawRenderBrowser"):
             if marker not in app:

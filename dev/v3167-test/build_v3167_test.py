@@ -15,6 +15,7 @@ SHA_OUT = ROOT / "KafePin-Pro-Update-v3.1.67-TEST.sha256.txt"
 TEST_LATEST = ROOT / "latest-test.json"
 OVERLAY = ROOT / "dev" / "v3164-final" / "payload" / "component-overlays" / "mp3-bot-pro"
 WORK = HERE / ".build-work"
+LIVE_ROOT = Path(r"C:\KafePin")
 VERSION = "3.1.67"
 FIXED_DT = (2026, 8, 23, 12, 0, 0)
 
@@ -48,7 +49,7 @@ def metadata(files: list[str], base_sha: str) -> dict[str, object]:
         "sourceVersion": "3.1.66",
         "sourceSha256": base_sha,
         "publishedAt": "2026-08-23T12:00:00+03:00",
-        "notes": "v3.1.67 TEST: MP3/Winamp araması yalnız aktif yeşil klasör için istek sürümüyle korunur; eski arama cevabı yeni klasör ekranını ezemez. USB MP3, Film ve Oyun gezginlerinde yalnız etkin klasörde kısa gecikmeli yerel filtre ve geç yanıt koruması eklendi. STABLE kanalına dokunulmadı.",
+        "notes": "v3.1.67 TEST: MP3/Winamp arşiv indeksi ve arama kararlılığı ile USB MP3/Film/Oyun arşiv eşitleme altyapısı test edilir. Yönetim Merkezi'ne bağımsız PRO bileşenleri için güvenli Ekle/Onar/Kaldır ekranı eklendi; kaldırma geri alınabilir klasöre taşıma şeklindedir. STABLE kanalına dokunulmadı.",
         "files": files,
     }
 
@@ -62,6 +63,16 @@ def main() -> None:
         stage = WORK / "update"
         with zipfile.ZipFile(BASE) as source:
             source.extractall(stage)
+        # v3.1.67 TEST: Yönetim Merkezi sadece bağımsız PRO bileşenlerini
+        # güvenli ekleme/onarım/kaldırma için genişletilir.
+        for relative in ("server.js", "public/kafepin-pro-yonetim.html", "KafePin_Pro_Component_Manager.ps1"):
+            source = LIVE_ROOT / relative
+            if not source.is_file():
+                raise FileNotFoundError(f"Canlı yönetim dosyası bulunamadı: {source}")
+            target = stage / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(source, target)
+
         component = stage / "pro-components" / "mp3-bot-pro.zip"
         unpacked = WORK / "mp3-bot-pro"
         with zipfile.ZipFile(component) as source:
