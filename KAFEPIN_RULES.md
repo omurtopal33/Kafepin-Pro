@@ -156,6 +156,14 @@ Bu dosya yeni sohbetlerde, Codex çalışmalarında ve yeni sürümlerde referan
 
 ## 15. Yeni kafe kurulumundan sonra STABLE eşitleme kuralı
 
+### Seçimli bileşen tercihi — mevcut kafe koruması
+
+- MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO, Client Yönetim PRO, Çark ve EveryCafe ilk yeni-kafe kurulumunda açıkça seçilir.
+- Sonraki STABLE güncellemeleri mevcut kafedeki seçilmiş/kurulu bileşeni gizlemez, kaldırmaz, devre dışı bırakmaz veya varsayılan seçime döndürmez.
+- Eski saha kurulumlarında seçim kaydı eksikse gerçek kurulu bileşen klasörü/servisi ve EveryCafe'nin varsayılan salt-okunur veri kaynağı güvenli varlık kanıtıdır; görünürlük bunlara göre korunur.
+- Yeni kafede seçilmemiş bileşenin klasörü/servisi yoksa görünmez kalır. Sonradan ekleme yalnız güvenli PRO bileşen kurulum/onarım akışından yapılır.
+- Bu tercih koruması müşteri verisi, PRO ayarları, favoriler, yazıcı/tarayıcı seçimi, Çark yaşam döngüsü, masa/IP yapılandırması veya EveryCafe DB üzerinde değişiklik yapmaz.
+
 - Yeni kafe paketi önce kendi içindeki doğrulanmış çevrimdış FINAL / STABLE tabanı kurar.
 - Temel kurulum tamamlandıktan sonra yalnız GitHub `latest.json` **STABLE** kanalı okunur. `latest-test.json` veya TEST sürümleri yeni kafeye otomatik kurulmaz.
 - `latest.json` sürümü kurulum tabanından daha yeniyse ara sürümler tek tek kurulmadan doğrudan en yeni kümülatif STABLE sürüme geçilir. Daha yeni STABLE yoksa paket içindeki sürüm korunur.
