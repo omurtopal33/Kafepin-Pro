@@ -10,13 +10,13 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 BASE = ROOT / "KafePin-Pro-Update-v3.1.66.zip"
-OUT = ROOT / "KafePin-Pro-Update-v3.1.67-TEST.zip"
-SHA_OUT = ROOT / "KafePin-Pro-Update-v3.1.67-TEST.sha256.txt"
+OUT = ROOT / "KafePin-Pro-Update-v3.1.68-TEST.zip"
+SHA_OUT = ROOT / "KafePin-Pro-Update-v3.1.68-TEST.sha256.txt"
 TEST_LATEST = ROOT / "latest-test.json"
 OVERLAY = ROOT / "dev" / "v3164-final" / "payload" / "component-overlays" / "mp3-bot-pro"
 WORK = HERE / ".build-work"
 LIVE_ROOT = Path(r"C:\KafePin")
-VERSION = "3.1.67"
+VERSION = "3.1.68"
 FIXED_DT = (2026, 8, 23, 12, 0, 0)
 
 
@@ -49,7 +49,7 @@ def metadata(files: list[str], base_sha: str) -> dict[str, object]:
         "sourceVersion": "3.1.66",
         "sourceSha256": base_sha,
         "publishedAt": "2026-08-23T12:00:00+03:00",
-        "notes": "v3.1.67 TEST: MP3/Winamp arşiv indeksi ve arama kararlılığı ile USB MP3/Film/Oyun arşiv eşitleme altyapısı test edilir. Yönetim Merkezi'ne bağımsız PRO bileşenleri için güvenli Ekle/Onar/Kaldır ekranı eklendi; kaldırma geri alınabilir klasöre taşıma şeklindedir. STABLE kanalına dokunulmadı.",
+        "notes": "v3.1.68 TEST: v3.1.67 MP3/Winamp arşiv indeksi, USB arşiv eşitleme ve güvenli PRO bileşen yönetimine ek olarak, ZIP güncellemesinden sonra sunucu sağlığı doğrulanınca KafePin masaüstü uygulamasının gerçek kullanıcı oturumunda otomatik yeniden açılması test edilir. STABLE kanalına dokunulmadı.",
         "files": files,
     }
 
@@ -65,7 +65,7 @@ def main() -> None:
             source.extractall(stage)
         # v3.1.67 TEST: Yönetim Merkezi sadece bağımsız PRO bileşenlerini
         # güvenli ekleme/onarım/kaldırma için genişletilir.
-        for relative in ("server.js", "public/kafepin-pro-yonetim.html", "KafePin_Pro_Component_Manager.ps1"):
+        for relative in ("server.js", "public/kafepin-pro-yonetim.html", "KafePin_Pro_Component_Manager.ps1", "KafePin_Desktop_Action.ps1"):
             source = LIVE_ROOT / relative
             if not source.is_file():
                 raise FileNotFoundError(f"Canlı yönetim dosyası bulunamadı: {source}")
@@ -95,11 +95,11 @@ def main() -> None:
     info = metadata([], sha256(BASE))
     info.update({
         "available": True,
-        "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/test/v3.1.67-mp3-search/KafePin-Pro-Update-v3.1.67-TEST.zip",
+        "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/test/v3.1.67-mp3-search/KafePin-Pro-Update-v3.1.68-TEST.zip",
         "sha256": digest,
     })
     TEST_LATEST.write_text(json.dumps(info, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print(f"V3167_TEST_BUILD_OK {digest} {OUT.stat().st_size}")
+    print(f"V3168_TEST_BUILD_OK {digest} {OUT.stat().st_size}")
 
 
 if __name__ == "__main__":

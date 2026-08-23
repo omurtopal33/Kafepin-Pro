@@ -1,5 +1,5 @@
 {
-  "version": "3.1.67",
+  "version": "3.1.68",
   "channel": "test",
   "finalStable": false,
   "stableBase": "3.1.66",
@@ -8,9 +8,9 @@
   "sourceVersion": "3.1.66",
   "sourceSha256": "c32eaef2c1bdb9093b5a23f2a8162cd574c94b0af9e23d9d5f58c3e440004812",
   "publishedAt": "2026-08-23T12:00:00+03:00",
-  "notes": "v3.1.67 TEST: MP3/Winamp arşiv indeksi ve arama kararlılığı ile USB MP3/Film/Oyun arşiv eşitleme altyapısı test edilir. Yönetim Merkezi'ne bağımsız PRO bileşenleri için güvenli Ekle/Onar/Kaldır ekranı eklendi; kaldırma geri alınabilir klasöre taşıma şeklindedir. STABLE kanalına dokunulmadı.",
+  "notes": "v3.1.68 TEST: v3.1.67 MP3/Winamp arşiv indeksi, USB arşiv eşitleme ve güvenli PRO bileşen yönetimine ek olarak, ZIP güncellemesinden sonra sunucu sağlığı doğrulanınca KafePin masaüstü uygulamasının gerçek kullanıcı oturumunda otomatik yeniden açılması test edilir. STABLE kanalına dokunulmadı.",
   "files": [],
   "available": true,
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/test/v3.1.67-mp3-search/KafePin-Pro-Update-v3.1.67-TEST.zip",
-  "sha256": "0dccf3ca941dd0b40eadec2d3def50ef45c394b78c33e77388e743a7c7a0d1c1"
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/test/v3.1.67-mp3-search/KafePin-Pro-Update-v3.1.68-TEST.zip",
+  "sha256": "440977a6b8c80e22d60496ee6787a061cf52f1f02644766db4953cdd3fd8b6d2"
 }

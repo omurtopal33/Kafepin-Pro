@@ -9,7 +9,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE = ROOT / "KafePin-Pro-Update-v3.1.66.zip"
-PACKAGE = ROOT / "KafePin-Pro-Update-v3.1.67-TEST.zip"
+PACKAGE = ROOT / "KafePin-Pro-Update-v3.1.68-TEST.zip"
 TEST_LATEST = ROOT / "latest-test.json"
 
 
@@ -23,7 +23,7 @@ def sha256(path: Path) -> str:
 
 def main() -> None:
     latest = json.loads(TEST_LATEST.read_text(encoding="utf-8-sig"))
-    if latest.get("version") != "3.1.67" or latest.get("channel") != "test" or latest.get("sha256") != sha256(PACKAGE):
+    if latest.get("version") != "3.1.68" or latest.get("channel") != "test" or latest.get("sha256") != sha256(PACKAGE):
         raise SystemExit("TEST metadata uyuşmuyor")
     with zipfile.ZipFile(BASE) as base, zipfile.ZipFile(PACKAGE) as package:
         if package.testzip():
@@ -40,6 +40,12 @@ def main() -> None:
         for marker in ("KAFEPIN_PRO_COMPONENT_MANAGER", "/admin/pro/components", "OPEN_READONLY"):
             if marker not in server:
                 raise SystemExit("Sunucu PRO yönetim / EveryCafe güvenlik marker eksik: " + marker)
+        for marker in ("launchKafePinDesktopWindows", "completeUpdateAndReopenDesktopIfNeeded"):
+            if marker not in server:
+                raise SystemExit("Güncelleme sonrası masaüstü açılış marker eksik: " + marker)
+        desktop_action = current.get("KafePin_Desktop_Action.ps1", b"").decode("utf-8-sig")
+        if "launch-kafepin" not in desktop_action:
+            raise SystemExit("İnteraktif masaüstü başlatma action marker eksik")
         for marker in ("Move-Item", "_kaldirilanlar", "client-yonetim-pro' -and -not $info.everyCafePresent"):
             if marker not in manager:
                 raise SystemExit("PRO bileşen yöneticisi güvenlik marker eksik: " + marker)
