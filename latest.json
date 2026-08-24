@@ -1,16 +1,15 @@
 {
-  "version": "3.1.66",
+  "version": "3.1.86",
   "channel": "stable",
   "finalStable": true,
-  "stableBase": "3.1.60",
-  "baseVersion": "3.1.60",
-  "futureUpdateBase": "3.1.64",
+  "stableBase": "3.1.64",
+  "baseVersion": "3.1.64",
+  "futureUpdateBase": "3.1.86",
   "cumulative": true,
-  "sourceVersion": "3.1.64",
-  "sourceSha256": "503b0f301e4f4f866dba83a2df3cc65e77be7a82ed34c1d1fdb8fbeaa448056c",
-  "publishedAt": "2026-08-22T18:00:00+03:00",
-  "notes": "v3.1.66 KÜMÜLATİF STABLE: mevcut EveryCafe kullanan kafelerde kurulu varsayılan kaynak otomatik korunur; EveryCafe ve Client Yönetim PRO menüleri eksik yerel seçim kaydı yüzünden gizlenmez. Yeni kafe kurulumunda seçimli yapı aynen korunur; seçilmeyen EveryCafe/Client görünmez. MP3/Winamp ve USB aktarım geliştirmeleri v3.1.65 ile birlikte korunur. EveryCafe DB yalnız okunur; çekirdek, finans, spin/session, Telegram ve 20:00 gün sonu değiştirilmedi.",
+  "sourceVersion": "3.1.86",
+  "publishedAt": "2026-08-24T08:24:00+03:00",
+  "notes": "v3.1.86 KÜMÜLATİF STABLE: önceki onaylı güncellemeler korunur. MP3 Bot PRO fiziksel Delete ve v2.34.67 exact eşitleme kilitlidir; MP3 listesinde Yukarı/Aşağı yalnız listede gezer, F favori kalır, Alt+F filtreye gider. Genel klavye standardı ve güncelleme sonrası yeniden başlatma korunur. Çarktan çıkan hediye süre, masa kapanışında EveryCafe bilet geliriyle eşleşirse normal gelir değil Promosyon / Çark Hediyesi olarak sınıflandırılır; eşleşmeyen bilet normal gelir kalır. EveryCafe DB yalnız okunur. Yeni kafe kurulumu KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip ile yapılır ve ardından bu STABLE sürüme tek adımda güncellenir.",
   "files": [],
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.66.zip",
-  "sha256": "c32eaef2c1bdb9093b5a23f2a8162cd574c94b0af9e23d9d5f58c3e440004812"
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.86.zip",
+  "sha256": "305b04d6bcda166db4fd6057a76318ac0500faae16d1e2b6813c454fc55dbf9e"
 }
