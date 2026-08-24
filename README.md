@@ -1,52 +1,53 @@
 # KafePin Pro Güncelleme Merkezi
 
-## Sürüm düzeni
+## Güncel sürüm düzeni
 
-- **v3.1.60:** Kilitli **FINAL / STABLE** temel kurulum sürümüdür.
-- v3.1.60 değişmeyen tarihsel bootstrap tabanıdır; yerinde değiştirilmez.
-- **v3.1.64 FINAL / STABLE:** Onaylanan güncel saha düzeninin kilitli kümülatif güncellemesidir.
-- **Yeni kafe dağıtımı:** `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip`; v3.1.64 payload'ını çevrimdışı ve doğrudan kurar.
-- Bundan sonraki tüm geliştirmeler **v3.1.65+** olarak, v3.1.60 üzerine **tek adımda uygulanabilen kümülatif STABLE UPDATE** şeklinde yayınlanır; v3.1.64 kart ve PRO servis davranışları korunur.
-- TEST paketleri yalnız `latest-test.json` üzerinden bildirilir; `latest.json` yalnız güncel STABLE güncellemeyi gösterir.
+- **v3.1.86 STABLE:** Güncel kümülatif saha sürümüdür ve bundan sonraki geliştirmelerin davranış referansıdır.
+- **Yeni kafe dağıtımı değişmez:** `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` çevrimdışı kurulum tabanıdır. Her STABLE sürüm için yeni bir yeni-kafe ZIP'i üretilmez.
+- Yeni kafe v3.1.64 FINAL ile kurulur; internet varsa yalnız `latest.json` içindeki daha yeni STABLE sürümü tek adımda alır.
+- Ara sürümlerin tek tek kurulması gerekmez.
+- TEST paketleri STABLE dağıtım kaynağı değildir; `latest.json` yalnız güncel STABLE güncellemeyi gösterir.
 
 ## Yeni Kafe kurulumu
 
-Yeni bir kafede kurulum sırası sabittir:
+1. `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` içindeki `KURULUMU_BASLAT.cmd` çalıştırılır.
+2. Kurucu internet olmasa da v3.1.64 FINAL tabanını kurabilir.
+3. İnternet varsa `latest.json` kontrol edilir; daha yeni STABLE varsa doğrudan güncel kümülatif STABLE'a yükseltilir.
+4. Ara update sürümleri kurulmaz.
 
-1. `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` içindeki `KURULUMU_BASLAT.cmd` çalıştırılır; soru/servis kurulumları bu CMD akışında ilerler.
-2. Kurucu internet olmasa da **v3.1.64 FINAL / STABLE** sürümünü doğrudan kurar; internet varsa önce yalnız `latest.json` içindeki daha yeni **STABLE UPDATE** kontrol edilir ve varsa tek seferde uygulanır.
-3. Ara sürümlerin tek tek kurulması gerekmez.
-4. Sistem zaten `latest.json` sürümündeyse başlangıçta tekrar “güncelleme var” uyarısı gösterilmez.
+PRO klasör düzeni korunur:
 
-Kurulum ekranı **“KafePin Pro v3.1.64 FINAL / STABLE — tam kurulum”** ifadesini gösterir. Ana Sunucu kurulumu önce EveryCafe kullanımı ve varsa salt-okunur `ecmdata.ecm` yolu, masa sayısı, yedek klasörü ve isteğe bağlı Telegram bilgilerini sorar. Ardından PRO hizmetleri ayrı ayrı sorulur:
+- MP3 Bot PRO: `C:\KafePinPro\MP3BotPRO`
+- Yazıcı PRO: `C:\KafePinPro\YaziciPRO`
+- Teknik Servis PRO: `C:\KafePinPro\TeknikServisPRO`
+- Client Yönetim PRO: `C:\KafePinPro\ClientYonetimPRO`
 
-- MP3 Bot PRO (`C:\KafePinPro\MP3BotPRO`)
-- Yazıcı PRO (`C:\KafePinPro\YaziciPRO`)
-- Teknik Servis PRO (`C:\KafePinPro\TeknikServisPRO`)
-- Client Yönetim PRO (`C:\KafePinPro\ClientYonetimPRO`; yalnız EveryCafe seçildiyse)
+## v3.1.86 STABLE kilitleri
 
-Client EXE, client ping, çark, session, 20:00 işletme günü ve EveryCafe davranışları ana kurallara göre korunur.
+- Önceki onaylı kümülatif düzeltmeler korunur.
+- MP3 Bot PRO fiziksel Delete ve v2.34.67 exact payload/version davranışı korunur.
+- MP3 PRO klavye: Yukarı/Aşağı yalnız listede gezinir; `F` favori olarak kalır; `Alt+F` filtre alanına gider.
+- Genel klavye standardı ve güncelleme sonrası KafePin Pro restart/health-check akışı korunur.
+- USB MP3 / Film / Oyun fiyat ve ayar kalıcılığı korunur.
+- Çarktan çıkan **hediye süre**, masa kapanışında onaylandıktan sonra EveryCafe bilet geliriyle tekil eşleşirse `Promosyon / Çark Hediyesi` olarak sınıflandırılır ve normal gelire eklenmez.
+- Eşleşmeyen EveryCafe bilet hareketi gerçek satış olarak normal gelirde kalır.
+- İçecek/atıştırmalık ödülleri hediye-süre bilet eşleştirmesine girmez.
 
-## Güvenlik ve etki alanı
+## Güvenlik ve ana yapı
 
-- EveryCafe yalnız `sqlite3.OPEN_READONLY` ile okunur; EveryCafe'ye yazma yapılmaz.
-- KafePin çekirdeğinin session, spin, Telegram sağlık raporu, 20:00 gün sonu ve finans davranışları değiştirilmez.
-- Kafe DB, tokenlar, IP ayarları, Telegram bilgileri ve yedekler güncelleme paketlerinde bulunmaz.
-- Yazıcı PRO finans kaydı yalnız kullanıcı açıkça onay verdiğinde KafePin Doğrudan Satış'a gider; aynı işlem ikinci kez kaydedilmez.
+- EveryCafe veritabanı yalnız `sqlite3.OPEN_READONLY` ile okunur; EveryCafe'ye yazma yapılmaz.
+- KafePin session, spin, 45 dakika yaşam döngüsü, 20:00 işletme günü, Telegram ve ana finans davranışları onaysız değiştirilmez.
+- Monitor/Admin tema ve kart yapısı onaysız değiştirilmez.
+- Aynı EveryCafe hareketi ikinci kez gelir veya promosyon olarak kaydedilmez.
 
-## Depoda tutulan temel paket
+## Depo düzeni
 
-Yeni kafe için kilitli temel paket:
+Korunacak temel dağıtımlar:
 
-- `KafePin-Pro-Yeni-Kafe-STABLE-v3.1.60.zip`
-- `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` güncel çevrimdışı yeni-kafe dağıtımıdır.
-- `KafePin-Client-v3.1.64.zip` eşleşen Client dağıtımıdır.
+- `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` — yeni kafe çevrimdışı tabanı.
+- `KafePin-Client-v3.1.64.zip` — eşleşen Client dağıtımı.
+- Güncel `KafePin-Pro-Update-v3.1.86.zip` — aktif STABLE kümülatif update.
 
-Güncelleme tarafında bundan sonra yalnız en güncel kümülatif STABLE update kullanılır; v3.1.60 temel paket yerinde değiştirilmez.
+Eski ara sunucu update ZIP/SHA ve eski ara release notları, v3.1.86 ZIP GitHub'a başarıyla yerleşip `latest.json` doğrulandıktan sonra aktif kökten temizlenir. Yeni-kafe FINAL v3.1.64 ve gerekli Client/kurulum referansları korunur.
 
-## Kilitli güncel saha referansı
-
-- `KafePin-Pro-Update-v3.1.64.zip`
-- Admin kartlarının panel yerleri, kopyasız görünümü ve boşluksuz otomatik dizilimi regresyon kilididir.
-- `PRO Servisleri` düğmesi MP3 Bot, Yazıcı, Teknik Servis ve Client Yönetim servislerini gerçekten yeniden başlatır.
-- Bir sonraki sürüm bu davranışları değiştiremez; paket doğrulaması ihlalde hata verir.
+Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v3.1.86.md`.
