@@ -1,9 +1,9 @@
 {
   "channel": "test",
-  "stableVersion": "3.1.86",
+  "stableVersion": "4.0.1",
   "available": false,
   "version": null,
-  "notes": "TEST kanalı şu anda boş. Sonraki TEST paketleri yalnız bu dosyada duyurulur; latest.json v3.1.86 FINAL / STABLE kümülatif güncellemesini gösterir.",
+  "notes": "TEST kanalı şu anda boş. Sonraki TEST paketleri yalnız bu dosyada duyurulur; latest.json v4.0.1 FINAL / STABLE kümülatif güncellemesini gösterir.",
   "downloadUrl": "",
   "sha256": ""
 }
