@@ -1,23 +1,22 @@
 {
-  "version": "3.1.91",
+  "version": "3.1.92",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "3.1.64",
   "baseVersion": "3.1.64",
   "futureUpdateBase": "3.1.64",
   "cumulative": true,
-  "sourceVersion": "3.1.90-test-r26",
-  "sourceSha256": "f645779c8f46097e097cef8aaf1fdc8d0a6d5407944a8271308d472832868e40",
-  "publishedAt": "2026-08-25T12:00:00+03:00",
+  "sourceVersion": "3.1.91",
+  "sourceSha256": "dba47218588b3f0cab54ea2cd4ce914c8a76c8654c8726f63a0f68b40c0d2575",
+  "publishedAt": "2026-08-25T13:00:00+03:00",
   "notes": [
-    "v3.1.91 KÜMÜLATİF STABLE: mevcut sahada çalışan tüm 3.1.90 test davranışları ve bugün doğrulanan MP3/Winamp ile USB MP3-Film-Oyun aktarım düzeni tek kararlı pakette kilitlendi.",
-    "MP3 Bot PRO: Winamp kalıcı klasörleri, klavye gezintisi, favoriler, hızlı arşiv araması, FLAC/WMA metadata başlıkları, USB kapasite/boş alan göstergesi ve MP3-Film-Oyun hesap listesi korunur.",
-    "USB aktarım: seçili klasör/öğe ile ekleme, güvenli hesap listesinden çıkarma, anlık adet-fiyat-boyut hesaplaması; kaynak veya USB dosyalarını silmeyen iptal davranışı korunur.",
-    "Tüm PRO bileşenleri seçimleri mevcut kafelerde korunur. Yeni kafe v3.1.64 tabanından yalnız stable kanal ile bu sürüme eşitlenir.",
-    "Çekirdek, finans, spin/session, EveryCafe salt-okunur erişimi, Telegram ve gün sonu akışına bu sürümde müdahale edilmedi."
+    "v3.1.92 KÜMÜLATİF STABLE KURTARMA: güncelleme sırasında çalışan KafePin Pro.exe üzerine doğrudan kopyalama nedeniyle oluşan EBUSY/EPERM dosya kilidi kalıcı olarak giderildi.",
+    "Bu kurtarma paketi masaüstü EXE/DLL dosyalarını özellikle taşımaz; takılmış 3.1.91/öncesi kurulumlar önce güvenli güncelleme altyapısına geçer.",
+    "Sonraki paketler masaüstü dosyası değiştirilecekse uygulamayı kapatır, kilidin kalkmasını bekler, kopyalamayı yeniden dener ve güncelleme sonunda yeniden açar.",
+    "MP3/Winamp/USB aktarım, PRO modülleri, EveryCafe salt-okunur erişimi, finans, spin/session, Telegram ve gün sonu davranışları korunur."
   ],
   "files": [],
-  "buildRevision": "v3191-stable-working-mp3-usb",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.91.zip",
-  "sha256": "dba47218588b3f0cab54ea2cd4ce914c8a76c8654c8726f63a0f68b40c0d2575"
+  "buildRevision": "v3192-desktop-file-lock-recovery",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.92.zip",
+  "sha256": "2b4563b1e9a7aadd182b5aa586941258d7c0a412de99ac067cfcb6865af201a4"
 }
