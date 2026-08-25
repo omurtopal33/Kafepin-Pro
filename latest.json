@@ -1,22 +1,23 @@
 {
-  "version": "3.1.92",
+  "version": "3.1.93",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "3.1.64",
   "baseVersion": "3.1.64",
   "futureUpdateBase": "3.1.64",
   "cumulative": true,
-  "sourceVersion": "3.1.91",
-  "sourceSha256": "dba47218588b3f0cab54ea2cd4ce914c8a76c8654c8726f63a0f68b40c0d2575",
-  "publishedAt": "2026-08-25T13:00:00+03:00",
+  "sourceVersion": "3.1.92",
+  "sourceSha256": "2b4563b1e9a7aadd182b5aa586941258d7c0a412de99ac067cfcb6865af201a4",
+  "publishedAt": "2026-08-25T15:00:00+03:00",
   "notes": [
-    "v3.1.92 KÜMÜLATİF STABLE KURTARMA: güncelleme sırasında çalışan KafePin Pro.exe üzerine doğrudan kopyalama nedeniyle oluşan EBUSY/EPERM dosya kilidi kalıcı olarak giderildi.",
-    "Bu kurtarma paketi masaüstü EXE/DLL dosyalarını özellikle taşımaz; takılmış 3.1.91/öncesi kurulumlar önce güvenli güncelleme altyapısına geçer.",
-    "Sonraki paketler masaüstü dosyası değiştirilecekse uygulamayı kapatır, kilidin kalkmasını bekler, kopyalamayı yeniden dener ve güncelleme sonunda yeniden açar.",
-    "MP3/Winamp/USB aktarım, PRO modülleri, EveryCafe salt-okunur erişimi, finans, spin/session, Telegram ve gün sonu davranışları korunur."
+    "v3.1.93 KÜMÜLATİF STABLE: Monitör TV / Chrome %175 ölçeğinde masa kartı metinleri otomatik okunaklı büyür; taşma olursa yalnız ilgili kartın metni sığacak kadar küçülür.",
+    "Masa adı dengeli küçük tutulurken durum, ücret, bağlantı-ping ve ödül satırları TV uzaktan okunacak öncelikte büyütüldü.",
+    "EveryCafe kapanış görünümü: ücretsiz masa anında kalkar; süresiz son fiyat kartı 30 sn, süreli son fiyat kartı 40 sn kalır. Bu yalnız monitör görünümüdür; runtime/session/finans temizliği anında ve EveryCafe DB salt-okunur kalır.",
+    "Kapanış kaynak tutarı geç gelirse aynı son kartta gerçek bilgisayar/ürün/toplam tutar güncellenir; yeni 'hesap kapandı' kartı oluşturulmaz.",
+    "v3.1.92 güvenli güncelleme dosya-kilidi kurtarması, MP3/USB/PRO modülleri, finans, spin/session, Telegram ve 20:00 gün sonu davranışları korunur."
   ],
   "files": [],
-  "buildRevision": "v3192-desktop-file-lock-recovery",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.92.zip",
-  "sha256": "2b4563b1e9a7aadd182b5aa586941258d7c0a412de99ac067cfcb6865af201a4"
+  "buildRevision": "v3193-monitor-tv-readable-everycafe-final-card",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.93.zip",
+  "sha256": "75725d451652ab1e55558886008950c48b7d3523ee01fe539f9cd407e536c878"
 }
