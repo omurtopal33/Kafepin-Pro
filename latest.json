@@ -1,15 +1,23 @@
 {
-  "version": "3.1.86",
+  "version": "3.1.91",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "3.1.64",
   "baseVersion": "3.1.64",
-  "futureUpdateBase": "3.1.86",
+  "futureUpdateBase": "3.1.64",
   "cumulative": true,
-  "sourceVersion": "3.1.86",
-  "publishedAt": "2026-08-24T08:24:00+03:00",
-  "notes": "v3.1.86 KÜMÜLATİF STABLE: önceki onaylı güncellemeler korunur. MP3 Bot PRO fiziksel Delete ve v2.34.67 exact eşitleme kilitlidir; MP3 listesinde Yukarı/Aşağı yalnız listede gezer, F favori kalır, Alt+F filtreye gider. Genel klavye standardı ve güncelleme sonrası yeniden başlatma korunur. Çarktan çıkan hediye süre, masa kapanışında EveryCafe bilet geliriyle eşleşirse normal gelir değil Promosyon / Çark Hediyesi olarak sınıflandırılır; eşleşmeyen bilet normal gelir kalır. EveryCafe DB yalnız okunur. Yeni kafe kurulumu KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip ile yapılır ve ardından bu STABLE sürüme tek adımda güncellenir.",
+  "sourceVersion": "3.1.90-test-r26",
+  "sourceSha256": "f645779c8f46097e097cef8aaf1fdc8d0a6d5407944a8271308d472832868e40",
+  "publishedAt": "2026-08-25T12:00:00+03:00",
+  "notes": [
+    "v3.1.91 KÜMÜLATİF STABLE: mevcut sahada çalışan tüm 3.1.90 test davranışları ve bugün doğrulanan MP3/Winamp ile USB MP3-Film-Oyun aktarım düzeni tek kararlı pakette kilitlendi.",
+    "MP3 Bot PRO: Winamp kalıcı klasörleri, klavye gezintisi, favoriler, hızlı arşiv araması, FLAC/WMA metadata başlıkları, USB kapasite/boş alan göstergesi ve MP3-Film-Oyun hesap listesi korunur.",
+    "USB aktarım: seçili klasör/öğe ile ekleme, güvenli hesap listesinden çıkarma, anlık adet-fiyat-boyut hesaplaması; kaynak veya USB dosyalarını silmeyen iptal davranışı korunur.",
+    "Tüm PRO bileşenleri seçimleri mevcut kafelerde korunur. Yeni kafe v3.1.64 tabanından yalnız stable kanal ile bu sürüme eşitlenir.",
+    "Çekirdek, finans, spin/session, EveryCafe salt-okunur erişimi, Telegram ve gün sonu akışına bu sürümde müdahale edilmedi."
+  ],
   "files": [],
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.86.zip",
-  "sha256": "305b04d6bcda166db4fd6057a76318ac0500faae16d1e2b6813c454fc55dbf9e"
+  "buildRevision": "v3191-stable-working-mp3-usb",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.91.zip",
+  "sha256": "dba47218588b3f0cab54ea2cd4ce914c8a76c8654c8726f63a0f68b40c0d2575"
 }
