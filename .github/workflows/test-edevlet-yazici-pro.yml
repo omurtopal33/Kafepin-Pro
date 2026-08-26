@@ -35,7 +35,6 @@ jobs:
           if($files.Count -ne 1){throw "Expected one WebView2 host in source payload, found $($files.Count)"}
           "KP_WEBVIEW_FILE=$($files[0].FullName)"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
           "KP_SOURCE_ROOT=$out"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "WEBVIEW_FILE=$($files[0].FullName)"
 
       - name: Verify WebView2 same-window capability
         shell: pwsh
@@ -44,19 +43,17 @@ jobs:
           $s=Get-Content $env:KP_WEBVIEW_FILE -Raw -Encoding UTF8
           foreach($must in @('EnsureCoreWebView2Async','CoreWebView2','web.whatsapp.com')){if(-not $s.Contains($must)){throw "Missing marker $must"}}
           foreach($m in @('NewWindowRequested','NavigationStarting','NavigationCompleted','WebMessageReceived','Navigate','Source')){if($s.Contains($m)){Write-Host "HOOK_PRESENT=$m"}else{Write-Host "HOOK_ABSENT=$m"}}
-          Write-Host 'WEBVIEW2_SOURCE_OK'
 
       - name: Probe official e-Devlet service entry points
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
-          $urls=@(
-            'https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama',
-            'https://www.turkiye.gov.tr/adli-sicil-kaydi',
-            'https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu'
-          )
-          foreach($u in $urls){$r=Invoke-WebRequest -UseBasicParsing -Uri $u -MaximumRedirection 10 -TimeoutSec 30;if($r.StatusCode -lt 200 -or $r.StatusCode -ge 400){throw "HTTP $($r.StatusCode) $u"};Write-Host "SERVICE_OK=$u"}
+          foreach($u in @('https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama','https://www.turkiye.gov.tr/adli-sicil-kaydi','https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu')){
+            $r=Invoke-WebRequest -UseBasicParsing -Uri $u -MaximumRedirection 10 -TimeoutSec 30
+            if($r.StatusCode -lt 200 -or $r.StatusCode -ge 400){throw "HTTP $($r.StatusCode) $u"}
+            Write-Host "SERVICE_OK=$u"
+          }
 
       - name: Validate session pricing model
         shell: pwsh
@@ -66,20 +63,31 @@ jobs:
           AddPrint 1 3; AddPrint 2 1; AddPrint 1 2
           if($s.serviceCount -ne 1){throw 'service fee repeated'}
           if($s.printedPages -ne 7){throw 'page accounting wrong'}
-          Write-Host "SESSION_PRICE_OK service=$($s.serviceCount) pages=$($s.printedPages) copies=$($s.copies)"
 
-      - name: Stage source inspection artifact
+      - name: Capture v4.0.2 updater layout and Yazici source
         shell: pwsh
         run: |
-          $dst=Join-Path $env:RUNNER_TEMP 'edevlet-inspect'
+          $ErrorActionPreference='Stop'
+          $stable=Join-Path $env:RUNNER_TEMP 'v402'
+          Expand-Archive 'KafePin-Pro-Update-v4.0.2.zip' $stable -Force
+          $dst=Join-Path $env:RUNNER_TEMP 'v403-inspect'
           New-Item -ItemType Directory -Force -Path $dst|Out-Null
+          Get-ChildItem $stable -Recurse -File | ForEach-Object { $_.FullName.Substring($stable.Length+1) } | Set-Content (Join-Path $dst 'v402-file-list.txt') -Encoding utf8
+          foreach($name in @('update.json','server.js','KafePin_Manager_Ensure.ps1','KafePin_Recovery_Health.ps1')){
+            $f=Get-ChildItem $stable -Recurse -File -Filter $name|Select-Object -First 1
+            if($f){Copy-Item $f.FullName (Join-Path $dst $name)}
+          }
           Copy-Item $env:KP_WEBVIEW_FILE (Join-Path $dst 'KafePin_YaziciPRO_WebView2.ps1')
           $idx=Get-ChildItem $env:KP_SOURCE_ROOT -Recurse -File -Filter 'index.html'|Where-Object{$_.FullName -match 'yazici'}|Select-Object -First 1
-          if($idx){Copy-Item $idx.FullName (Join-Path $dst 'index.html')}
+          if($idx){Copy-Item $idx.FullName (Join-Path $dst 'YaziciPRO-index.html')}
+          $ws=Get-ChildItem $env:KP_SOURCE_ROOT -Recurse -File -Filter 'web_service.py'|Where-Object{$_.FullName -match 'yazici'}|Select-Object -First 1
+          if($ws){Copy-Item $ws.FullName (Join-Path $dst 'web_service.py')}
+          $rev=Get-ChildItem $env:KP_SOURCE_ROOT -Recurse -File -Filter 'KafePin_YaziciGelir_Service.js'|Select-Object -First 1
+          if($rev){Copy-Item $rev.FullName (Join-Path $dst 'KafePin_YaziciGelir_Service.js')}
           "KP_ARTIFACT_DIR=$dst"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
 
       - uses: actions/upload-artifact@v4
         with:
-          name: edevlet-yazici-source-inspection
+          name: v403-design-inspection
           path: ${{ env.KP_ARTIFACT_DIR }}
           if-no-files-found: error
