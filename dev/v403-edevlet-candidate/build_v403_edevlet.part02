@@ -1,0 +1,119 @@
+        raise SystemExit('v4.0.2 sha file invalid')
+    return m.group(1).lower()
+
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    n = text.count(old)
+    if n != 1:
+        raise SystemExit(f'{label}: expected one occurrence, found {n}')
+    return text.replace(old, new, 1)
+
+
+def patch_revenue(text: str) -> str:
+    text = replace_once(text, 'const VERSION = "3.1.60";', 'const VERSION = "3.1.61";', 'revenue version')
+    old = '''function prepareService(serviceType,quantity,payment,documentPrep=false,title=""){
+  const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
+  if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
+  else if(serviceType==="document"){ items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1}); serviceLabel="Belge / Dilekçe Hazırlama"; }
+  else throw new Error("Geçersiz hizmet türü.");
+  if(documentPrep && serviceType!=="document") items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1});
+  return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep}});
+}'''
+    new = '''function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){
+  const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
+  if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
+  else if(serviceType==="document"){ items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1}); serviceLabel="Belge / Dilekçe Hazırlama"; }
+  else if(serviceType==="edevlet"){ const amount=money(amountOverride); if(amount<=0) throw new Error("e-Devlet hizmet bedeli 0 TL olamaz."); items.push({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1}); serviceLabel="e-Devlet Hizmet Bedeli"; }
+  else throw new Error("Geçersiz hizmet türü.");
+  if(documentPrep && serviceType!=="document" && serviceType!=="edevlet") items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1});
+  return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"&&serviceType!=="edevlet"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep}});
+}'''
+    text = replace_once(text, old, new, 'prepareService')
+    old_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||"")); return json(res,200,{ok:true,transaction:tx}); }'
+    new_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||""),Object.prototype.hasOwnProperty.call(d,"amount")?d.amount:null); return json(res,200,{ok:true,transaction:tx}); }'
+    return replace_once(text, old_route, new_route, 'service route')
+
+
+def patch_service_host(text: str) -> str:
+    for old, new in [
+        ("$Expected='3.1.60'", "$Expected='3.1.61'"),
+        ("v3160-yazici-startup.log", "v3161-yazici-startup.log"),
+        ("v3160-yazici-startup.json", "v3161-yazici-startup.json"),
+        ("[v3160]", "[v3161]"),
+        ("v3160-revenue.out.log", "v3161-revenue.out.log"),
+        ("v3160-revenue.err.log", "v3161-revenue.err.log"),
+        ("v3160-webservice.out.log", "v3161-webservice.out.log"),
+        ("v3160-webservice.err.log", "v3161-webservice.err.log"),
+        ("Servisler zaten 3.1.60 hazır.", "Servisler zaten 3.1.61 hazır."),
+    ]:
+        text = text.replace(old, new)
+    return text
+
+
+def patch_payload(tmp: Path) -> None:
+    p = tmp / 'KafePin_YaziciPRO_WebView2.ps1'
+    p.write_text('\ufeff' + WEBVIEW_PS1.replace('\r\n','\n'), encoding='utf-8')
+
+    p = tmp / 'KafePin_YaziciGelir_Service.js'
+    p.write_text(patch_revenue(p.read_text(encoding='utf-8-sig')), encoding='utf-8')
+
+    p = tmp / 'KafePin_YaziciPRO_ServiceHost.ps1'
+    host = patch_service_host(p.read_text(encoding='utf-8-sig'))
+    p.write_text('\ufeff' + host, encoding='utf-8')
+
+    p = tmp / 'web_service.py'
+    s = p.read_text(encoding='utf-8-sig')
+    s = replace_once(s, 'APP_VERSION = "3.1.60"', 'APP_VERSION = "3.1.61"', 'web service version')
+    p.write_text(s, encoding='utf-8')
+
+    p = tmp / 'yazici-pro-version.json'
+    meta = json.loads(p.read_text(encoding='utf-8-sig'))
+    meta['version'] = '3.1.61'
+    meta['build'] = 'v403-edevlet-candidate1'
+    fixes = list(meta.get('fixes') or [])
+    for item in [
+        'edevlet-internal-webview2-tab',
+        'edevlet-no-external-window',
+        'edevlet-separate-private-profile',
+        'edevlet-session-cookie-clear',
+        'edevlet-single-service-fee-per-session',
+        'edevlet-print-fees-remain-printservice-based',
+    ]:
+        if item not in fixes:
+            fixes.append(item)
+    meta['fixes'] = fixes
+    p.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+def repack_nested(original_bytes: bytes, modified_root: Path) -> bytes:
+    src = zipfile.ZipFile(io.BytesIO(original_bytes), 'r')
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, 'w') as z:
+        for info in src.infolist():
+            data = src.read(info.filename)
+            if not info.is_dir() and info.filename in ALLOWED_YAZICI:
+                data = (modified_root / Path(info.filename)).read_bytes()
+            z.writestr(info, data)
+    return out.getvalue()
+
+
+def main() -> None:
+    root = Path(os.environ.get('GITHUB_WORKSPACE') or Path.cwd())
+    base = root / BASE_NAME
+    if not base.exists():
+        raise SystemExit(f'base missing: {base}')
+    expected = read_expected_sha(root)
+    base_bytes = base.read_bytes()
+    base_sha = sha(base_bytes)
+    if base_sha != expected:
+        raise SystemExit(f'v4.0.2 base sha mismatch expected={expected} actual={base_sha}')
+
+    with zipfile.ZipFile(io.BytesIO(base_bytes), 'r') as outer:
+        names = outer.namelist()
+        if 'update.json' not in names or NESTED not in names:
+            raise SystemExit('base package missing update.json or yazici-pro.zip')
+        base_update = json.loads(outer.read('update.json').decode('utf-8-sig'))
+        if str(base_update.get('version')) != '4.0.2' or str(base_update.get('channel')) != 'stable':
+            raise SystemExit('base package is not v4.0.2 stable')
+        nested_bytes = outer.read(NESTED)
+
