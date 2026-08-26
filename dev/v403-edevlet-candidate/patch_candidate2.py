@@ -77,6 +77,8 @@ one("        nested_bytes = outer.read(NESTED)\n", "        nested_bytes = outer
 
 one("                yz.extractall(td)\n", "                for info in yz.infolist():\n                    if info.is_dir() or info.filename not in ALLOWED_YAZICI: continue\n                    dest = td / Path(info.filename)\n                    dest.parent.mkdir(parents=True, exist_ok=True)\n                    dest.write_bytes(yz.read(info.filename))\n", 'targeted extract permissions')
 
+one("            changed = {name for name, old in before.items() if (td / Path(name)).read_bytes() != old}\n", "            changed = {name for name, old in before.items() if name in ALLOWED_YAZICI and (td / Path(name)).read_bytes() != old}\n", 'targeted change comparison')
+
 one("            update['buildRevision'] = 'v403-candidate-edevlet-r1'", "            update['buildRevision'] = 'v403-candidate3-edevlet-fast-r3'\n            update['files'] = [SUPERVISOR, NESTED]", 'candidate metadata')
 
 one("                'v4.0.3 TEST/CANDIDATE: v4.0.2 STABLE güncelleme/rollback/DB güvenliği aynen korunur; yalnız Yazıcı PRO içine e-Devlet Resmî Belgeler testi eklenir.',", "                'v4.0.3 TEST/CANDIDATE2: hedefli hızlı güncelleme; ana masaüstü kabuğu ve diğer PRO modülleri refresh edilmez, yalnız Yazıcı PRO güncellenir.',\n                'v4.0.3 TEST/CANDIDATE: v4.0.2 STABLE güncelleme/rollback/DB güvenliği aynen korunur; yalnız Yazıcı PRO içine e-Devlet Resmî Belgeler testi eklenir.',", 'candidate note')
