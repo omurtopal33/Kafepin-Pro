@@ -2,7 +2,7 @@
 
 ## Güncel sürüm düzeni
 
-- **v4.0.1 STABLE:** Güncel kümülatif saha sürümüdür; güvenli otomatik kurtarma, performans ve onaylanan tüm PRO davranışlarının referansıdır.
+- **v4.0.2 STABLE:** Güncel kümülatif saha sürümüdür; saha-onaylı FIX5 güncelleme güvenliği, performans ve onaylanan tüm PRO davranışlarının referansıdır.
 - **Yeni kafe dağıtımı değişmez:** `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` çevrimdışı kurulum tabanıdır. Her STABLE sürüm için yeni bir yeni-kafe ZIP'i üretilmez.
 - Yeni kafe v3.1.64 FINAL ile kurulur; internet varsa yalnız `latest.json` içindeki daha yeni STABLE sürümü tek adımda alır.
 - Ara sürümlerin tek tek kurulması gerekmez.
@@ -22,7 +22,7 @@ PRO klasör düzeni korunur:
 - Teknik Servis PRO: `C:\KafePinPro\TeknikServisPRO`
 - Client Yönetim PRO: `C:\KafePinPro\ClientYonetimPRO`
 
-## v4.0.1 STABLE kilitleri
+## v4.0.2 STABLE kilitleri
 
 - Önceki onaylı kümülatif düzeltmeler korunur.
 - Yönetim merkezi; Kafe & Çark, EveryCafe, Anlık Finans ve Kasa & Muhasebe içinde son açık paneli ile kaydırma konumunu saklar. Başka sekmeden dönünce kullanıcı aynı yerde kalır.
@@ -31,7 +31,9 @@ PRO klasör düzeni korunur:
 - MP3 Bot PRO Winamp klasör gezgini, kalıcı klasör seçimi, hızlı arama, favoriler ve metadata başlıkları korunur.
 - USB MP3 / Film / Oyun sol seçim–sağ hesap listesi, seçili boyut/fiyat, USB boş alan ve güvenli aktarım hazırlığı korunur.
 - PRO modülleri kurulu seçimleri mevcut kafelerde aynen korur; yeni kafe v3.1.64 tabanından güncellenir.
-- Güncelleme sırasında masaüstü EXE/DLL dosyaları önce uygulama kapatılıp dosya kilidi doğrulanmadan değiştirilmez; EBUSY/EPERM yarım kurulum bırakmaz.
+- Güncelleme sırasında masaüstü EXE/DLL dosyaları önce uygulama kapatılıp dosya kilidi doğrulanmadan değiştirilmez; EBUSY/EPERM yarım kurulum bırakmaz. Hedefli rollback için gerçek disk I/O watchdog 90 saniyedir.
+- Update paketi `database.db`, `database.db-wal` ve `database.db-shm` içermez; update sırasında DB'ye dokunulmaz. Çift update/backup yarışı engellenir.
+- Client Performans bağlantı hızı göstergesi, 1000 Mbps altı uyarı ve 17896 portunda tek-instance koruması; EveryCafe `SQLITE_BUSY` bounded retry ve Manager → Recovery sağlık doğrulaması korunur.
 - Güncelleme veya açılış sonrasında 3000/DB sağlığı gelmezse masaüstü önce Windows Server Manager, ardından güvenli recovery akışını otomatik çalıştırır; yalnız bu iki doğrulanmış adım başarısızsa manuel onarım gösterilir.
 - Çarktan çıkan **hediye süre**, masa kapanışında onaylandıktan sonra EveryCafe bilet geliriyle tekil eşleşirse `Promosyon / Çark Hediyesi` olarak sınıflandırılır ve normal gelire eklenmez.
 - Eşleşmeyen EveryCafe bilet hareketi gerçek satış olarak normal gelirde kalır.
@@ -50,8 +52,8 @@ Korunacak temel dağıtımlar:
 
 - `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` — yeni kafe çevrimdışı tabanı.
 - `KafePin-Client-v3.1.64.zip` — eşleşen Client dağıtımı.
-- Güncel `KafePin-Pro-Update-v4.0.1.zip` — aktif STABLE kümülatif update.
+- Güncel `KafePin-Pro-Update-v4.0.2.zip` — aktif STABLE kümülatif update.
 
-Eski ara sunucu update ZIP/SHA ve eski ara release notları, v4.0.1 ZIP GitHub'a başarıyla yerleşip `latest.json` doğrulandıktan sonra aktif kökten temizlenir. Yeni-kafe FINAL v3.1.64 ve gerekli Client/kurulum referansları korunur.
+Eski ara sunucu update ZIP/SHA ve eski ara release notları, v4.0.2 ZIP GitHub'a başarıyla yerleşip `latest.json` doğrulandıktan sonra aktif kökten temizlenir. Yeni-kafe FINAL v3.1.64 ve gerekli Client/kurulum referansları korunur.
 
-Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.1.md`.
+Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.2.md`.

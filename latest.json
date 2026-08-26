@@ -1,26 +1,24 @@
 {
-  "version": "4.0.1",
+  "version": "4.0.2",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "3.1.64",
   "baseVersion": "3.1.64",
   "futureUpdateBase": "3.1.64",
   "cumulative": true,
-  "sourceVersion": "4.0.0",
-  "sourceSha256": "2b4563b1e9a7aadd182b5aa586941258d7c0a412de99ac067cfcb6865af201a4",
-  "publishedAt": "2026-08-25T15:00:00+03:00",
+  "sourceVersion": "4.0.1",
+  "sourceSha256": "c60a975f0fd391743432cc6a4558c285db51b265cda991c49cccac4d83f68f52",
+  "publishedAt": "2026-08-26T00:00:00+03:00",
   "notes": [
-    "v4.0.1 KÜMÜLATİF STABLE: v4 güvenli kurtarma, performans ve mevcut tüm PRO modüllerini içerir.",
-    "Masaüstünde Sunucuyu Onar düğmesi önce 3000/DB sağlığını korur; Server Manager yanıt vermezse yalnız güvenli Node fallback dener ve sonuç kaydını üretir.",
-    "Masa adı dengeli küçük tutulurken durum, ücret, bağlantı-ping ve ödül satırları TV uzaktan okunacak öncelikte büyütüldü.",
-    "EveryCafe kapanış görünümü: ücretsiz masa anında kalkar; süresiz son fiyat kartı 30 sn, süreli son fiyat kartı 40 sn kalır. Bu yalnız monitör görünümüdür; runtime/session/finans temizliği anında ve EveryCafe DB salt-okunur kalır.",
-    "Kapanış kaynak tutarı geç gelirse aynı son kartta gerçek bilgisayar/ürün/toplam tutar güncellenir; yeni 'hesap kapandı' kartı oluşturulmaz.",
-    "Güncelleme güvenliği: Normal kanal yalnız GitHub STABLE/FINAL manifestini kabul eder; Windows Server Manager tek yeniden başlatma otoritesidir ve DB sağlık kontrolü olmadan başarı vermez.",
-    "Monitör tek ve çakışmayan yenileme akışı kullanır; aynı masa verisi ikinci kez istenmez, değişmeyen şanslı/ödül listeleri tekrar çizilmez.",
-    "v3.1.92 güvenli güncelleme dosya-kilidi kurtarması, MP3/USB/PRO modülleri, finans, spin/session, Telegram ve 20:00 gün sonu davranışları korunur."
+    "v4.0.2 KÜMÜLATİF STABLE: saha-onaylı FIX5 paketini ve önceki STABLE davranışlarını içerir.",
+    "Hızlı hedefli program rollback; gerçek disk I/O için 90 saniye watchdog ve çift update/backup yarışı engeli.",
+    "DB update paketinde yasaktır; update sırasında database.db, -wal ve -shm dosyalarına dokunulmaz.",
+    "Client Performans bağlantı hızı göstergesi ve 1000 Mbps altı bağlantı uyarısı; 17896 portunda tek-instance koruması.",
+    "EveryCafe SQLITE_BUSY için bounded retry; Manager → Recovery sağlık doğrulaması korunur.",
+    "Yeni kafe dağıtım tabanı v3.1.64 olarak sabit kalır."
   ],
   "files": [],
-  "buildRevision": "v401-recovery-performance-test",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.1.zip",
-  "sha256": "c60a975f0fd391743432cc6a4558c285db51b265cda991c49cccac4d83f68f52"
+  "buildRevision": "v402-stable-fast-update-client-performance-r5",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.2.zip",
+  "sha256": "c8b54f38b7360828d47c52b15b44e83231a533fe7fd3f15ab35b2247ca035979"
 }
