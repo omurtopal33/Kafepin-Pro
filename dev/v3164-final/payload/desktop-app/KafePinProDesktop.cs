@@ -2033,8 +2033,11 @@ namespace KafePinProDesktop
                         // Yazici PRO paket surumu 3.1.60'a sabitlenmez; servis kimligi
                         // ve version alani dogrulanir. Boylece 3.1.61+ servisleri
                         // saglikli olduklari halde yanlislikla basarisiz sayilmaz.
-                        if (health.IndexOf("KafePin Yazıcı PRO", StringComparison.OrdinalIgnoreCase) < 0 ||
-                            health.IndexOf("\"version\"", StringComparison.OrdinalIgnoreCase) < 0) return false;
+                        // JSON Turkce karakterleri Unicode escape olarak dondurebilir;
+                        // servis kimligini aksanli metinle degil alanlarla dogrula.
+                        if (health.IndexOf("\"ok\":true", StringComparison.OrdinalIgnoreCase) < 0 ||
+                            health.IndexOf("\"service\":", StringComparison.OrdinalIgnoreCase) < 0 ||
+                            health.IndexOf("\"version\":", StringComparison.OrdinalIgnoreCase) < 0) return false;
                     }
                     HttpWebRequest rev = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:17893/health?_desktop=" + DateTime.UtcNow.Ticks.ToString());
                     rev.Method = "GET"; rev.Timeout = 1500; rev.ReadWriteTimeout = 1500;
@@ -2043,7 +2046,8 @@ namespace KafePinProDesktop
                     {
                         string health = rd.ReadToEnd();
                         return (int)resp.StatusCode >= 200 && (int)resp.StatusCode < 300 &&
-                            health.IndexOf("KafePin Yazıcı Geliri", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                            health.IndexOf("\"ok\":true", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                            health.IndexOf("\"service\":", StringComparison.OrdinalIgnoreCase) >= 0 &&
                             health.IndexOf("\"version\"", StringComparison.OrdinalIgnoreCase) >= 0;
                     }
                 }
