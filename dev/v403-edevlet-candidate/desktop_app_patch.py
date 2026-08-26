@@ -325,7 +325,15 @@ def patch_desktop_source(source: bytes) -> bytes:
 
 '''
     dynamic_pattern = r"        private async Task<bool> IsPrinterProReadyOnceAsync\(\)\n.*?        private async Task<bool> WaitForPrinterProAsync"
-    text, replaced = re.subn(dynamic_pattern, dynamic_ready + "        private async Task<bool> WaitForPrinterProAsync", text, count=1, flags=re.S)
+    # Do not hand C# backslashes to re.sub as a replacement template: it would
+    # turn the required C# `\\s` regex escape into an invalid `\s` literal.
+    text, replaced = re.subn(
+        dynamic_pattern,
+        lambda _match: dynamic_ready + "        private async Task<bool> WaitForPrinterProAsync",
+        text,
+        count=1,
+        flags=re.S,
+    )
     if replaced != 1:
         raise RuntimeError(f"dynamic Yazici readiness replacement expected one occurrence, found {replaced}")
     return ("\ufeff" + text).encode("utf-8")
