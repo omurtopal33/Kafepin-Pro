@@ -33,6 +33,7 @@ jobs:
           $text=$text.Replace([string][char]0x2019,'')
           [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE $out),$text,$utf8NoBom)
           python dev/v403-edevlet-candidate/patch_candidate2.py
+          python dev/v403-edevlet-candidate/patch_candidate3_desktop.py
           python -m py_compile $out
 
       - name: Build v4.0.3 TEST candidate3
@@ -51,10 +52,10 @@ jobs:
           $td1=Join-Path $env:RUNNER_TEMP 'v402-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403c3-final'
           Expand-Archive $base $td1 -Force; Expand-Archive $cand $td2 -Force
           $u=Get-Content (Join-Path $td2 'update.json') -Raw | ConvertFrom-Json
-          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip')
+          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip','desktop-app/KafePinProDesktop.cs')
           $actual=@($u.files)
-          if($actual.Count -ne 2 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Fast files list wrong: '+($actual -join ','))}
-          $protected=@('server.js','KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Manager_Ensure.ps1','KafePin_Recovery.ps1','KafePin_System_Manager.ps1','desktop-app/KafePinProDesktop.cs','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
+          if($actual.Count -ne 3 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Targeted files list wrong: '+($actual -join ','))}
+          $protected=@('server.js','KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Manager_Ensure.ps1','KafePin_Recovery.ps1','KafePin_System_Manager.ps1','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
           foreach($rel in $protected){
             $a=Join-Path $td1 $rel; $b=Join-Path $td2 $rel
             if((Test-Path $a) -and (Test-Path $b)){
@@ -73,8 +74,19 @@ jobs:
           }
           $sup=Get-Content (Join-Path $td2 'KafePin_Update_Supervisor.js') -Raw
           if($sup -notmatch '17891/17893 health veya version'){throw 'Yazici health/version guard missing'}
-          if($sup -notmatch 'desktop shell and other PRO refresh skipped'){throw 'desktop no-rebuild guard missing'}
-          Write-Host 'CANDIDATE3_FAST_UPDATE_STARTUP_LOCK_OK'
+          $desktop=Get-Content (Join-Path $td2 'desktop-app/KafePinProDesktop.cs') -Raw
+          if($desktop -notmatch 'e-Devlet / Resmî Belgeler'){ throw 'main desktop e-Devlet tab missing' }
+          if($desktop -notmatch 'NewWindowRequested'){ throw 'desktop popup guard missing' }
+          if($desktop -notmatch 'WebView2Profile-eDevlet'){ throw 'separate e-Devlet session profile missing' }
+          if($desktop -notmatch 'ClearEdevletSessionAsync'){ throw 'e-Devlet session cleanup missing' }
+          if($desktop -notmatch '17891'){ throw 'desktop 17891 path missing' }
+          $csc=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
+          $sdkRoot=Join-Path $td2 'desktop-app/sdk/1.0.4129.50'
+          $desktopExe=Join-Path $env:RUNNER_TEMP 'KafePinProDesktop-edevlet-test.exe'
+          $cscArgs=@('/nologo','/target:winexe','/platform:x64','/optimize+','/utf8output',('/out:'+ $desktopExe),'/reference:System.dll','/reference:System.Core.dll','/reference:System.Drawing.dll','/reference:System.Windows.Forms.dll',('/reference:'+ (Join-Path $sdkRoot 'Microsoft.Web.WebView2.Core.dll')),('/reference:'+ (Join-Path $sdkRoot 'Microsoft.Web.WebView2.WinForms.dll')),(Join-Path $td2 'desktop-app/KafePinProDesktop.cs'))
+          & $csc @cscArgs
+          if($LASTEXITCODE -ne 0 -or -not (Test-Path $desktopExe)){ throw 'main desktop e-Devlet source compile failed' }
+          Write-Host 'CANDIDATE3_TARGETED_DESKTOP_EDEVLET_OK'
 
       - uses: actions/upload-artifact@v4
         with:
