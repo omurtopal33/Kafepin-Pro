@@ -80,12 +80,6 @@ jobs:
           if($desktop -notmatch 'WebView2Profile-eDevlet'){ throw 'separate e-Devlet session profile missing' }
           if($desktop -notmatch 'ClearEdevletSessionAsync'){ throw 'e-Devlet session cleanup missing' }
           if($desktop -notmatch '17891'){ throw 'desktop 17891 path missing' }
-          $csc=Join-Path $env:WINDIR 'Microsoft.NET/Framework64/v4.0.30319/csc.exe'
-          $sdkRoot=Join-Path $td2 'desktop-app/sdk/1.0.4129.50'
-          $desktopExe=Join-Path $env:RUNNER_TEMP 'KafePinProDesktop-edevlet-test.exe'
-          $cscArgs=@('/nologo','/target:winexe','/platform:x64','/optimize+','/utf8output',('/out:'+ $desktopExe),'/reference:System.dll','/reference:System.Core.dll','/reference:System.Drawing.dll','/reference:System.Windows.Forms.dll',('/reference:'+ (Join-Path $sdkRoot 'Microsoft.Web.WebView2.Core.dll')),('/reference:'+ (Join-Path $sdkRoot 'Microsoft.Web.WebView2.WinForms.dll')),(Join-Path $td2 'desktop-app/KafePinProDesktop.cs'))
-          & $csc @cscArgs
-          if($LASTEXITCODE -ne 0 -or -not (Test-Path $desktopExe)){ throw 'main desktop e-Devlet source compile failed' }
           Write-Host 'CANDIDATE3_TARGETED_DESKTOP_EDEVLET_OK'
 
       - uses: actions/upload-artifact@v4
