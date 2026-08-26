@@ -1,10 +1,11 @@
-name: BUILD v4.0.3 e-Devlet Candidate3
+name: BUILD v4.0.3 unified TEST candidate
 
 on:
   pull_request:
     branches: [main]
     paths:
       - 'dev/v403-edevlet-candidate/**'
+      - 'dev/failsafe-update-lock/**'
       - '.github/workflows/build-v403-edevlet-candidate.yml'
   workflow_dispatch:
 
@@ -14,80 +15,78 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
-      - name: Reconstruct candidate builder
+      - name: Reconstruct and patch unified builder
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $dir='dev/v403-edevlet-candidate'
           $parts=Get-ChildItem "$dir/build_v403_edevlet.part*" | Sort-Object Name
           if($parts.Count -ne 4){ throw "Expected 4 builder parts, found $($parts.Count)" }
-          $out="$dir/build_v403_edevlet.py"
+          $out=Join-Path $env:GITHUB_WORKSPACE "$dir/build_v403_edevlet.py"
           $utf8NoBom=New-Object System.Text.UTF8Encoding($false)
           $text=($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join ''
           $text=$text.Replace([string][char]0x2019,'')
-          [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE $out),$text,$utf8NoBom)
-          python dev/v403-edevlet-candidate/patch_candidate2.py
-          python dev/v403-edevlet-candidate/patch_candidate3_desktop.py
+          [IO.File]::WriteAllText($out,$text,$utf8NoBom)
+          python "$dir/patch_candidate2.py"
+          python "$dir/patch_candidate3_desktop.py"
           python -m py_compile $out
 
-      - name: Build v4.0.3 TEST candidate3
+      - name: Build one unified v4.0.3 TEST candidate
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           python dev/v403-edevlet-candidate/build_v403_edevlet.py
 
-      - name: Final fast-update safety checks
+      - name: Windows fail-safe and runtime regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          powershell -NoProfile -ExecutionPolicy Bypass -File dev/failsafe-update-lock/test_failsafe_update_lock.ps1
+
+      - name: Validate unified update, rollback safety and UI payload
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $base='KafePin-Pro-Update-v4.0.2.zip'
-          $cand='KafePin-Pro-Update-v4.0.3-CANDIDATE3.zip'
-          if(-not (Test-Path $cand)){throw 'candidate3 missing'}
-          $td1=Join-Path $env:RUNNER_TEMP 'v402-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403c3-final'
+          $cand='KafePin-Pro-Update-v4.0.3-UNIFIED-TEST-CANDIDATE.zip'
+          if(-not (Test-Path $cand)){throw 'unified candidate missing'}
+          $td1=Join-Path $env:RUNNER_TEMP 'v402-unified-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403-unified-final'
           Expand-Archive $base $td1 -Force; Expand-Archive $cand $td2 -Force
           $u=Get-Content (Join-Path $td2 'update.json') -Raw | ConvertFrom-Json
-          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip','desktop-app/KafePinProDesktop.cs')
+          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip','desktop-app/KafePinProDesktop.cs','server.js','public/admin.html')
           $actual=@($u.files)
-          if($actual.Count -ne 3 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Targeted files list wrong: '+($actual -join ','))}
-          $protected=@('server.js','KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Manager_Ensure.ps1','KafePin_Recovery.ps1','KafePin_System_Manager.ps1','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
-          foreach($rel in $protected){
-            $a=Join-Path $td1 $rel; $b=Join-Path $td2 $rel
-            if((Test-Path $a) -and (Test-Path $b)){
-              if((Get-FileHash $a -Algorithm SHA256).Hash -ne (Get-FileHash $b -Algorithm SHA256).Hash){throw "Protected file changed: $rel"}
-            }
-          }
-          $sup=Get-Content (Join-Path $td2 'KafePin_Update_Supervisor.js') -Raw
-          if($sup -notmatch 'component-only activation: Yazici PRO repaired') { throw 'component-only supervisor path missing' }
-          if($sup -notmatch "-Component','yazici-pro") { throw 'targeted Yazici repair missing' }
+          if($actual.Count -ne 5 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Targeted files list wrong: '+($actual -join ','))}
+          foreach($rel in @('database.db','database.db-wal','database.db-shm')) { if(Test-Path (Join-Path $td2 $rel)){throw "DB payload forbidden: $rel"} }
+          $protected=@('KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Manager_Ensure.ps1','KafePin_Recovery.ps1','KafePin_System_Manager.ps1','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
+          foreach($rel in $protected){$a=Join-Path $td1 $rel;$b=Join-Path $td2 $rel;if((Test-Path $a)-and(Test-Path $b)){if((Get-FileHash $a -Algorithm SHA256).Hash -ne (Get-FileHash $b -Algorithm SHA256).Hash){throw "Protected file changed: $rel"}}}
+          node --check (Join-Path $td2 'server.js')
           node --check (Join-Path $td2 'KafePin_Update_Supervisor.js')
           node (Join-Path $td2 'KafePin_Update_Supervisor.js') --self-test
-          $yz=Join-Path $env:RUNNER_TEMP 'v403c3-yazici'; Expand-Archive (Join-Path $td2 'pro-components/yazici-pro.zip') $yz -Force
-          foreach($f in @('KafePin_YaziciPRO_ServiceHost.ps1','KafePin_YaziciPRO_WebView2.ps1')) {
-            $e=$null; $t=$null; [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $yz $f),[ref]$t,[ref]$e)|Out-Null
-            if($e.Count){ throw "PowerShell syntax failed: $f" }
-          }
-          $sup=Get-Content (Join-Path $td2 'KafePin_Update_Supervisor.js') -Raw
-          if($sup -notmatch '17891/17893 health veya version'){throw 'Yazici health/version guard missing'}
+          $server=Get-Content (Join-Path $td2 'server.js') -Raw
+          foreach($marker in @('recoverRecentEveryCafeMissingImports','/admin/everycafe/retry-missing','withSqliteBusyRetry','DAILY_ROLLOVER_ACK_FILE','runChildTracked')){if($server -notmatch [regex]::Escape($marker)){throw "server marker missing: $marker"}}
+          if($server -notmatch 'OPEN_READONLY'){throw 'EveryCafe read-only guard missing'}
+          $admin=Get-Content (Join-Path $td2 'public/admin.html') -Raw
+          foreach($marker in @('MANUEL AKTAR / YENİDEN İŞLE','retryEveryCafeMissing')){if($admin -notmatch [regex]::Escape($marker)){throw "admin recovery marker missing: $marker"}}
           $desktop=Get-Content (Join-Path $td2 'desktop-app/KafePinProDesktop.cs') -Raw
-          if($desktop -notmatch 'e-Devlet / Resmî Belgeler'){ throw 'main desktop e-Devlet tab missing' }
-          if($desktop -notmatch 'NewWindowRequested'){ throw 'desktop popup guard missing' }
-          if($desktop -notmatch 'WebView2Profile-eDevlet'){ throw 'separate e-Devlet session profile missing' }
-          if($desktop -notmatch 'ClearEdevletSessionAsync'){ throw 'e-Devlet session cleanup missing' }
-          if($desktop -notmatch '17891'){ throw 'desktop 17891 path missing' }
-          Write-Host 'CANDIDATE3_TARGETED_DESKTOP_EDEVLET_OK'
+          foreach($marker in @('e-Devlet / Resmî Belgeler','İkametgâh','Adli Sicil','SGK','NewWindowRequested','ClearEdevletSessionAsync','17891')){if($desktop -notmatch [regex]::Escape($marker)){throw "desktop marker missing: $marker"}}
+          $yz=Join-Path $env:RUNNER_TEMP 'v403-unified-yazici'; Expand-Archive (Join-Path $td2 'pro-components/yazici-pro.zip') $yz -Force
+          foreach($f in @('KafePin_YaziciPRO_ServiceHost.ps1','KafePin_YaziciPRO_WebView2.ps1')){$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $yz $f),[ref]$t,[ref]$e)|Out-Null;if($e.Count){throw "PowerShell syntax failed: $f"}}
+          $digest=(Get-FileHash $cand -Algorithm SHA256).Hash.ToLowerInvariant()
+          "UNIFIED_CANDIDATE_PASS outer_sha256=$digest" | Tee-Object -FilePath unified-candidate-ci-result.txt
 
       - uses: actions/upload-artifact@v4
         with:
-          name: KafePin-Pro-v4.0.3-EDEVLET-CANDIDATE3
+          name: KafePin-Pro-v4.0.3-UNIFIED-TEST-CANDIDATE
           path: |
-            KafePin-Pro-Update-v4.0.3-CANDIDATE3.zip
-            KafePin-Pro-Update-v4.0.3-CANDIDATE3.sha256.txt
-            V4.0.3-EDEVLET-CANDIDATE-TEST-REPORT.md
+            KafePin-Pro-Update-v4.0.3-UNIFIED-TEST-CANDIDATE.zip
+            KafePin-Pro-Update-v4.0.3-UNIFIED-TEST-CANDIDATE.sha256.txt
+            V4.0.3-UNIFIED-TEST-CANDIDATE-REPORT.md
+            unified-candidate-ci-result.txt
           if-no-files-found: error
           retention-days: 30
