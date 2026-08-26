@@ -44,8 +44,10 @@ def patch_supervisor(text: str) -> str:
       while(Date.now()<end){
         const main=await httpJson(17891,'/api/health?_supervisor='+Date.now(),1500);
         const revenue=await httpJson(17893,'/health?_supervisor='+Date.now(),1500);
-        const mainOk=main.ok&&main.json&&main.json.ok===true&&String(main.json.version||'')==='3.1.61';
-        const revenueOk=revenue.ok&&revenue.json&&revenue.json.ok===true&&String(revenue.json.version||'')==='3.1.61';
+        const yaziciMeta=readJson(path.join(proRoot,'YaziciPRO','yazici-pro-version.json'))||{};
+        const yaziciExpectedVersion=String(yaziciMeta.version||'').trim();
+        const mainOk=Boolean(yaziciExpectedVersion)&&main.ok&&main.json&&main.json.ok===true&&String(main.json.version||'')===yaziciExpectedVersion;
+        const revenueOk=Boolean(yaziciExpectedVersion)&&revenue.ok&&revenue.json&&revenue.json.ok===true&&String(revenue.json.version||'')===yaziciExpectedVersion;
         if(mainOk&&revenueOk){ yazici={ok:true,details:'17891+17893 health/version OK'}; break; }
         yazici={ok:false,details:JSON.stringify({main:main.json||null,revenue:revenue.json||null})};
         await sleep(250);
@@ -53,7 +55,7 @@ def patch_supervisor(text: str) -> str:
       if(!yazici.ok){
         const logDir=path.join(process.env.LOCALAPPDATA||'', 'KafePinYaziciPRO','logs');
         const tails=[];
-        for(const f of ['v3161-yazici-startup.log','v3161-revenue.err.log','v3161-webservice.err.log']){
+        for(const f of ['yazici-startup.log','yazici-revenue.err.log','yazici-webservice.err.log']){
           try{ const lines=fs.readFileSync(path.join(logDir,f),'utf8').split(/\\r?\\n/).filter(Boolean); tails.push(`${f}: ${lines.slice(-12).join(' | ')}`); }catch(_){ tails.push(`${f}: okunamadi`); }
         }
         throw new Error(`Yazici PRO 17891/17893 health veya version dogrulamasi basarisiz: ${yazici.details}; ${tails.join(' || ')}`);

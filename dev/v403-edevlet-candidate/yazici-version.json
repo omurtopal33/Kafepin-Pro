@@ -1,0 +1,5 @@
+{
+  "version": "3.1.61",
+  "source": "candidate-build-input",
+  "policy": "Runtime validators read the installed yazici-pro-version.json; update this metadata only for the next Yazici PRO version."
+}

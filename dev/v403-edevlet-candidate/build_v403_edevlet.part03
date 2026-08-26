@@ -3,7 +3,8 @@
             with zipfile.ZipFile(io.BytesIO(nested_bytes), 'r') as yz:
                 yz.extractall(td)
                 before = {i.filename: yz.read(i.filename) for i in yz.infolist() if not i.is_dir()}
-            patch_payload(td)
+            target_version = read_yazici_version(root)
+            patch_payload(td, target_version)
             changed = {name for name, old in before.items() if (td / Path(name)).read_bytes() != old}
             if changed != ALLOWED_YAZICI:
                 raise SystemExit(f'unexpected Yazici changes: {sorted(changed)} expected={sorted(ALLOWED_YAZICI)}')

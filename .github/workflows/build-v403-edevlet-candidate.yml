@@ -77,6 +77,32 @@ jobs:
           foreach($marker in @('e-Devlet / Resmî Belgeler','İkametgâh','Adli Sicil','SGK','NewWindowRequested','ClearEdevletSessionAsync','17891')){if($desktop -notmatch [regex]::Escape($marker)){throw "desktop marker missing: $marker"}}
           $yz=Join-Path $env:RUNNER_TEMP 'v403-unified-yazici'; Expand-Archive (Join-Path $td2 'pro-components/yazici-pro.zip') $yz -Force
           foreach($f in @('KafePin_YaziciPRO_ServiceHost.ps1','KafePin_YaziciPRO_WebView2.ps1')){$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $yz $f),[ref]$t,[ref]$e)|Out-Null;if($e.Count){throw "PowerShell syntax failed: $f"}}
+
+          # Yazıcı PRO sürümünün tek source-of-truth'i payload metadata'sıdır.
+          # Runtime/desktop/updater kodu belirli 3.1.x değerlerini karşılaştırmamalı.
+          $meta=Get-Content (Join-Path $yz 'yazici-pro-version.json') -Raw | ConvertFrom-Json
+          $yzVersion=[string]$meta.version
+          if($yzVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$'){throw "Invalid Yazici metadata version: $yzVersion"}
+          $supervisor=Get-Content (Join-Path $td2 'KafePin_Update_Supervisor.js') -Raw
+          foreach($required in @('yazici-pro-version.json','ReadInstalledYaziciVersion')){
+            if(($supervisor+$desktop) -notmatch [regex]::Escape($required)){throw "metadata source-of-truth marker missing: $required"}
+          }
+          $runtimeFiles=@(
+            (Join-Path $yz 'KafePin_YaziciGelir_Service.js'),
+            (Join-Path $yz 'web_service.py'),
+            (Join-Path $yz 'KafePin_YaziciPRO_ServiceHost.ps1'),
+            (Join-Path $yz 'KafePin_YaziciPRO_WebView2.ps1')
+          )
+          foreach($file in $runtimeFiles){
+            $text=Get-Content $file -Raw
+            if($text -notmatch 'yazici-pro-version\.json'){throw "runtime does not read Yazici metadata: $file"}
+            if($text -match '(?i)(?:-eq|===|IndexOf\(|APP_VERSION\s*=|const\s+VERSION\s*=|\$Expected\s*=).*3\.1\.\d+'){throw "hard-coded Yazici version comparison remains: $file"}
+          }
+          $readyBlock=[regex]::Match($desktop,'(?s)private async Task<bool> IsPrinterProReadyOnceAsync\(\).*?private async Task<bool> WaitForPrinterProAsync').Value
+          if($readyBlock -match '3\.1\.\d+'){throw 'desktop readiness block contains hard-coded Yazici version'}
+          if($desktop -notmatch 'ReadInstalledYaziciVersion'){throw 'desktop metadata version reader missing'}
+          if($supervisor -match "===['\"]3\.1\.\d+"){throw 'supervisor contains hard-coded Yazici version comparison'}
+          Write-Host "YAZICI_VERSION_SOURCE_OF_TRUTH_PASS version=$yzVersion"
           $digest=(Get-FileHash $cand -Algorithm SHA256).Hash.ToLowerInvariant()
           "UNIFIED_CANDIDATE_PASS outer_sha256=$digest" | Tee-Object -FilePath unified-candidate-ci-result.txt
 

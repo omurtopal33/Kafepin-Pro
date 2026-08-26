@@ -21,6 +21,10 @@ WEBVIEW_PS1 = r'''param(
 )
 $ErrorActionPreference = 'Stop'
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$VersionFile = Join-Path $PSScriptRoot 'yazici-pro-version.json'
+$ExpectedVersion = ''
+try { $ExpectedVersion = [string]((Get-Content -LiteralPath $VersionFile -Raw -Encoding UTF8 | ConvertFrom-Json).version).Trim() } catch { }
+if ([string]::IsNullOrWhiteSpace($ExpectedVersion)) { throw ('Yazici PRO metadata version okunamadı: ' + $VersionFile) }
 $SdkVersion = '1.0.4129.50'
 $SdkRoot = Join-Path $env:ProgramData ('KafePinPro\WebView2SDK\' + $SdkVersion)
 $CoreDll = Join-Path $SdkRoot 'lib\net462\Microsoft.Web.WebView2.Core.dll'
@@ -29,12 +33,12 @@ $LoaderDir = Join-Path $SdkRoot 'runtimes\win-x64\native'
 $NugetUrl = 'https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/' + $SdkVersion
 $RuntimeBootstrapperUrl = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
 $LogDir = Join-Path $env:ProgramData 'KafePinPro\logs'
-$LogFile = Join-Path $LogDir 'v3161-edevlet-webview2.log'
+$LogFile = Join-Path $LogDir 'edevlet-webview2.log'
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 function Log([string]$Text) { try { Add-Content -LiteralPath $LogFile -Value ((Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + ' ' + $Text) -Encoding UTF8 } catch {} }
 function Fail([string]$Reason) {
   Log ('HATA: ' + $Reason)
-  try { Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show(('Yazici PRO / WebView2 baslatilamadi.`r`n`r`n' + $Reason + '`r`n`r`nLog: ' + $LogFile),'KafePin Yazici PRO 3.1.61 TEST') | Out-Null } catch {}
+  try { Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show(('Yazici PRO / WebView2 baslatilamadi.`r`n`r`n' + $Reason + '`r`n`r`nLog: ' + $LogFile),('KafePin Yazici PRO ' + $ExpectedVersion + ' TEST')) | Out-Null } catch {}
   exit 31
 }
 function WaitTask($Task) {
@@ -78,15 +82,15 @@ try {
     try{
       $w=Invoke-RestMethod 'http://127.0.0.1:17891/api/health' -TimeoutSec 1
       $r=Invoke-RestMethod 'http://127.0.0.1:17893/health' -TimeoutSec 1
-      if($w.ok -and $r.ok -and [string]$w.version -eq '3.1.61' -and [string]$r.version -eq '3.1.61'){$ready=$true;break}
+      if($w.ok -and $r.ok -and [string]$w.version -eq $ExpectedVersion -and [string]$r.version -eq $ExpectedVersion){$ready=$true;break}
     }catch{}
     Start-Sleep -Milliseconds 300
   }
-  if(-not $ready){throw 'Yazici PRO 3.1.61 TEST servisleri hazir degil.'}
+  if(-not $ready){throw ('Yazici PRO ' + $ExpectedVersion + ' TEST servisleri hazir degil.')}
 
   [System.Windows.Forms.Application]::EnableVisualStyles()
   $form=New-Object System.Windows.Forms.Form
-  $form.Text='KafePin Yazıcı PRO 3.1.61 TEST • e-Devlet'
+  $form.Text=('KafePin Yazıcı PRO ' + $ExpectedVersion + ' TEST • e-Devlet')
   $form.StartPosition='CenterScreen'; $form.WindowState='Maximized'; $form.MinimumSize=New-Object System.Drawing.Size(1000,700)
   $tabs=New-Object System.Windows.Forms.TabControl; $tabs.Dock=[System.Windows.Forms.DockStyle]::Fill; $tabs.Font=New-Object System.Drawing.Font('Segoe UI',11)
   $localTab=New-Object System.Windows.Forms.TabPage; $localTab.Text='🖨️ Yazıcı PRO'

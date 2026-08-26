@@ -9,8 +9,25 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
-def patch_revenue(text: str) -> str:
-    text = replace_once(text, 'const VERSION = "3.1.60";', 'const VERSION = "3.1.61";', 'revenue version')
+def read_yazici_version(root: Path) -> str:
+    source = root / 'dev' / 'v403-edevlet-candidate' / 'yazici-version.json'
+    try:
+        value = str(json.loads(source.read_text(encoding='utf-8')).get('version') or '').strip()
+    except Exception as exc:
+        raise SystemExit(f'Yazici version source invalid: {source}: {exc}')
+    if not re.fullmatch(r'\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?', value):
+        raise SystemExit(f'Yazici version source invalid value: {value!r}')
+    return value
+
+
+def patch_revenue(text: str, target_version: str) -> str:
+    dynamic = '''const VERSION = (() => {
+  try { return String(JSON.parse(fs.readFileSync(path.join(__dirname, "yazici-pro-version.json"), "utf8")).version || "unknown"); }
+  catch (_) { return "unknown"; }
+})();'''
+    text, count = re.subn(r'const VERSION = "[^"]+";', dynamic, text, count=1)
+    if count != 1:
+        raise SystemExit('Yazici revenue VERSION assignment missing')
     old = '''function prepareService(serviceType,quantity,payment,documentPrep=false,title=""){
   const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
   if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
@@ -34,41 +51,46 @@ def patch_revenue(text: str) -> str:
     return replace_once(text, old_route, new_route, 'service route')
 
 
-def patch_service_host(text: str) -> str:
-    for old, new in [
-        ("$Expected='3.1.60'", "$Expected='3.1.61'"),
-        ("v3160-yazici-startup.log", "v3161-yazici-startup.log"),
-        ("v3160-yazici-startup.json", "v3161-yazici-startup.json"),
-        ("[v3160]", "[v3161]"),
-        ("v3160-revenue.out.log", "v3161-revenue.out.log"),
-        ("v3160-revenue.err.log", "v3161-revenue.err.log"),
-        ("v3160-webservice.out.log", "v3161-webservice.out.log"),
-        ("v3160-webservice.err.log", "v3161-webservice.err.log"),
-        ("Servisler zaten 3.1.60 hazır.", "Servisler zaten 3.1.61 hazır."),
-    ]:
-        text = text.replace(old, new)
+def patch_service_host(text: str, target_version: str) -> str:
+    dynamic = "$VersionFile=Join-Path $InstallRoot 'yazici-pro-version.json'\n$Expected=''\ntry { $Expected=[string]((Get-Content -LiteralPath $VersionFile -Raw -Encoding UTF8 | ConvertFrom-Json).version).Trim() } catch {}\nif([string]::IsNullOrWhiteSpace($Expected)){ throw ('Yazici PRO metadata version okunamadi: '+$VersionFile) }"
+    text, count = re.subn(r"\$Expected='[^']+'", dynamic, text, count=1)
+    if count != 1:
+        raise SystemExit('Yazici service host expected-version assignment missing')
+    text = re.sub(r'v\d+-yazici-startup\.log', 'yazici-startup.log', text)
+    text = re.sub(r'v\d+-yazici-startup\.json', 'yazici-startup.json', text)
+    text = re.sub(r'v\d+-revenue\.(out|err)\.log', r'yazici-revenue.\1.log', text)
+    text = re.sub(r'v\d+-webservice\.(out|err)\.log', r'yazici-webservice.\1.log', text)
+    text = re.sub(r'\[v\d+\]', '[yazici]', text)
+    text = re.sub(r'Servisler zaten [^\r\n]+ hazır\.', 'Servisler metadata sürümünde hazır.', text)
     return text
 
 
-def patch_payload(tmp: Path) -> None:
+def patch_payload(tmp: Path, target_version: str) -> None:
     p = tmp / 'KafePin_YaziciPRO_WebView2.ps1'
-    p.write_text('\ufeff' + WEBVIEW_PS1.replace('\r\n','\n'), encoding='utf-8')
+    p.write_text('\ufeff' + WEBVIEW_PS1.replace('\r\n','\n').replace('__KAFEPIN_YAZICI_VERSION__', target_version), encoding='utf-8')
 
     p = tmp / 'KafePin_YaziciGelir_Service.js'
-    p.write_text(patch_revenue(p.read_text(encoding='utf-8-sig')), encoding='utf-8')
+    p.write_text(patch_revenue(p.read_text(encoding='utf-8-sig'), target_version), encoding='utf-8')
 
     p = tmp / 'KafePin_YaziciPRO_ServiceHost.ps1'
-    host = patch_service_host(p.read_text(encoding='utf-8-sig'))
+    host = patch_service_host(p.read_text(encoding='utf-8-sig'), target_version)
     p.write_text('\ufeff' + host, encoding='utf-8')
 
     p = tmp / 'web_service.py'
     s = p.read_text(encoding='utf-8-sig')
-    s = replace_once(s, 'APP_VERSION = "3.1.60"', 'APP_VERSION = "3.1.61"', 'web service version')
+    dynamic = '''VERSION_FILE = Path(__file__).resolve().with_name("yazici-pro-version.json")
+try:
+    APP_VERSION = str(json.loads(VERSION_FILE.read_text(encoding="utf-8-sig")).get("version") or "unknown").strip()
+except Exception:
+    APP_VERSION = "unknown"'''
+    s, count = re.subn(r'APP_VERSION = "[^"]+"', dynamic, s, count=1)
+    if count != 1:
+        raise SystemExit('Yazici web service APP_VERSION assignment missing')
     p.write_text(s, encoding='utf-8')
 
     p = tmp / 'yazici-pro-version.json'
     meta = json.loads(p.read_text(encoding='utf-8-sig'))
-    meta['version'] = '3.1.61'
+    meta['version'] = target_version
     meta['build'] = 'v403-edevlet-candidate1'
     fixes = list(meta.get('fixes') or [])
     for item in [

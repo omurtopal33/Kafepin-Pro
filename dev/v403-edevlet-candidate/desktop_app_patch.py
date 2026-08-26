@@ -209,8 +209,8 @@ def patch_desktop_source(source: bytes) -> bytes:
     )
     text = text.replace("            printerBrowser.Visible = false;\n", "            printerBrowser.Visible = false;\n            printerTabs.Visible = false;\n")
 
-    # v4.0.2's desktop shell still checked the retired 3.1.60 literal in
-    # IsPrinterProReadyOnceAsync.  That makes healthy 3.1.61 services appear
+    # v4.0.2's desktop shell still checked a retired fixed version literal in
+    # IsPrinterProReadyOnceAsync.  That makes healthy newer services appear
     # dead after the component manager has started them. Keep the check
     # bounded, verify both loopback services, and derive the expected version
     # from the installed Yazici PRO metadata instead of a stale literal.
