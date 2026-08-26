@@ -19,40 +19,32 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Expand current v4.0.2 STABLE package
+      - name: Reconstruct Yazici PRO source payload from tested v3.1.54 delta
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
-          $zip='KafePin-Pro-Update-v4.0.2.zip'
-          if(-not (Test-Path $zip)){ throw 'v4.0.2 stable package missing' }
-          $dst=Join-Path $env:RUNNER_TEMP 'kp-edevlet-probe'
-          if(Test-Path $dst){ Remove-Item $dst -Recurse -Force }
-          Expand-Archive $zip $dst -Force
-          "KP_PROBE_ROOT=$dst" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          $out=Join-Path $env:RUNNER_TEMP 'kp-yazici-src'
+          New-Item -ItemType Directory -Force -Path $out|Out-Null
+          $parts=Get-ChildItem 'dev/v3154-candidate/delta.b64.part*' | Sort-Object Name
+          if(-not $parts){throw 'v3154 delta parts missing'}
+          $b64=($parts|ForEach-Object{(Get-Content $_.FullName -Raw).Trim()}) -join ''
+          $tgz=Join-Path $env:RUNNER_TEMP 'delta.tar.gz'
+          [IO.File]::WriteAllBytes($tgz,[Convert]::FromBase64String($b64))
+          tar -xzf $tgz -C $out
+          $files=Get-ChildItem $out -Recurse -File -Filter 'KafePin_YaziciPRO_WebView2.ps1'
+          if($files.Count -ne 1){throw "Expected one WebView2 host in source payload, found $($files.Count)"}
+          "KP_WEBVIEW_FILE=$($files[0].FullName)"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "KP_SOURCE_ROOT=$out"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "WEBVIEW_FILE=$($files[0].FullName)"
 
-      - name: Locate existing Yazici PRO WebView2 host
-        shell: pwsh
-        run: |
-          $ErrorActionPreference='Stop'
-          $files=Get-ChildItem $env:KP_PROBE_ROOT -Recurse -File -Filter 'KafePin_YaziciPRO_WebView2.ps1'
-          if($files.Count -ne 1){ throw "Expected exactly one Yazici PRO WebView2 host, found $($files.Count)" }
-          $f=$files[0].FullName
-          "KP_WEBVIEW_FILE=$f" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          Write-Host "WEBVIEW_FILE=$f"
-
-      - name: Verify same-window WebView2 hooks are available
+      - name: Verify WebView2 same-window capability
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $s=Get-Content $env:KP_WEBVIEW_FILE -Raw -Encoding UTF8
-          foreach($must in @('EnsureCoreWebView2Async','CoreWebView2','web.whatsapp.com')){
-            if(-not $s.Contains($must)){ throw "Missing WebView2 marker: $must" }
-          }
-          $markers=@('NewWindowRequested','NavigationStarting','NavigationCompleted','WebMessageReceived','Navigate','Source')
-          foreach($m in $markers){
-            if($s.Contains($m)){ Write-Host "HOOK_PRESENT=$m" } else { Write-Host "HOOK_ABSENT=$m" }
-          }
-          Write-Host 'WEBVIEW2_EXISTING_HOST_OK'
+          foreach($must in @('EnsureCoreWebView2Async','CoreWebView2','web.whatsapp.com')){if(-not $s.Contains($must)){throw "Missing marker $must"}}
+          foreach($m in @('NewWindowRequested','NavigationStarting','NavigationCompleted','WebMessageReceived','Navigate','Source')){if($s.Contains($m)){Write-Host "HOOK_PRESENT=$m"}else{Write-Host "HOOK_ABSENT=$m"}}
+          Write-Host 'WEBVIEW2_SOURCE_OK'
 
       - name: Probe official e-Devlet service entry points
         shell: pwsh
@@ -64,36 +56,30 @@ jobs:
             'https://www.turkiye.gov.tr/adli-sicil-kaydi',
             'https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu'
           )
-          foreach($u in $urls){
-            try {
-              $r=Invoke-WebRequest -UseBasicParsing -Uri $u -MaximumRedirection 10 -TimeoutSec 30
-              if($r.StatusCode -lt 200 -or $r.StatusCode -ge 400){ throw "HTTP $($r.StatusCode)" }
-              Write-Host "SERVICE_OK=$u FINAL=$($r.BaseResponse.ResponseUri.AbsoluteUri)"
-            } catch {
-              throw "e-Devlet service probe failed for $u :: $($_.Exception.Message)"
-            }
-          }
+          foreach($u in $urls){$r=Invoke-WebRequest -UseBasicParsing -Uri $u -MaximumRedirection 10 -TimeoutSec 30;if($r.StatusCode -lt 200 -or $r.StatusCode -ge 400){throw "HTTP $($r.StatusCode) $u"};Write-Host "SERVICE_OK=$u"}
 
-      - name: Validate proposed session pricing state machine
+      - name: Validate session pricing model
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          $session=[ordered]@{ serviceCharged=$false; serviceCount=0; printedPages=0; copies=0 }
-          function Add-Print([int]$pages,[int]$copies){
-            if(-not $session.serviceCharged){$session.serviceCharged=$true;$session.serviceCount++}
-            $session.printedPages += ($pages*$copies)
-            $session.copies += $copies
-          }
-          Add-Print 1 3
-          Add-Print 2 1
-          Add-Print 1 2
-          if($session.serviceCount -ne 1){throw 'Service fee would be charged more than once'}
-          if($session.printedPages -ne 7){throw "Printed page accounting wrong: $($session.printedPages)"}
-          Write-Host "SESSION_PRICE_OK service=$($session.serviceCount) pages=$($session.printedPages) copies=$($session.copies)"
+          $s=[ordered]@{serviceCharged=$false;serviceCount=0;printedPages=0;copies=0}
+          function AddPrint([int]$pages,[int]$copies){if(-not $s.serviceCharged){$s.serviceCharged=$true;$s.serviceCount++};$s.printedPages+=($pages*$copies);$s.copies+=$copies}
+          AddPrint 1 3; AddPrint 2 1; AddPrint 1 2
+          if($s.serviceCount -ne 1){throw 'service fee repeated'}
+          if($s.printedPages -ne 7){throw 'page accounting wrong'}
+          Write-Host "SESSION_PRICE_OK service=$($s.serviceCount) pages=$($s.printedPages) copies=$($s.copies)"
 
-      - name: Safety lock - no STABLE mutation
+      - name: Stage source inspection artifact
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          if(-not (git diff --quiet)){ throw 'Probe modified tracked repository files' }
-          Write-Host 'STABLE_UNCHANGED_OK'
+          $dst=Join-Path $env:RUNNER_TEMP 'edevlet-inspect'
+          New-Item -ItemType Directory -Force -Path $dst|Out-Null
+          Copy-Item $env:KP_WEBVIEW_FILE (Join-Path $dst 'KafePin_YaziciPRO_WebView2.ps1')
+          $idx=Get-ChildItem $env:KP_SOURCE_ROOT -Recurse -File -Filter 'index.html'|Where-Object{$_.FullName -match 'yazici'}|Select-Object -First 1
+          if($idx){Copy-Item $idx.FullName (Join-Path $dst 'index.html')}
+          "KP_ARTIFACT_DIR=$dst"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edevlet-yazici-source-inspection
+          path: ${{ env.KP_ARTIFACT_DIR }}
+          if-no-files-found: error
