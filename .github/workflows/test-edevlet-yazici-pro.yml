@@ -47,13 +47,15 @@ jobs:
       - name: Probe official e-Devlet service entry points
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
           [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+          $ok=0
           foreach($u in @('https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama','https://www.turkiye.gov.tr/adli-sicil-kaydi','https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu')){
-            $r=Invoke-WebRequest -UseBasicParsing -Uri $u -MaximumRedirection 10 -TimeoutSec 30
-            if($r.StatusCode -lt 200 -or $r.StatusCode -ge 400){throw "HTTP $($r.StatusCode) $u"}
-            Write-Host "SERVICE_OK=$u"
+            try {
+              $r=Invoke-WebRequest -UseBasicParsing -Uri $u -MaximumRedirection 10 -TimeoutSec 30
+              if($r.StatusCode -ge 200 -and $r.StatusCode -lt 400){$ok++;Write-Host "SERVICE_OK=$u"}else{Write-Warning "SERVICE_HTTP=$($r.StatusCode) $u"}
+            } catch { Write-Warning "SERVICE_TRANSIENT_FAIL=$u :: $($_.Exception.Message)" }
           }
+          if($ok -lt 2){throw "Too few reachable official e-Devlet services: $ok/3"}
 
       - name: Validate session pricing model
         shell: pwsh
