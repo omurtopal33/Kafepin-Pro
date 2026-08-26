@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 
 def _replace(text: str, old: str, new: str, label: str) -> str:
     count = text.count(old)
@@ -206,4 +208,72 @@ def patch_desktop_source(source: bytes) -> bytes:
         "printer popup isolation",
     )
     text = text.replace("            printerBrowser.Visible = false;\n", "            printerBrowser.Visible = false;\n            printerTabs.Visible = false;\n")
+
+    # v4.0.2's desktop shell still checked the retired 3.1.60 literal in
+    # IsPrinterProReadyOnceAsync.  That makes healthy 3.1.61 services appear
+    # dead after the component manager has started them. Keep the check
+    # bounded, verify both loopback services, and derive the expected version
+    # from the installed Yazici PRO metadata instead of a stale literal.
+    dynamic_ready = r'''        private async Task<bool> IsPrinterProReadyOnceAsync()
+        {
+            return await Task.Run(delegate
+            {
+                try
+                {
+                    HttpWebRequest req = (HttpWebRequest)WebRequest.Create(PrinterProUrl + "api/health?_desktop=" + DateTime.UtcNow.Ticks.ToString());
+                    req.Method = "GET"; req.Timeout = 1500; req.ReadWriteTimeout = 1500;
+                    req.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
+                    string printerVersion;
+                    using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+                    using (StreamReader rd = new StreamReader(resp.GetResponseStream()))
+                    {
+                        if ((int)resp.StatusCode < 200 || (int)resp.StatusCode >= 300) return false;
+                        string isolation = resp.Headers["X-KafePin-Yazici-Isolation"] ?? string.Empty;
+                        if (!string.Equals(isolation, "separate-loopback-service", StringComparison.OrdinalIgnoreCase)) return false;
+                        string health = rd.ReadToEnd();
+                        if (health.IndexOf("\"ok\":true", StringComparison.OrdinalIgnoreCase) < 0) return false;
+                        printerVersion = ReadHealthVersion(health);
+                        if (string.IsNullOrWhiteSpace(printerVersion)) return false;
+                    }
+
+                    string installedVersion = ReadInstalledYaziciVersion();
+                    if (!string.IsNullOrWhiteSpace(installedVersion) && !string.Equals(printerVersion, installedVersion, StringComparison.OrdinalIgnoreCase)) return false;
+
+                    HttpWebRequest rev = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:17893/health?_desktop=" + DateTime.UtcNow.Ticks.ToString());
+                    rev.Method = "GET"; rev.Timeout = 1500; rev.ReadWriteTimeout = 1500;
+                    using (HttpWebResponse resp = (HttpWebResponse)rev.GetResponse())
+                    using (StreamReader rd = new StreamReader(resp.GetResponseStream()))
+                    {
+                        if ((int)resp.StatusCode < 200 || (int)resp.StatusCode >= 300) return false;
+                        string revenueVersion = ReadHealthVersion(rd.ReadToEnd());
+                        return string.Equals(printerVersion, revenueVersion, StringComparison.OrdinalIgnoreCase);
+                    }
+                }
+                catch { return false; }
+            });
+        }
+
+        private static string ReadHealthVersion(string json)
+        {
+            if (string.IsNullOrWhiteSpace(json)) return string.Empty;
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(json, "\\\"version\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
+        }
+
+        private static string ReadInstalledYaziciVersion()
+        {
+            try
+            {
+                string path = Path.Combine(PrinterProRoot, "yazici-pro-version.json");
+                if (!File.Exists(path)) return string.Empty;
+                return ReadHealthVersion(File.ReadAllText(path, Encoding.UTF8));
+            }
+            catch { return string.Empty; }
+        }
+
+'''
+    dynamic_pattern = r"        private async Task<bool> IsPrinterProReadyOnceAsync\(\)\n.*?        private async Task<bool> WaitForPrinterProAsync"
+    text, replaced = re.subn(dynamic_pattern, dynamic_ready + "        private async Task<bool> WaitForPrinterProAsync", text, count=1, flags=re.S)
+    if replaced != 1:
+        raise RuntimeError(f"dynamic Yazici readiness replacement expected one occurrence, found {replaced}")
     return ("\ufeff" + text).encode("utf-8")
