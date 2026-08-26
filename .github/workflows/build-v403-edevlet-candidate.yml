@@ -1,0 +1,69 @@
+name: BUILD v4.0.3 e-Devlet Candidate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v403-edevlet-candidate/**'
+      - '.github/workflows/build-v403-edevlet-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Reconstruct candidate builder
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dir='dev/v403-edevlet-candidate'
+          $parts=Get-ChildItem "$dir/build_v403_edevlet.part*" | Sort-Object Name
+          if($parts.Count -ne 4){ throw "Expected 4 builder parts, found $($parts.Count)" }
+          $out="$dir/build_v403_edevlet.py"
+          $utf8NoBom=New-Object System.Text.UTF8Encoding($false)
+          $text=($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join ''
+          [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE $out),$text,$utf8NoBom)
+          python -m py_compile $out
+
+      - name: Build v4.0.3 TEST candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python dev/v403-edevlet-candidate/build_v403_edevlet.py
+
+      - name: Final immutable-base checks
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $base='KafePin-Pro-Update-v4.0.2.zip'
+          $cand='KafePin-Pro-Update-v4.0.3-CANDIDATE.zip'
+          if(-not (Test-Path $cand)){throw 'candidate missing'}
+          $td1=Join-Path $env:RUNNER_TEMP 'v402-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403-final'
+          Expand-Archive $base $td1 -Force; Expand-Archive $cand $td2 -Force
+          $protected=@('server.js','KafePin_Update_Supervisor.js','KafePin_Recovery.ps1','KafePin_Manager_Ensure.ps1','pro-components/everycafe-pro.zip','pro-components/client-performance.zip','services/spinService.js','utils/fee.js')
+          foreach($rel in $protected){
+            $a=Join-Path $td1 $rel; $b=Join-Path $td2 $rel
+            if((Test-Path $a) -and (Test-Path $b)){
+              $ha=(Get-FileHash $a -Algorithm SHA256).Hash; $hb=(Get-FileHash $b -Algorithm SHA256).Hash
+              if($ha -ne $hb){throw "Protected file changed: $rel"}
+            }
+          }
+          Write-Host 'V402_PROTECTED_FILES_IDENTICAL_OK'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-Pro-v4.0.3-EDEVLET-CANDIDATE
+          path: |
+            KafePin-Pro-Update-v4.0.3-CANDIDATE.zip
+            KafePin-Pro-Update-v4.0.3-CANDIDATE.sha256.txt
+            V4.0.3-EDEVLET-CANDIDATE-TEST-REPORT.md
+          if-no-files-found: error
+          retention-days: 30
