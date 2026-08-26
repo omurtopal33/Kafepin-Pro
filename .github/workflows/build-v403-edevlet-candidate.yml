@@ -30,6 +30,7 @@ jobs:
           $out="$dir/build_v403_edevlet.py"
           $utf8NoBom=New-Object System.Text.UTF8Encoding($false)
           $text=($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join ''
+          $text=$text.Replace([string][char]0x2019,'')
           [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE $out),$text,$utf8NoBom)
           python -m py_compile $out
 
