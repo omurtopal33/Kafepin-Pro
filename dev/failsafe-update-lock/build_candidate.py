@@ -10,8 +10,8 @@ from patch_server import patch_server
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE = ROOT / "KafePin-Pro-Update-v4.0.2.zip"
-OUT = ROOT / "KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE.zip"
-SHA = ROOT / "KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE.sha256.txt"
+OUT = ROOT / "KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.zip"
+SHA = ROOT / "KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.sha256.txt"
 
 
 def digest(data: bytes) -> str:
@@ -29,10 +29,10 @@ def main() -> None:
             "finalStable": False,
             "sourceVersion": "4.0.2",
             "sourceSha256": digest(base_bytes),
-            "buildRevision": "v403-failsafe-update-lock-r1",
+            "buildRevision": "v403-failsafe-update-lock-r2-child-race-bounded-busy",
             "files": ["server.js"],
             "notes": [
-                "TEST only: fail-safe update lock recovery.",
+                "TEST only: fail-safe update lock recovery plus child callback race fix.",
                 "Startup validates lock age, state, owner/supervisor PID and server/DB health.",
                 "No database.db, WAL/SHM, finance, EveryCafe, session or spin payload is changed.",
             ],

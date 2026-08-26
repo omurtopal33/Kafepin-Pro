@@ -27,7 +27,7 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           python dev/failsafe-update-lock/build_candidate.py
-          $zip='KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE.zip'
+          $zip='KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.zip'
           $td=Join-Path $env:RUNNER_TEMP 'failsafe-candidate'
           Expand-Archive $zip $td -Force
           node --check (Join-Path $td 'server.js')
@@ -46,6 +46,6 @@ jobs:
         with:
           name: KafePin-Pro-v4.0.3-FAILSAFE-CANDIDATE
           path: |
-            KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE.zip
-            KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE.sha256.txt
+            KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.zip
+            KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.sha256.txt
           if-no-files-found: error

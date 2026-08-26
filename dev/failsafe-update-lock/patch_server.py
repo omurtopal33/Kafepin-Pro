@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 
 RECOVERY_BLOCK = r'''function readProUpdateSupervisorLock() {
@@ -108,6 +107,79 @@ def patch_server(text: str) -> str:
     if text.count(anchor) != 1:
         raise SystemExit(f'listen recovery anchor count={text.count(anchor)}')
     text = text.replace(anchor, replacement, 1)
+    old_child = '''function runChildTracked(command, args, timeoutMs, callback) {
+  let finished = false;
+  let stderr = "";
+  let stdout = "";
+  let child = null;
+  const done = (err) => {
+    if (finished) return;
+    finished = true;
+    if (timer) clearTimeout(timer);
+    callback(err, { stdout, stderr });
+  };
+
+  try {
+    child = spawn(command, args, { windowsHide: true });
+  } catch (err) {
+    return done(err);
+  }
+
+  child.stdout && child.stdout.on("data", chunk => { stdout += chunk.toString("utf8"); });
+  child.stderr && child.stderr.on("data", chunk => { stderr += chunk.toString("utf8"); });
+  child.on("error", err => done(err));
+  child.on("close", code => {
+    if (code === 0) return done(null);
+    done(new Error(`${command} cikis kodu ${code}${stderr.trim() ? `: ${stderr.trim().slice(0, 500)}` : ""}`));
+  });
+
+  const timer = setTimeout(() => {
+    try { child.kill(); } catch (_err) {}
+    done(new Error(`${command} zaman asimina ugradi`));
+  }, timeoutMs);
+}'''
+    new_child = '''function runChildTracked(command, args, timeoutMs, callback) {
+  let finished = false;
+  let stderr = "";
+  let stdout = "";
+  let child = null;
+  let timer = null;
+  const done = (err) => {
+    if (finished) return;
+    finished = true;
+    if (timer) { clearTimeout(timer); timer = null; }
+    callback(err, { stdout, stderr });
+  };
+
+  try {
+    child = spawn(command, args, { windowsHide: true });
+  } catch (err) {
+    return done(err);
+  }
+
+  child.stdout && child.stdout.on("data", chunk => { stdout += chunk.toString("utf8"); });
+  child.stderr && child.stderr.on("data", chunk => { stderr += chunk.toString("utf8"); });
+  child.on("error", err => done(err));
+  child.on("close", code => {
+    if (code === 0) return done(null);
+    done(new Error(`${command} cikis kodu ${code}${stderr.trim() ? `: ${stderr.trim().slice(0, 500)}` : ""}`));
+  });
+
+  // spawn() can emit close synchronously for an immediately exiting child.
+  // Never install a timer after the callback has already completed.
+  if (!finished) {
+    timer = setTimeout(() => {
+      try { child.kill(); } catch (_err) {}
+      done(new Error(`${command} zaman asimina ugradi`));
+    }, timeoutMs);
+  }
+}'''
+    if text.count(old_child) != 1:
+        raise SystemExit(f'runChildTracked anchor count={text.count(old_child)}')
+    text = text.replace(old_child, new_child, 1)
+
+    text = text.replace('try { source.configure("busyTimeout", 650); } catch (_) {}', 'try { source.configure("busyTimeout", 300); } catch (_) {}', 1)
+    text = text.replace('if (transientBusy && busyAttempt < 3) {\n      const waitMs = 180 * (busyAttempt + 1);', 'if (transientBusy && busyAttempt < 2) {\n      const waitMs = 120 * (busyAttempt + 1);', 1)
     return text
 
 
