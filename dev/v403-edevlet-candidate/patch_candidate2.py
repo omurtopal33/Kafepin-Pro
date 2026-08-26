@@ -10,7 +10,7 @@ def one(old, new, label):
         raise SystemExit(f'{label}: expected 1 occurrence, found {n}')
     s = s.replace(old, new, 1)
 
-one("OUT_NAME = 'KafePin-Pro-Update-v4.0.3-CANDIDATE.zip'", "OUT_NAME = 'KafePin-Pro-Update-v4.0.3-CANDIDATE2.zip'", 'out name')
+one("OUT_NAME = 'KafePin-Pro-Update-v4.0.3-CANDIDATE.zip'", "OUT_NAME = 'KafePin-Pro-Update-v4.0.3-CANDIDATE3.zip'", 'out name')
 one("NESTED = 'pro-components/yazici-pro.zip'\nALLOWED_OUTER = {'update.json', NESTED}", "NESTED = 'pro-components/yazici-pro.zip'\nSUPERVISOR = 'KafePin_Update_Supervisor.js'\nALLOWED_OUTER = {'update.json', NESTED, SUPERVISOR}", 'allowed outer')
 
 insert = r'''
@@ -23,7 +23,7 @@ def patch_supervisor(text: str) -> str:
     if(componentsSynced){ await runDesktopBridgeAction(installRoot,'refresh-pro-services',70000); proServicesRefreshed=true; }
     const desktopLaunched=!desktopWasRunning || shell.required;
 """
-    new = """    // v4.0.3 candidate2: Yazici-only paket ana desktop kabugunu ve diger PRO'lari
+    new = """    // v4.0.3 candidate3: Yazici-only paket ana desktop kabugunu ve diger PRO'lari
     // gereksiz yere refresh etmez. Bu yol update.json files listesiyle fail-closed calisir.
     const installedMeta=readJson(path.join(installRoot,'kafepin-pro-version.json'))||{};
     const updateFiles=Array.isArray(installedMeta.files)?installedMeta.files.map(String):[];
@@ -39,6 +39,26 @@ def patch_supervisor(text: str) -> str:
       if(r.code!==0) throw new Error(`Yazici PRO hedefli guncelleme basarisiz: ${(r.stderr||r.stdout).trim().slice(0,1800)}`);
       componentsSynced=true; proServicesRefreshed=true;
       log(installRoot,'component-only activation: Yazici PRO repaired; desktop shell and other PRO refresh skipped');
+      const end=Date.now()+45000;
+      let yazici={ok:false,details:''};
+      while(Date.now()<end){
+        const main=await httpJson(17891,'/api/health?_supervisor='+Date.now(),1500);
+        const revenue=await httpJson(17893,'/health?_supervisor='+Date.now(),1500);
+        const mainOk=main.ok&&main.json&&main.json.ok===true&&String(main.json.version||'')==='3.1.61';
+        const revenueOk=revenue.ok&&revenue.json&&revenue.json.ok===true&&String(revenue.json.version||'')==='3.1.61';
+        if(mainOk&&revenueOk){ yazici={ok:true,details:'17891+17893 health/version OK'}; break; }
+        yazici={ok:false,details:JSON.stringify({main:main.json||null,revenue:revenue.json||null})};
+        await sleep(250);
+      }
+      if(!yazici.ok){
+        const logDir=path.join(process.env.LOCALAPPDATA||'', 'KafePinYaziciPRO','logs');
+        const tails=[];
+        for(const f of ['v3161-yazici-startup.log','v3161-revenue.err.log','v3161-webservice.err.log']){
+          try{ const lines=fs.readFileSync(path.join(logDir,f),'utf8').split(/\\r?\\n/).filter(Boolean); tails.push(`${f}: ${lines.slice(-12).join(' | ')}`); }catch(_){ tails.push(`${f}: okunamadi`); }
+        }
+        throw new Error(`Yazici PRO 17891/17893 health veya version dogrulamasi basarisiz: ${yazici.details}; ${tails.join(' || ')}`);
+      }
+      log(installRoot,'component-only Yazici PRO health/version verified: '+yazici.details);
     } else {
       shell=await ensureDesktopShellExact(installRoot);
       mp3=syncMp3Payload(installRoot,proRoot); await startAndVerifyMp3(mp3);
@@ -55,14 +75,16 @@ one("\ndef main() -> None:\n", insert + "\ndef main() -> None:\n", 'insert patch
 
 one("        nested_bytes = outer.read(NESTED)\n", "        nested_bytes = outer.read(NESTED)\n        supervisor_bytes = outer.read(SUPERVISOR)\n        patched_supervisor = patch_supervisor(supervisor_bytes.decode('utf-8-sig')).encode('utf-8')\n", 'supervisor bytes')
 
-one("            update['buildRevision'] = 'v403-candidate-edevlet-r1'", "            update['buildRevision'] = 'v403-candidate2-edevlet-fast-r2'\n            update['files'] = [SUPERVISOR, NESTED]", 'candidate metadata')
+one("                yz.extractall(td)\n", "                for info in yz.infolist():\n                    if info.is_dir() or info.filename not in ALLOWED_YAZICI: continue\n                    dest = td / Path(info.filename)\n                    dest.parent.mkdir(parents=True, exist_ok=True)\n                    dest.write_bytes(yz.read(info.filename))\n", 'targeted extract permissions')
+
+one("            update['buildRevision'] = 'v403-candidate-edevlet-r1'", "            update['buildRevision'] = 'v403-candidate3-edevlet-fast-r3'\n            update['files'] = [SUPERVISOR, NESTED]", 'candidate metadata')
 
 one("                'v4.0.3 TEST/CANDIDATE: v4.0.2 STABLE güncelleme/rollback/DB güvenliği aynen korunur; yalnız Yazıcı PRO içine e-Devlet Resmî Belgeler testi eklenir.',", "                'v4.0.3 TEST/CANDIDATE2: hedefli hızlı güncelleme; ana masaüstü kabuğu ve diğer PRO modülleri refresh edilmez, yalnız Yazıcı PRO güncellenir.',\n                'v4.0.3 TEST/CANDIDATE: v4.0.2 STABLE güncelleme/rollback/DB güvenliği aynen korunur; yalnız Yazıcı PRO içine e-Devlet Resmî Belgeler testi eklenir.',", 'candidate note')
 
 one("                    elif info.filename == NESTED:\n                        data = patched_nested\n                    outz.writestr(info, data)", "                    elif info.filename == NESTED:\n                        data = patched_nested\n                    elif info.filename == SUPERVISOR:\n                        data = patched_supervisor\n                    outz.writestr(info, data)", 'outer supervisor write')
 
-one("(root / 'KafePin-Pro-Update-v4.0.3-CANDIDATE.sha256.txt')", "(root / 'KafePin-Pro-Update-v4.0.3-CANDIDATE2.sha256.txt')", 'sha filename')
+one("(root / 'KafePin-Pro-Update-v4.0.3-CANDIDATE.sha256.txt')", "(root / 'KafePin-Pro-Update-v4.0.3-CANDIDATE3.sha256.txt')", 'sha filename')
 one("- Outer değişen girdiler: `update.json`, `pro-components/yazici-pro.zip`", "- Outer değişen girdiler: `update.json`, `KafePin_Update_Supervisor.js`, `pro-components/yazici-pro.zip`\n- Hızlı component-only aktivasyon: desktop shell exact/rebuild ve diğer PRO refresh adımları atlanır; yalnız Yazıcı PRO repair edilir.\n- `update.json files` yalnız `KafePin_Update_Supervisor.js` + `pro-components/yazici-pro.zip`; ana program dosyaları kopyalanmaz.", 'report outer')
 
 p.write_text(s, encoding='utf-8')
-print('CANDIDATE2_PATCH_OK')
+print('CANDIDATE3_PATCH_OK')
