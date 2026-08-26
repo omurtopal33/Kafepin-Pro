@@ -1,0 +1,112 @@
+from __future__ import annotations
+import hashlib, io, json, os, re, shutil, subprocess, sys, tempfile, zipfile
+from datetime import datetime, timezone, timedelta
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[0]
+BASE_NAME = 'KafePin-Pro-Update-v4.0.2.zip'
+OUT_NAME = 'KafePin-Pro-Update-v4.0.3-CANDIDATE.zip'
+NESTED = 'pro-components/yazici-pro.zip'
+ALLOWED_OUTER = {'update.json', NESTED}
+ALLOWED_YAZICI = {
+    'KafePin_YaziciPRO_WebView2.ps1',
+    'KafePin_YaziciGelir_Service.js',
+    'KafePin_YaziciPRO_ServiceHost.ps1',
+    'web_service.py',
+    'yazici-pro-version.json',
+}
+
+WEBVIEW_PS1 = r'''param(
+  [string]$LocalUrl = 'http://127.0.0.1:17891/?v=3161edevlet1'
+)
+$ErrorActionPreference = 'Stop'
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+$SdkVersion = '1.0.4129.50'
+$SdkRoot = Join-Path $env:ProgramData ('KafePinPro\WebView2SDK\' + $SdkVersion)
+$CoreDll = Join-Path $SdkRoot 'lib\net462\Microsoft.Web.WebView2.Core.dll'
+$FormsDll = Join-Path $SdkRoot 'lib\net462\Microsoft.Web.WebView2.WinForms.dll'
+$LoaderDir = Join-Path $SdkRoot 'runtimes\win-x64\native'
+$NugetUrl = 'https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/' + $SdkVersion
+$RuntimeBootstrapperUrl = 'https://go.microsoft.com/fwlink/p/?LinkId=2124703'
+$LogDir = Join-Path $env:ProgramData 'KafePinPro\logs'
+$LogFile = Join-Path $LogDir 'v3161-edevlet-webview2.log'
+New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
+function Log([string]$Text) { try { Add-Content -LiteralPath $LogFile -Value ((Get-Date -Format 'yyyy-MM-dd HH:mm:ss') + ' ' + $Text) -Encoding UTF8 } catch {} }
+function Fail([string]$Reason) {
+  Log ('HATA: ' + $Reason)
+  try { Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show(('Yazici PRO / WebView2 baslatilamadi.`r`n`r`n' + $Reason + '`r`n`r`nLog: ' + $LogFile),'KafePin Yazici PRO 3.1.61 TEST') | Out-Null } catch {}
+  exit 31
+}
+function WaitTask($Task) {
+  while (-not $Task.IsCompleted) { [System.Windows.Forms.Application]::DoEvents(); Start-Sleep -Milliseconds 20 }
+  if ($Task.IsFaulted) { throw $Task.Exception.GetBaseException().Message }
+  return $Task.GetAwaiter().GetResult()
+}
+function PostLocalJson([string]$Uri, $Body) {
+  $json = $Body | ConvertTo-Json -Depth 8 -Compress
+  return Invoke-RestMethod -Method Post -Uri $Uri -ContentType 'application/json; charset=utf-8' -Body $json -TimeoutSec 7
+}
+try {
+  if (-not (Test-Path -LiteralPath $CoreDll -PathType Leaf) -or -not (Test-Path -LiteralPath $FormsDll -PathType Leaf) -or -not (Test-Path -LiteralPath (Join-Path $LoaderDir 'WebView2Loader.dll') -PathType Leaf)) {
+    Log ('WebView2 SDK indiriliyor: ' + $SdkVersion)
+    $tmp = Join-Path $env:TEMP ('KafePin-WebView2-' + [guid]::NewGuid().ToString('N'))
+    $nupkg = $tmp + '.nupkg'; $zip = $tmp + '.zip'
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $SdkRoot) | Out-Null
+    Invoke-WebRequest -UseBasicParsing -Uri $NugetUrl -OutFile $nupkg -TimeoutSec 90
+    Copy-Item -LiteralPath $nupkg -Destination $zip -Force
+    if (Test-Path -LiteralPath $SdkRoot) { Remove-Item -LiteralPath $SdkRoot -Recurse -Force }
+    New-Item -ItemType Directory -Force -Path $SdkRoot | Out-Null
+    Expand-Archive -LiteralPath $zip -DestinationPath $SdkRoot -Force
+    Remove-Item -LiteralPath $nupkg,$zip -Force -ErrorAction SilentlyContinue
+  }
+  $env:PATH = $LoaderDir + ';' + $env:PATH
+  Add-Type -AssemblyName System.Windows.Forms
+  Add-Type -AssemblyName System.Drawing
+  Add-Type -Path $CoreDll
+  Add-Type -Path $FormsDll
+  try { $runtimeVersion=[Microsoft.Web.WebView2.Core.CoreWebView2Environment]::GetAvailableBrowserVersionString(); Log ('Runtime: '+$runtimeVersion) }
+  catch {
+    $bootstrapper=Join-Path $env:TEMP 'MicrosoftEdgeWebView2Setup.exe'
+    Invoke-WebRequest -UseBasicParsing -Uri $RuntimeBootstrapperUrl -OutFile $bootstrapper -TimeoutSec 120
+    $proc=Start-Process -FilePath $bootstrapper -ArgumentList @('/silent','/install') -Wait -PassThru
+    Remove-Item $bootstrapper -Force -ErrorAction SilentlyContinue
+    $runtimeVersion=[Microsoft.Web.WebView2.Core.CoreWebView2Environment]::GetAvailableBrowserVersionString(); Log ('Runtime kuruldu: '+$runtimeVersion+' exit='+$proc.ExitCode)
+  }
+
+  $ready=$false
+  for($i=0;$i -lt 40;$i++){
+    try{
+      $w=Invoke-RestMethod 'http://127.0.0.1:17891/api/health' -TimeoutSec 1
+      $r=Invoke-RestMethod 'http://127.0.0.1:17893/health' -TimeoutSec 1
+      if($w.ok -and $r.ok -and [string]$w.version -eq '3.1.61' -and [string]$r.version -eq '3.1.61'){$ready=$true;break}
+    }catch{}
+    Start-Sleep -Milliseconds 300
+  }
+  if(-not $ready){throw 'Yazici PRO 3.1.61 TEST servisleri hazir degil.'}
+
+  [System.Windows.Forms.Application]::EnableVisualStyles()
+  $form=New-Object System.Windows.Forms.Form
+  $form.Text='KafePin Yazıcı PRO 3.1.61 TEST • e-Devlet'
+  $form.StartPosition='CenterScreen'; $form.WindowState='Maximized'; $form.MinimumSize=New-Object System.Drawing.Size(1000,700)
+  $tabs=New-Object System.Windows.Forms.TabControl; $tabs.Dock=[System.Windows.Forms.DockStyle]::Fill; $tabs.Font=New-Object System.Drawing.Font('Segoe UI',11)
+  $localTab=New-Object System.Windows.Forms.TabPage; $localTab.Text='🖨️ Yazıcı PRO'
+  $waTab=New-Object System.Windows.Forms.TabPage; $waTab.Text='📲 WhatsApp Web'
+  $edevletTab=New-Object System.Windows.Forms.TabPage; $edevletTab.Text='🏛️ e-Devlet'
+  [void]$tabs.TabPages.Add($localTab); [void]$tabs.TabPages.Add($waTab); [void]$tabs.TabPages.Add($edevletTab); $form.Controls.Add($tabs)
+
+  $localView=New-Object Microsoft.Web.WebView2.WinForms.WebView2; $localView.Dock=[System.Windows.Forms.DockStyle]::Fill
+  $waView=New-Object Microsoft.Web.WebView2.WinForms.WebView2; $waView.Dock=[System.Windows.Forms.DockStyle]::Fill
+  $edevletView=New-Object Microsoft.Web.WebView2.WinForms.WebView2; $edevletView.Dock=[System.Windows.Forms.DockStyle]::Fill
+  $localTab.Controls.Add($localView); $waTab.Controls.Add($waView)
+
+  $bar=New-Object System.Windows.Forms.FlowLayoutPanel
+  $bar.Dock=[System.Windows.Forms.DockStyle]::Top; $bar.Height=52; $bar.AutoSize=$false; $bar.WrapContents=$false; $bar.Padding=New-Object System.Windows.Forms.Padding(7,7,7,4)
+  $bar.BackColor=[System.Drawing.Color]::FromArgb(244,246,249)
+  function AddBarButton([string]$Text,[int]$Width=125){ $b=New-Object System.Windows.Forms.Button; $b.Text=$Text; $b.Width=$Width; $b.Height=34; return $b }
+  $btnBack=AddBarButton '← Geri' 78
+  $btnHome=AddBarButton 'e-Devlet Ana' 112
+  $btnIkamet=AddBarButton 'İkametgâh' 112
+  $btnAdli=AddBarButton 'Adli Sicil' 105
+  $btnSgk=AddBarButton 'SGK Dökümü' 115
+  $btnPrint=AddBarButton '🖨 KafePin Yazdır' 145
+  $feeLabel=New-Object System.Windows.Forms.Label; $feeLabel.Text='Hizmet ₺'; $feeLabel.AutoSize=$true; $feeLabel.Margin=New-Object System.Windows.Forms.Padding(12,9,2,0)
