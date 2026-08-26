@@ -28,6 +28,46 @@ def patch_desktop_source(source: bytes) -> bytes:
     )
     text = _replace(
         text,
+        '            string marker = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "KafePinPro", "pro-services-started.marker");\n',
+        '            string marker = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "KafePinPro", "pro-services-started.marker");\n',
+        "per-user PRO startup marker",
+    )
+    text = _replace(
+        text,
+        "                BeginInitialize();\n                serverWatchTimer.Start();\n",
+        "                BeginInitialize();\n                EnsureProServicesReadyAtStartupAsync();\n                serverWatchTimer.Start();\n",
+        "non-blocking PRO startup from form shown",
+    )
+    text = _replace(
+        text,
+        "            bool allReady = mp3Ready && printerReady && serviceReady && clientReady && cvReady;\n",
+        "            bool allReady = mp3Ready && printerReady && serviceReady && clientReady && performanceReady && cvReady;\n",
+        "all installed PRO services readiness",
+    )
+    text = _replace(
+        text,
+        "        private async Task<bool> WaitForCvProAsync(int maxSeconds)\n",
+        "        private async Task<bool> WaitForClientPerformanceAsync(int maxSeconds)\n"
+        "        {\n"
+        "            DateTime deadline = DateTime.UtcNow.AddSeconds(Math.Max(1, maxSeconds));\n"
+        "            while (DateTime.UtcNow < deadline)\n"
+        "            {\n"
+        "                if (await IsClientPerformanceReadyAsync()) return true;\n"
+        "                await Task.Delay(500);\n"
+        "            }\n"
+        "            return await IsClientPerformanceReadyAsync();\n"
+        "        }\n\n"
+        "        private async Task<bool> WaitForCvProAsync(int maxSeconds)\n",
+        "Client Performance bounded readiness wait",
+    )
+    text = _replace(
+        text,
+        "            Task<bool> performanceReadyTask = performanceStarted ? IsClientPerformanceReadyAsync() : Task.FromResult(false);\n",
+        "            Task<bool> performanceReadyTask = performanceStarted ? WaitForClientPerformanceAsync(35) : Task.FromResult(false);\n",
+        "Client Performance readiness task",
+    )
+    text = _replace(
+        text,
         "                if (version == null)\n"
         "                {\n"
         "                    if (!serverWasUnavailable)\n",
@@ -109,7 +149,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            printerPanelTab.Controls.Add(printerBrowser);\n"
         "            edevletBrowser = new WebView2();\n"
         "            edevletBrowser.Dock = DockStyle.Fill;\n"
-        "            edevletBrowser.Visible = false;\n"
+        "            edevletBrowser.Visible = true;\n"
         "            edevletTab.Controls.Add(edevletBrowser);\n"
         "            FlowLayoutPanel edevletToolbar = new FlowLayoutPanel();\n"
         "            edevletToolbar.Dock = DockStyle.Top; edevletToolbar.Height = 44; edevletToolbar.WrapContents = false; edevletToolbar.Padding = new Padding(6, 5, 6, 4);\n"
@@ -167,6 +207,8 @@ def patch_desktop_source(source: bytes) -> bytes:
             serviceBrowser.Visible = false;
             clientBrowser.Visible = false;
             clientPerformanceBrowser.Visible = false;
+            printerBrowser.Visible = true;
+            edevletBrowser.Visible = true;
             printerTabs.Visible = true;
             printerTabs.BringToFront();
             UpdateNavButtons(printerTabs.SelectedTab == edevletTab ? EdevletHomeUrl : PrinterProUrl);

@@ -21,13 +21,50 @@ def _replace(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def _replace_in_block(text: str, start_marker: str, end_marker: str, old: str, new: str, label: str) -> str:
+    start = text.index(start_marker)
+    end = text.index(end_marker, start)
+    block = text[start:end]
+    count = block.count(old)
+    if count != 1:
+        raise RuntimeError(f"{label}: expected one occurrence in block, found {count}")
+    block = block.replace(old, new, 1)
+    return text[:start] + block + text[end:]
+
+
 def patch_server_source(source: bytes) -> bytes:
     text = source.decode("utf-8-sig")
-    # A closed-session callback already has the EveryCafe row as `session`.
-    # `sourceSession` is not in scope and would turn a successful DB callback
-    # into an uncaught exception on a real close event.
-    text = text.replace("isEveryCafeFreeSession(sourceSession)", "isEveryCafeFreeSession(session)")
+    # The closed-session callback has the row as `session`, while the active
+    # session loop intentionally calls it `sourceSession`. Patch only the
+    # closed-session check so the active loop keeps its valid variable.
+    text = _replace(
+        text,
+        "if (!isEveryCafeFreeSession(sourceSession)) {",
+        "if (!isEveryCafeFreeSession(session)) {",
+        "closed-session free check variable",
+    )
     text = _load_failsafe_patch()(text)
+    text = _replace(
+        text,
+        "function importEveryCafeSession(session, cb) {",
+        "function importEveryCafeSession(session, cb, busyAttempt = 0) {",
+        "closed-session busy retry state",
+    )
+    import_start = text.index("function importEveryCafeSession(session, cb, busyAttempt = 0) {")
+    import_end = text.index("\n}\n\n// EveryCafe'de", import_start) + 2
+    import_block = text[import_start:import_end]
+    begin_line = "          if (beginErr) return cb(beginErr);"
+    if import_block.count(begin_line) != 2:
+        raise RuntimeError(f"closed-session BEGIN retry: expected two occurrences, found {import_block.count(begin_line)}")
+    begin_retry = '''          if (beginErr) {
+            if (isSqliteBusyError(beginErr) && busyAttempt < 3) {
+              const waitMs = 200 * (busyAttempt + 1);
+              return setTimeout(() => importEveryCafeSession(session, cb, busyAttempt + 1), waitMs);
+            }
+            return cb(beginErr);
+          }'''
+    import_block = import_block.replace(begin_line, begin_retry)
+    text = text[:import_start] + import_block + text[import_end:]
     text = _replace(
         text,
         "function syncEveryCafeClosedSessions(cb = () => {}) {",
@@ -141,6 +178,15 @@ function readDurableRolloverAck() {
   } catch (_err) { return null; }
 }
 
+function getEffectiveRolloverStatus(dbStatus) {
+  const durable = readDurableRolloverAck();
+  const dbTs = Number(dbStatus && dbStatus.rolloverTs) || 0;
+  const durableTs = Number(durable && durable.rolloverTs) || 0;
+  if (!durable || durable.status !== "success" || !durableTs) return dbStatus || null;
+  if (!dbStatus || durableTs > dbTs || (durableTs === dbTs && dbStatus.status !== "success")) return durable;
+  return dbStatus;
+}
+
 function writeDurableRolloverAck(status) {
   if (!status || status.status !== "success") return;
   try {
@@ -175,13 +221,51 @@ function writeDurableRolloverAck(status) {
 }'''
     text = text[:start] + replacement + text[end:]
 
-    old = '  const lastTs = Number(last && last.rolloverTs) || 0;'
-    new = '''  const durableAck = readDurableRolloverAck();
-  const dbLastTs = Number(last && last.rolloverTs) || 0;
-  const durableTs = Number(durableAck && durableAck.rolloverTs) || 0;
-  if (durableAck && durableTs > dbLastTs) last = durableAck;
-  const lastTs = Number(last && last.rolloverTs) || 0;'''
-    text = _replace(text, old, new, "durable rollover acknowledgement")
+    text = _replace_in_block(
+        text,
+        "function getNextMissedRolloverBoundary(last, nowTs = Date.now()) {",
+        "\n}\n\nfunction getMissedRolloverRepairLabel",
+        "  const lastTs = Number(last && last.rolloverTs) || 0;",
+        "  last = getEffectiveRolloverStatus(last);\n  const lastTs = Number(last && last.rolloverTs) || 0;",
+        "missed rollover durable acknowledgement",
+    )
+
+    # Every reader must use the newest successful acknowledgement.  This is
+    # what makes an already completed manual day-end stay completed even when
+    # a transient SQLite lock left the settings row one day behind.
+    parse_line = "        try { last = row && row.value ? JSON.parse(row.value) : null; } catch (_err) {}"
+    text = _replace_in_block(
+        text,
+        'db.get("SELECT 1 AS ok", (dbErr) => {',
+        '\napp.get("/admin/automatic-health"',
+        parse_line,
+        parse_line + "\n        last = getEffectiveRolloverStatus(last);",
+        "automatic health durable rollover status",
+    )
+    text = _replace_in_block(
+        text,
+        'app.post("/admin/rollover/repair-missed", (req, res) => {',
+        "\nfunction sendRolloverTelegramWithRetry",
+        "    try { last = row && row.value ? JSON.parse(row.value) : null; } catch (_err) {}",
+        "    try { last = row && row.value ? JSON.parse(row.value) : null; } catch (_err) {}\n    last = getEffectiveRolloverStatus(last);",
+        "manual repair durable rollover status",
+    )
+    text = _replace_in_block(
+        text,
+        'app.get("/admin/rollover-status", (req, res) => {',
+        "\nlet dailyRolloverInProgress = false;",
+        "      const sendStatus = () => res.json({",
+        "      last = getEffectiveRolloverStatus(last);\n      const sendStatus = () => res.json({",
+        "rollover status durable acknowledgement",
+    )
+    text = _replace_in_block(
+        text,
+        "function ensureTodayRollover() {",
+        '\ncron.schedule("0 20 * * *"',
+        "    if (last && last.status === \"success\" && Number(last.rolloverTs) >= boundaryTs) return;",
+        "    last = getEffectiveRolloverStatus(last);\n    if (last && last.status === \"success\" && Number(last.rolloverTs) >= boundaryTs) return;",
+        "catch-up durable rollover status",
+    )
     return text
 
 

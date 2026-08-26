@@ -59,23 +59,32 @@ jobs:
           $td1=Join-Path $env:RUNNER_TEMP 'v402-unified-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403-unified-final'
           Expand-Archive $base $td1 -Force; Expand-Archive $cand $td2 -Force
           $u=Get-Content (Join-Path $td2 'update.json') -Raw | ConvertFrom-Json
-          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip','desktop-app/KafePinProDesktop.cs','server.js','public/admin.html')
+          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip','desktop-app/KafePinProDesktop.cs','server.js','public/admin.html','KafePin_System_Manager.ps1','KafePin_Manager_Ensure.ps1')
           $actual=@($u.files)
-          if($actual.Count -ne 5 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Targeted files list wrong: '+($actual -join ','))}
+          if($actual.Count -ne 7 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Targeted files list wrong: '+($actual -join ','))}
           foreach($rel in @('database.db','database.db-wal','database.db-shm')) { if(Test-Path (Join-Path $td2 $rel)){throw "DB payload forbidden: $rel"} }
-          $protected=@('KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Manager_Ensure.ps1','KafePin_Recovery.ps1','KafePin_System_Manager.ps1','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
+          $protected=@('KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Recovery.ps1','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
           foreach($rel in $protected){$a=Join-Path $td1 $rel;$b=Join-Path $td2 $rel;if((Test-Path $a)-and(Test-Path $b)){if((Get-FileHash $a -Algorithm SHA256).Hash -ne (Get-FileHash $b -Algorithm SHA256).Hash){throw "Protected file changed: $rel"}}}
           node --check (Join-Path $td2 'server.js')
           node --check (Join-Path $td2 'KafePin_Update_Supervisor.js')
           node (Join-Path $td2 'KafePin_Update_Supervisor.js') --self-test
           $server=Get-Content (Join-Path $td2 'server.js') -Raw
-          foreach($marker in @('recoverRecentEveryCafeMissingImports','/admin/everycafe/retry-missing','withSqliteBusyRetry','DAILY_ROLLOVER_ACK_FILE','runChildTracked')){if($server -notmatch [regex]::Escape($marker)){throw "server marker missing: $marker"}}
+          foreach($marker in @('recoverRecentEveryCafeMissingImports','/admin/everycafe/retry-missing','withSqliteBusyRetry','DAILY_ROLLOVER_ACK_FILE','getEffectiveRolloverStatus','runChildTracked')){if($server -notmatch [regex]::Escape($marker)){throw "server marker missing: $marker"}}
           if($server -notmatch 'OPEN_READONLY'){throw 'EveryCafe read-only guard missing'}
-          if($server -match 'isEveryCafeFreeSession\(sourceSession\)'){throw 'EveryCafe close callback contains undefined sourceSession'}
+          if(([regex]::Matches($server,'isEveryCafeFreeSession\(sourceSession\)')).Count -ne 1){throw 'EveryCafe active-session sourceSession guard missing or duplicated'}
+          if(([regex]::Matches($server,'if \(!isEveryCafeFreeSession\(session\)\)')).Count -ne 1){throw 'EveryCafe closed-session session guard missing or duplicated'}
+          if(([regex]::Matches($server,'importEveryCafeSession\(session, cb, busyAttempt \+ 1\)')).Count -ne 2){throw 'EveryCafe bounded BEGIN retry must exist at both transaction entries'}
+          if(([regex]::Matches($server,'getEffectiveRolloverStatus\(last\)')).Count -lt 5){throw 'durable day-end acknowledgement is not used by every status/repair/catch-up reader'}
           $admin=Get-Content (Join-Path $td2 'public/admin.html') -Raw
           foreach($marker in @('MANUEL AKTAR / YENİDEN İŞLE','retryEveryCafeMissing')){if($admin -notmatch [regex]::Escape($marker)){throw "admin recovery marker missing: $marker"}}
           $desktop=Get-Content (Join-Path $td2 'desktop-app/KafePinProDesktop.cs') -Raw
           foreach($marker in @('e-Devlet / Resmî Belgeler','İkametgâh','Adli Sicil','SGK','NewWindowRequested','ClearEdevletSessionAsync','17891')){if($desktop -notmatch [regex]::Escape($marker)){throw "desktop marker missing: $marker"}}
+          if(([regex]::Matches($desktop,'edevletBrowser\.Visible = true')).Count -lt 2){throw 'e-Devlet browser visibility regression'}
+          if($desktop -notmatch '(?s)ShowPrinterView\(\).*?printerBrowser\.Visible = true;.*?edevletBrowser\.Visible = true;.*?printerTabs\.Visible = true;'){throw 'Yazici tab visibility restore missing'}
+          if($desktop -notmatch 'SpecialFolder\.LocalApplicationData\), "KafePinPro", "pro-services-started\.marker"'){throw 'PRO startup marker is not user-writable'}
+          if($desktop -notmatch '(?s)Shown \+= async delegate.*?EnsureProServicesReadyAtStartupAsync\(\);.*?serverWatchTimer\.Start'){throw 'non-blocking PRO startup trigger missing from visible form'}
+          if($desktop -notmatch 'WaitForClientPerformanceAsync\(35\)'){throw 'Client Performance bounded readiness wait missing'}
+          if($desktop -notmatch 'allReady = mp3Ready && printerReady && serviceReady && clientReady && performanceReady && cvReady'){throw 'allReady omits an installed PRO service'}
           if($desktop -notmatch 'serverConsecutiveHealthMisses'){throw 'desktop watchdog threshold missing'}
           if($desktop -notmatch 'serverWatchTimer\.Interval = 3500'){throw 'desktop watchdog interval missing'}
           $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
@@ -122,6 +131,16 @@ jobs:
           if($readyBlock -match '3\.1\.\d+'){throw 'desktop readiness block contains hard-coded Yazici version'}
           if($desktop -notmatch 'ReadInstalledYaziciVersion'){throw 'desktop metadata version reader missing'}
           if($supervisor -match '===[''\"]3\.1\.\d+'){throw 'supervisor contains hard-coded Yazici version comparison'}
+          $manager=Get-Content (Join-Path $td2 'KafePin_System_Manager.ps1') -Raw
+          if($manager -match 'if \(\$null -ne \$fast\) \{ return @\(\$fast\) \}'){throw 'manager still returns early from PID-file process'}
+          foreach($marker in @('SYNC restart iptal','ASYNC restart iptal','Kuyruk restart iptal','control server stop failed PID=')){if($manager -notmatch [regex]::Escape($marker)){throw "manager duplicate-server guard missing: $marker"}}
+          $parseErrors=$null; [System.Management.Automation.Language.Parser]::ParseInput($manager,[ref]$null,[ref]$parseErrors)|Out-Null
+          if($parseErrors.Count){throw ('manager PowerShell parse failed: '+(($parseErrors|ForEach-Object{$_.Message}) -join '; '))}
+          $managerEnsure=Get-Content (Join-Path $td2 'KafePin_Manager_Ensure.ps1') -Raw
+          foreach($marker in @('$managerChanged','Get-FileHash','/End','/Run')){if($managerEnsure -notmatch [regex]::Escape($marker)){throw "manager ensure reload marker missing: $marker"}}
+          $ensureErrors=$null; [System.Management.Automation.Language.Parser]::ParseInput($managerEnsure,[ref]$null,[ref]$ensureErrors)|Out-Null
+          if($ensureErrors.Count){throw ('manager ensure PowerShell parse failed: '+(($ensureErrors|ForEach-Object{$_.Message}) -join '; '))}
+          if($supervisor -notmatch 'unified activation: Server Manager payload synchronized'){throw 'supervisor does not activate updated Manager payload'}
           Write-Host "YAZICI_VERSION_SOURCE_OF_TRUTH_PASS version=$yzVersion"
           $digest=(Get-FileHash $cand -Algorithm SHA256).Hash.ToLowerInvariant()
           "UNIFIED_CANDIDATE_PASS outer_sha256=$digest" | Tee-Object -FilePath unified-candidate-ci-result.txt
