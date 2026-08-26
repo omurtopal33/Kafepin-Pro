@@ -2029,13 +2029,23 @@ namespace KafePinProDesktop
                         if ((int)resp.StatusCode < 200 || (int)resp.StatusCode >= 300) return false;
                         string isolation = resp.Headers["X-KafePin-Yazici-Isolation"] ?? string.Empty;
                         if (!string.Equals(isolation, "separate-loopback-service", StringComparison.OrdinalIgnoreCase)) return false;
-                        if (rd.ReadToEnd().IndexOf("3.1.60", StringComparison.OrdinalIgnoreCase) < 0) return false;
+                        string health = rd.ReadToEnd();
+                        // Yazici PRO paket surumu 3.1.60'a sabitlenmez; servis kimligi
+                        // ve version alani dogrulanir. Boylece 3.1.61+ servisleri
+                        // saglikli olduklari halde yanlislikla basarisiz sayilmaz.
+                        if (health.IndexOf("KafePin Yazıcı PRO", StringComparison.OrdinalIgnoreCase) < 0 ||
+                            health.IndexOf("\"version\"", StringComparison.OrdinalIgnoreCase) < 0) return false;
                     }
                     HttpWebRequest rev = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:17893/health?_desktop=" + DateTime.UtcNow.Ticks.ToString());
                     rev.Method = "GET"; rev.Timeout = 1500; rev.ReadWriteTimeout = 1500;
                     using (HttpWebResponse resp = (HttpWebResponse)rev.GetResponse())
                     using (StreamReader rd = new StreamReader(resp.GetResponseStream()))
-                    { return (int)resp.StatusCode >= 200 && (int)resp.StatusCode < 300 && rd.ReadToEnd().IndexOf("3.1.60", StringComparison.OrdinalIgnoreCase) >= 0; }
+                    {
+                        string health = rd.ReadToEnd();
+                        return (int)resp.StatusCode >= 200 && (int)resp.StatusCode < 300 &&
+                            health.IndexOf("KafePin Yazıcı Geliri", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                            health.IndexOf("\"version\"", StringComparison.OrdinalIgnoreCase) >= 0;
+                    }
                 }
                 catch { return false; }
             });
