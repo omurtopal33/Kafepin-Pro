@@ -119,6 +119,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         "        private readonly WebView2 printerBrowser;\n"
         "        private readonly WebView2 edevletBrowser;\n"
         "        private readonly TabControl printerTabs;\n"
+        "        private readonly Panel printerTabsHeaderFill;\n"
         "        private readonly TabPage printerPanelTab;\n"
         "        private readonly TabPage edevletTab;\n",
         "e-Devlet controls",
@@ -149,6 +150,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            printerPanelTab.Controls.Add(printerBrowser);\n"
         "            edevletBrowser = new WebView2();\n"
         "            edevletBrowser.Dock = DockStyle.Fill;\n"
+        "            edevletBrowser.DefaultBackgroundColor = Color.FromArgb(11, 20, 29);\n"
         "            edevletBrowser.Visible = true;\n"
         "            edevletTab.Controls.Add(edevletBrowser);\n"
         "            FlowLayoutPanel edevletToolbar = new FlowLayoutPanel();\n"
@@ -158,6 +160,17 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            Button adli = new Button(); adli.Text = \"Adli Sicil\"; adli.Width = 105; adli.Height = 32;\n"
         "            Button sgk = new Button(); sgk.Text = \"SGK Dökümü\"; sgk.Width = 112; sgk.Height = 32;\n"
         "            Button endSession = new Button(); endSession.Text = \"Oturumu Bitir\"; endSession.Width = 118; endSession.Height = 32;\n"
+        "            printerPanelTab.BackColor = Color.FromArgb(11, 20, 29); edevletTab.BackColor = Color.FromArgb(11, 20, 29);\n"
+        "            edevletToolbar.BackColor = Color.FromArgb(15, 29, 41);\n"
+        "            foreach (Button toolButton in new Button[] { edevletHome, ikamet, adli, sgk, endSession })\n"
+        "            {\n"
+        "                toolButton.FlatStyle = FlatStyle.Flat; toolButton.FlatAppearance.BorderSize = 1;\n"
+        "                toolButton.FlatAppearance.BorderColor = Color.FromArgb(55, 82, 103);\n"
+        "                toolButton.BackColor = Color.FromArgb(24, 42, 58); toolButton.ForeColor = Color.White;\n"
+        "                toolButton.Font = new Font(\"Segoe UI\", 9F, FontStyle.Bold); toolButton.Cursor = Cursors.Hand;\n"
+        "            }\n"
+        "            edevletHome.BackColor = Color.FromArgb(24, 142, 98); edevletHome.FlatAppearance.BorderColor = Color.FromArgb(70, 220, 160);\n"
+        "            endSession.BackColor = Color.FromArgb(123, 37, 53); endSession.FlatAppearance.BorderColor = Color.FromArgb(218, 78, 102);\n"
         "            edevletHome.Click += async delegate { await OpenEdevletUrlAsync(EdevletHomeUrl); };\n"
         "            ikamet.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama\"); };\n"
         "            adli.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/adli-sicil-kaydi\"); };\n"
@@ -168,7 +181,13 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            printerTabs.TabPages.Add(printerPanelTab);\n"
         "            printerTabs.TabPages.Add(edevletTab);\n"
         "            printerTabs.SelectedIndexChanged += async delegate { if (printerTabs.SelectedTab == edevletTab) { try { await EnsureEdevletBrowserAsync(); } catch (Exception ex) { MessageBox.Show(\"e-Devlet açılamadı:\\n\" + ex.Message, \"KafePin e-Devlet\", MessageBoxButtons.OK, MessageBoxIcon.Error); } } };\n"
-        "            contentPanel.Controls.Add(printerTabs);\n",
+        "            contentPanel.Controls.Add(printerTabs);\n"
+        "            printerTabsHeaderFill = new Panel();\n"
+        "            printerTabsHeaderFill.BackColor = Color.FromArgb(11, 20, 29);\n"
+        "            printerTabsHeaderFill.SetBounds(420, 0, Math.Max(0, contentPanel.ClientSize.Width - 420), 36);\n"
+        "            printerTabsHeaderFill.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;\n"
+        "            printerTabsHeaderFill.Visible = false;\n"
+        "            contentPanel.Controls.Add(printerTabsHeaderFill);\n",
         "printer tabs construction",
     )
     text = _replace(
@@ -176,6 +195,25 @@ def patch_desktop_source(source: bytes) -> bytes:
         "try { printerBrowser.Dispose(); } catch { }",
         "try { printerBrowser.Dispose(); } catch { } try { edevletBrowser.Dispose(); } catch { }",
         "e-Devlet dispose",
+    )
+    text = _replace(
+        text,
+        "            printerTabs.Font = new Font(\"Segoe UI\", 10F);\n",
+        "            printerTabs.Font = new Font(\"Segoe UI\", 10F, FontStyle.Bold);\n"
+        "            printerTabs.DrawMode = TabDrawMode.OwnerDrawFixed;\n"
+        "            printerTabs.SizeMode = TabSizeMode.Fixed;\n"
+        "            printerTabs.ItemSize = new Size(210, 34);\n"
+        "            printerTabs.DrawItem += delegate(object sender, DrawItemEventArgs e)\n"
+        "            {\n"
+        "                bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;\n"
+        "                Color tabBack = selected ? Color.FromArgb(24, 142, 98) : Color.FromArgb(24, 42, 58);\n"
+        "                Color tabBorder = selected ? Color.FromArgb(70, 220, 160) : Color.FromArgb(55, 82, 103);\n"
+        "                Rectangle tabRect = e.Bounds; tabRect.Inflate(-1, -1);\n"
+        "                using (SolidBrush fill = new SolidBrush(tabBack)) e.Graphics.FillRectangle(fill, tabRect);\n"
+        "                using (Pen border = new Pen(tabBorder)) e.Graphics.DrawRectangle(border, tabRect);\n"
+        "                TextRenderer.DrawText(e.Graphics, printerTabs.TabPages[e.Index].Text, printerTabs.Font, tabRect, Color.White, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);\n"
+        "            };\n",
+        "themed Yazici PRO tabs",
     )
     old_show = """        private void ShowPrinterView()
         {
@@ -211,6 +249,8 @@ def patch_desktop_source(source: bytes) -> bytes:
             edevletBrowser.Visible = true;
             printerTabs.Visible = true;
             printerTabs.BringToFront();
+            printerTabsHeaderFill.Visible = true;
+            printerTabsHeaderFill.BringToFront();
             UpdateNavButtons(printerTabs.SelectedTab == edevletTab ? EdevletHomeUrl : PrinterProUrl);
             KeepWhatsAppSidebarOnTop();
         }
@@ -240,6 +280,7 @@ def patch_desktop_source(source: bytes) -> bytes:
             if (edevletBrowserReady && edevletBrowser.CoreWebView2 != null) return;
             CoreWebView2Environment env = await GetEdevletEnvironmentAsync();
             await edevletBrowser.EnsureCoreWebView2Async(env);
+            try { await edevletBrowser.CoreWebView2.CallDevToolsProtocolMethodAsync("Emulation.setAutoDarkModeOverride", "{\"enabled\":true}"); } catch { }
             edevletBrowser.CoreWebView2.Settings.AreDevToolsEnabled = false;
             edevletBrowser.CoreWebView2.Settings.AreDefaultContextMenusEnabled = true;
             edevletBrowser.CoreWebView2.Settings.IsStatusBarEnabled = false;
@@ -292,7 +333,7 @@ def patch_desktop_source(source: bytes) -> bytes:
     text = _replace(
         text,
         "                    printerBrowser.Visible = true;\n                    printerBrowser.BringToFront();\n                    if (whatsAppViewActive && whatsAppPanel.Visible)\n                        whatsAppPanel.BringToFront();\n                    UpdateNavButtons(PrinterProUrl);\n",
-        "                    printerTabs.Visible = true;\n                    printerTabs.BringToFront();\n                    if (whatsAppViewActive && whatsAppPanel.Visible)\n                        whatsAppPanel.BringToFront();\n                    UpdateNavButtons(PrinterProUrl);\n",
+        "                    printerTabs.Visible = true;\n                    printerTabs.BringToFront();\n                    printerTabsHeaderFill.Visible = true;\n                    printerTabsHeaderFill.BringToFront();\n                    if (whatsAppViewActive && whatsAppPanel.Visible)\n                        whatsAppPanel.BringToFront();\n                    UpdateNavButtons(PrinterProUrl);\n",
         "printer navigation completion",
     )
     text = _replace(
@@ -301,7 +342,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            if (IsPrinterProUrl(e.Uri))\n            {\n                printerBrowser.CoreWebView2.Navigate(e.Uri);\n                return;\n            }\n            return;\n",
         "printer popup isolation",
     )
-    text = text.replace("            printerBrowser.Visible = false;\n", "            printerBrowser.Visible = false;\n            printerTabs.Visible = false;\n")
+    text = text.replace("            printerBrowser.Visible = false;\n", "            printerBrowser.Visible = false;\n            printerTabs.Visible = false;\n            printerTabsHeaderFill.Visible = false;\n")
 
     # v4.0.2's desktop shell still checked a retired fixed version literal in
     # IsPrinterProReadyOnceAsync.  That makes healthy newer services appear
