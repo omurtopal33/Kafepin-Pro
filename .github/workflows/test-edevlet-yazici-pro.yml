@@ -66,7 +66,7 @@ jobs:
           if($s.serviceCount -ne 1){throw 'service fee repeated'}
           if($s.printedPages -ne 7){throw 'page accounting wrong'}
 
-      - name: Capture v4.0.2 updater layout and Yazici source
+      - name: Capture v4.0.2 updater layout and current Yazici PRO
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
@@ -75,21 +75,19 @@ jobs:
           $dst=Join-Path $env:RUNNER_TEMP 'v403-inspect'
           New-Item -ItemType Directory -Force -Path $dst|Out-Null
           Get-ChildItem $stable -Recurse -File | ForEach-Object { $_.FullName.Substring($stable.Length+1) } | Set-Content (Join-Path $dst 'v402-file-list.txt') -Encoding utf8
-          foreach($name in @('update.json','server.js','KafePin_Manager_Ensure.ps1','KafePin_Recovery_Health.ps1')){
+          foreach($name in @('update.json','server.js','KafePin_Manager_Ensure.ps1')){
             $f=Get-ChildItem $stable -Recurse -File -Filter $name|Select-Object -First 1
             if($f){Copy-Item $f.FullName (Join-Path $dst $name)}
           }
-          Copy-Item $env:KP_WEBVIEW_FILE (Join-Path $dst 'KafePin_YaziciPRO_WebView2.ps1')
-          $idx=Get-ChildItem $env:KP_SOURCE_ROOT -Recurse -File -Filter 'index.html'|Where-Object{$_.FullName -match 'yazici'}|Select-Object -First 1
-          if($idx){Copy-Item $idx.FullName (Join-Path $dst 'YaziciPRO-index.html')}
-          $ws=Get-ChildItem $env:KP_SOURCE_ROOT -Recurse -File -Filter 'web_service.py'|Where-Object{$_.FullName -match 'yazici'}|Select-Object -First 1
-          if($ws){Copy-Item $ws.FullName (Join-Path $dst 'web_service.py')}
-          $rev=Get-ChildItem $env:KP_SOURCE_ROOT -Recurse -File -Filter 'KafePin_YaziciGelir_Service.js'|Select-Object -First 1
-          if($rev){Copy-Item $rev.FullName (Join-Path $dst 'KafePin_YaziciGelir_Service.js')}
+          $yz=Join-Path $stable 'pro-components\yazici-pro.zip'
+          if(-not (Test-Path $yz)){throw 'v4.0.2 yazici-pro.zip missing'}
+          $current=Join-Path $dst 'current-yazici-pro'
+          Expand-Archive $yz $current -Force
+          Get-ChildItem $current -Recurse -File | ForEach-Object { $_.FullName.Substring($current.Length+1) } | Set-Content (Join-Path $dst 'current-yazici-file-list.txt') -Encoding utf8
           "KP_ARTIFACT_DIR=$dst"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
 
       - uses: actions/upload-artifact@v4
         with:
-          name: v403-design-inspection
+          name: v403-current-yazici-inspection
           path: ${{ env.KP_ARTIFACT_DIR }}
           if-no-files-found: error
