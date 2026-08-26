@@ -23,6 +23,10 @@ def _replace(text: str, old: str, new: str, label: str) -> str:
 
 def patch_server_source(source: bytes) -> bytes:
     text = source.decode("utf-8-sig")
+    # A closed-session callback already has the EveryCafe row as `session`.
+    # `sourceSession` is not in scope and would turn a successful DB callback
+    # into an uncaught exception on a real close event.
+    text = text.replace("isEveryCafeFreeSession(sourceSession)", "isEveryCafeFreeSession(session)")
     text = _load_failsafe_patch()(text)
     text = _replace(
         text,

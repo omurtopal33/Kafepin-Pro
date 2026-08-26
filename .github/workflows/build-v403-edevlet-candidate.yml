@@ -71,10 +71,20 @@ jobs:
           $server=Get-Content (Join-Path $td2 'server.js') -Raw
           foreach($marker in @('recoverRecentEveryCafeMissingImports','/admin/everycafe/retry-missing','withSqliteBusyRetry','DAILY_ROLLOVER_ACK_FILE','runChildTracked')){if($server -notmatch [regex]::Escape($marker)){throw "server marker missing: $marker"}}
           if($server -notmatch 'OPEN_READONLY'){throw 'EveryCafe read-only guard missing'}
+          if($server -match 'isEveryCafeFreeSession\(sourceSession\)'){throw 'EveryCafe close callback contains undefined sourceSession'}
           $admin=Get-Content (Join-Path $td2 'public/admin.html') -Raw
           foreach($marker in @('MANUEL AKTAR / YENİDEN İŞLE','retryEveryCafeMissing')){if($admin -notmatch [regex]::Escape($marker)){throw "admin recovery marker missing: $marker"}}
           $desktop=Get-Content (Join-Path $td2 'desktop-app/KafePinProDesktop.cs') -Raw
           foreach($marker in @('e-Devlet / Resmî Belgeler','İkametgâh','Adli Sicil','SGK','NewWindowRequested','ClearEdevletSessionAsync','17891')){if($desktop -notmatch [regex]::Escape($marker)){throw "desktop marker missing: $marker"}}
+          if($desktop -notmatch 'serverConsecutiveHealthMisses'){throw 'desktop watchdog threshold missing'}
+          if($desktop -notmatch 'serverWatchTimer\.Interval = 3500'){throw 'desktop watchdog interval missing'}
+          $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          $core=Get-ChildItem (Join-Path $td1 'desktop-app') -Recurse -Filter 'Microsoft.Web.WebView2.Core.dll' -File | Select-Object -First 1
+          $forms=Get-ChildItem (Join-Path $td1 'desktop-app') -Recurse -Filter 'Microsoft.Web.WebView2.WinForms.dll' -File | Select-Object -First 1
+          if(-not $core -or -not $forms -or -not (Test-Path $csc)){throw 'desktop compile prerequisites missing'}
+          $desktopExe=Join-Path $env:RUNNER_TEMP 'v403-unified-desktop-compile.exe'
+          & $csc /nologo /target:winexe /out:$desktopExe /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll ("/reference:"+$core.FullName) ("/reference:"+$forms.FullName) (Join-Path $td2 'desktop-app/KafePinProDesktop.cs')
+          if($LASTEXITCODE -ne 0 -or -not (Test-Path $desktopExe)){throw 'candidate desktop C# compile failed'}
           $yz=Join-Path $env:RUNNER_TEMP 'v403-unified-yazici'; Expand-Archive (Join-Path $td2 'pro-components/yazici-pro.zip') $yz -Force
           foreach($f in @('KafePin_YaziciPRO_ServiceHost.ps1','KafePin_YaziciPRO_WebView2.ps1')){$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $yz $f),[ref]$t,[ref]$e)|Out-Null;if($e.Count){throw "PowerShell syntax failed: $f"}}
 

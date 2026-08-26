@@ -15,6 +15,58 @@ def patch_desktop_source(source: bytes) -> bytes:
 
     text = _replace(
         text,
+        "        private bool serverWasUnavailable;\n",
+        "        private bool serverWasUnavailable;\n"
+        "        private int serverConsecutiveHealthMisses;\n",
+        "desktop watchdog consecutive-miss state",
+    )
+    text = _replace(
+        text,
+        "            serverWatchTimer.Interval = 1500;\n",
+        "            serverWatchTimer.Interval = 3500;\n",
+        "desktop watchdog interval",
+    )
+    text = _replace(
+        text,
+        "                if (version == null)\n"
+        "                {\n"
+        "                    if (!serverWasUnavailable)\n",
+        "                if (version == null)\n"
+        "                {\n"
+        "                    serverConsecutiveHealthMisses++;\n"
+        "                    if (serverConsecutiveHealthMisses < 3) return;\n"
+        "                    if (!serverWasUnavailable)\n",
+        "desktop watchdog threshold",
+    )
+    text = _replace(
+        text,
+        "                bool versionChanged = !string.IsNullOrWhiteSpace(lastServerVersion) &&\n",
+        "                serverConsecutiveHealthMisses = 0;\n"
+        "\n"
+        "                bool versionChanged = !string.IsNullOrWhiteSpace(lastServerVersion) &&\n",
+        "desktop watchdog reset",
+    )
+    text = _replace(
+        text,
+        "                    req.Timeout = 900;\n"
+        "                    req.ReadWriteTimeout = 900;\n"
+        "                    req.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);\n"
+        "                    using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())\n"
+        "                    {\n"
+        "                        if ((int)resp.StatusCode < 200 || (int)resp.StatusCode >= 300) return null;\n"
+        "                        return resp.Headers[\"X-KafePin-Version\"] ?? string.Empty;\n",
+        "                    req.Timeout = 5000;\n"
+        "                    req.ReadWriteTimeout = 5000;\n"
+        "                    req.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);\n"
+        "                    using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())\n"
+        "                    {\n"
+        "                        if ((int)resp.StatusCode < 200 || (int)resp.StatusCode >= 300) return null;\n"
+        "                        return resp.Headers[\"X-KafePin-Version\"] ?? string.Empty;\n",
+        "desktop watchdog health timeout",
+    )
+
+    text = _replace(
+        text,
         '        private const string PrinterProRoot = @"C:\\KafePinPro\\YaziciPRO";\n',
         '        private const string PrinterProRoot = @"C:\\KafePinPro\\YaziciPRO";\n'
         '        private const string EdevletHomeUrl = "https://www.turkiye.gov.tr/";\n'
@@ -256,7 +308,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         private static string ReadHealthVersion(string json)
         {
             if (string.IsNullOrWhiteSpace(json)) return string.Empty;
-            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(json, "\\\"version\\\"\\s*:\\s*\\\"([^\\\"]+)\\\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            System.Text.RegularExpressions.Match match = System.Text.RegularExpressions.Regex.Match(json, "\"version\"\\s*:\\s*\"([^\"]+)\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             return match.Success ? match.Groups[1].Value.Trim() : string.Empty;
         }
 
