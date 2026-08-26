@@ -1,4 +1,4 @@
-name: BUILD v4.0.3 e-Devlet Candidate
+name: BUILD v4.0.3 e-Devlet Candidate2
 
 on:
   pull_request:
@@ -32,39 +32,46 @@ jobs:
           $text=($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join ''
           $text=$text.Replace([string][char]0x2019,'')
           [IO.File]::WriteAllText((Join-Path $env:GITHUB_WORKSPACE $out),$text,$utf8NoBom)
+          python dev/v403-edevlet-candidate/patch_candidate2.py
           python -m py_compile $out
 
-      - name: Build v4.0.3 TEST candidate
+      - name: Build v4.0.3 TEST candidate2
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           python dev/v403-edevlet-candidate/build_v403_edevlet.py
 
-      - name: Final immutable-base checks
+      - name: Final fast-update safety checks
         shell: pwsh
         run: |
           $ErrorActionPreference='Stop'
           $base='KafePin-Pro-Update-v4.0.2.zip'
-          $cand='KafePin-Pro-Update-v4.0.3-CANDIDATE.zip'
-          if(-not (Test-Path $cand)){throw 'candidate missing'}
-          $td1=Join-Path $env:RUNNER_TEMP 'v402-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403-final'
+          $cand='KafePin-Pro-Update-v4.0.3-CANDIDATE2.zip'
+          if(-not (Test-Path $cand)){throw 'candidate2 missing'}
+          $td1=Join-Path $env:RUNNER_TEMP 'v402-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403c2-final'
           Expand-Archive $base $td1 -Force; Expand-Archive $cand $td2 -Force
-          $protected=@('server.js','KafePin_Update_Supervisor.js','KafePin_Recovery.ps1','KafePin_Manager_Ensure.ps1','pro-components/everycafe-pro.zip','pro-components/client-performance.zip','services/spinService.js','utils/fee.js')
+          $u=Get-Content (Join-Path $td2 'update.json') -Raw | ConvertFrom-Json
+          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip')
+          $actual=@($u.files)
+          if($actual.Count -ne 2 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Fast files list wrong: '+($actual -join ','))}
+          $protected=@('server.js','KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Manager_Ensure.ps1','KafePin_Recovery.ps1','KafePin_System_Manager.ps1','desktop-app/KafePinProDesktop.cs','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
           foreach($rel in $protected){
             $a=Join-Path $td1 $rel; $b=Join-Path $td2 $rel
             if((Test-Path $a) -and (Test-Path $b)){
-              $ha=(Get-FileHash $a -Algorithm SHA256).Hash; $hb=(Get-FileHash $b -Algorithm SHA256).Hash
-              if($ha -ne $hb){throw "Protected file changed: $rel"}
+              if((Get-FileHash $a -Algorithm SHA256).Hash -ne (Get-FileHash $b -Algorithm SHA256).Hash){throw "Protected file changed: $rel"}
             }
           }
-          Write-Host 'V402_PROTECTED_FILES_IDENTICAL_OK'
+          $sup=Get-Content (Join-Path $td2 'KafePin_Update_Supervisor.js') -Raw
+          if($sup -notmatch 'component-only activation: Yazici PRO repaired') { throw 'component-only supervisor path missing' }
+          if($sup -notmatch "-Component','yazici-pro") { throw 'targeted Yazici repair missing' }
+          Write-Host 'CANDIDATE2_FAST_UPDATE_LOCK_OK'
 
       - uses: actions/upload-artifact@v4
         with:
-          name: KafePin-Pro-v4.0.3-EDEVLET-CANDIDATE
+          name: KafePin-Pro-v4.0.3-EDEVLET-CANDIDATE2
           path: |
-            KafePin-Pro-Update-v4.0.3-CANDIDATE.zip
-            KafePin-Pro-Update-v4.0.3-CANDIDATE.sha256.txt
+            KafePin-Pro-Update-v4.0.3-CANDIDATE2.zip
+            KafePin-Pro-Update-v4.0.3-CANDIDATE2.sha256.txt
             V4.0.3-EDEVLET-CANDIDATE-TEST-REPORT.md
           if-no-files-found: error
           retention-days: 30
