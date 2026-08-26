@@ -101,7 +101,7 @@ jobs:
           $readyBlock=[regex]::Match($desktop,'(?s)private async Task<bool> IsPrinterProReadyOnceAsync\(\).*?private async Task<bool> WaitForPrinterProAsync').Value
           if($readyBlock -match '3\.1\.\d+'){throw 'desktop readiness block contains hard-coded Yazici version'}
           if($desktop -notmatch 'ReadInstalledYaziciVersion'){throw 'desktop metadata version reader missing'}
-          if($supervisor -match "===['\"]3\.1\.\d+"){throw 'supervisor contains hard-coded Yazici version comparison'}
+          if($supervisor -match '===[''\"]3\.1\.\d+'){throw 'supervisor contains hard-coded Yazici version comparison'}
           Write-Host "YAZICI_VERSION_SOURCE_OF_TRUTH_PASS version=$yzVersion"
           $digest=(Get-FileHash $cand -Algorithm SHA256).Hash.ToLowerInvariant()
           "UNIFIED_CANDIDATE_PASS outer_sha256=$digest" | Tee-Object -FilePath unified-candidate-ci-result.txt
