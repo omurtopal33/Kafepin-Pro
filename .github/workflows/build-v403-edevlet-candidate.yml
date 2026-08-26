@@ -81,6 +81,16 @@ jobs:
           $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
           $core=Get-ChildItem (Join-Path $td1 'desktop-app') -Recurse -Filter 'Microsoft.Web.WebView2.Core.dll' -File | Select-Object -First 1
           $forms=Get-ChildItem (Join-Path $td1 'desktop-app') -Recurse -Filter 'Microsoft.Web.WebView2.WinForms.dll' -File | Select-Object -First 1
+          if(-not $core -or -not $forms){
+            $sdkRoot=Join-Path $env:RUNNER_TEMP 'webview2-sdk-compile'
+            $sdkPkg=Join-Path $env:RUNNER_TEMP 'webview2-sdk-compile.nupkg'
+            $sdkZip=Join-Path $env:RUNNER_TEMP 'webview2-sdk-compile.zip'
+            Invoke-WebRequest -UseBasicParsing -Uri 'https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.4129.50' -OutFile $sdkPkg
+            Copy-Item -LiteralPath $sdkPkg -Destination $sdkZip -Force
+            Expand-Archive -LiteralPath $sdkZip -DestinationPath $sdkRoot -Force
+            $core=Get-ChildItem $sdkRoot -Recurse -Filter 'Microsoft.Web.WebView2.Core.dll' -File | Where-Object { $_.FullName -match 'net4(5|6|62)' } | Select-Object -First 1
+            $forms=Get-ChildItem $sdkRoot -Recurse -Filter 'Microsoft.Web.WebView2.WinForms.dll' -File | Where-Object { $_.FullName -match 'net4(5|6|62)' } | Select-Object -First 1
+          }
           if(-not $core -or -not $forms -or -not (Test-Path $csc)){throw 'desktop compile prerequisites missing'}
           $desktopExe=Join-Path $env:RUNNER_TEMP 'v403-unified-desktop-compile.exe'
           & $csc /nologo /target:winexe /out:$desktopExe /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll ("/reference:"+$core.FullName) ("/reference:"+$forms.FullName) (Join-Path $td2 'desktop-app/KafePinProDesktop.cs')
