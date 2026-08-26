@@ -1,0 +1,98 @@
+        with tempfile.TemporaryDirectory(prefix='v403-yazici-') as td:
+            td = Path(td)
+            with zipfile.ZipFile(io.BytesIO(nested_bytes), 'r') as yz:
+                yz.extractall(td)
+                before = {i.filename: yz.read(i.filename) for i in yz.infolist() if not i.is_dir()}
+            patch_payload(td)
+            changed = {name for name, old in before.items() if (td / Path(name)).read_bytes() != old}
+            if changed != ALLOWED_YAZICI:
+                raise SystemExit(f'unexpected Yazici changes: {sorted(changed)} expected={sorted(ALLOWED_YAZICI)}')
+            patched_nested = repack_nested(nested_bytes, td)
+
+            # Syntax gates on Windows runner.
+            node = shutil.which('node') or shutil.which('node.exe')
+            if node:
+                r = subprocess.run([node, '--check', str(td / 'KafePin_YaziciGelir_Service.js')], capture_output=True, text=True)
+                if r.returncode:
+                    raise SystemExit('node syntax failed: ' + (r.stderr or r.stdout))
+
+            ps = shutil.which('powershell.exe') or shutil.which('pwsh')
+            if ps:
+                for rel in ['KafePin_YaziciPRO_WebView2.ps1','KafePin_YaziciPRO_ServiceHost.ps1']:
+                    f = str(td / rel).replace("'", "''")
+                    cmd = f"$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile('{f}',[ref]$t,[ref]$e)|Out-Null;if($e.Count){{$e|ForEach-Object{{$_.ToString()}};exit 1}}"
+                    r = subprocess.run([ps, '-NoProfile', '-Command', cmd], capture_output=True, text=True)
+                    if r.returncode:
+                        raise SystemExit(f'powershell syntax failed {rel}: ' + (r.stderr or r.stdout))
+
+            update = dict(base_update)
+            update['version'] = '4.0.3'
+            update['channel'] = 'candidate'
+            update['finalStable'] = False
+            update['sourceVersion'] = '4.0.2'
+            update['sourceSha256'] = base_sha
+            update['publishedAt'] = datetime.now(timezone(timedelta(hours=3))).replace(microsecond=0).isoformat()
+            update['buildRevision'] = 'v403-candidate-edevlet-r1'
+            new_notes = [
+                'v4.0.3 TEST/CANDIDATE: v4.0.2 STABLE güncelleme/rollback/DB güvenliği aynen korunur; yalnız Yazıcı PRO içine e-Devlet Resmî Belgeler testi eklenir.',
+                'e-Devlet ayrı tarayıcı açmaz: İkametgâh, Adli Sicil ve SGK hizmetleri aynı KafePin Yazıcı PRO WebView2 penceresinde açılır; popup talepleri aynı sekmeye alınır.',
+                'Müşteri oturumu bazlı ücret: e-Devlet hizmet bedeli ilk hizmet açılışında yalnız 1 kez KafePin Doğrudan Satışa işlenir; aynı oturumda 1 veya 10 belge için tekrarlanmaz.',
+                'Belge baskıları mevcut Yazıcı PRO/Windows PrintService fiyatlandırmasını kullanmaya devam eder; aynı belgeden 3 kopya dahil gerçek basılan sayfa/kopya ayrıca ücretlenir.',
+                'Oturumu Bitir e-Devlet cookie/cache/session verilerini temizler; e-Devlet için ayrı WebView2 profili kullanıldığı için WhatsApp oturumu etkilenmez.',
+                'TEST sınırlaması: gerçek e-Devlet kimlik doğrulama ve belge önizleme/yazdırma akışı yalnız kullanıcı saha testinde doğrulanacaktır; şifre/CAPTCHA/e-Devlet kimlik verisi KafePin tarafından okunmaz veya saklanmaz.'
+            ]
+            update['notes'] = new_notes + list(base_update.get('notes') or [])
+            update_bytes = (json.dumps(update, ensure_ascii=False, indent=2) + '\n').encode('utf-8')
+
+            out_path = root / OUT_NAME
+            out_io = io.BytesIO()
+            with zipfile.ZipFile(out_io, 'w') as outz:
+                for info in outer.infolist():
+                    data = outer.read(info.filename)
+                    if info.filename == 'update.json':
+                        data = update_bytes
+                    elif info.filename == NESTED:
+                        data = patched_nested
+                    outz.writestr(info, data)
+            out_bytes = out_io.getvalue()
+            out_path.write_bytes(out_bytes)
+
+    # Strict outer-diff lock.
+    with zipfile.ZipFile(io.BytesIO(base_bytes), 'r') as a, zipfile.ZipFile(out_path, 'r') as b:
+        if a.namelist() != b.namelist():
+            raise SystemExit('outer manifest changed')
+        changed_outer = {name for name in a.namelist() if a.read(name) != b.read(name)}
+        if changed_outer != ALLOWED_OUTER:
+            raise SystemExit(f'unexpected outer changes: {sorted(changed_outer)}')
+        u = json.loads(b.read('update.json').decode('utf-8-sig'))
+        files = list(u.get('files') or [])
+        if not files:
+            raise SystemExit('candidate files list empty')
+        for rel in files:
+            if rel not in b.namelist():
+                raise SystemExit(f'candidate manifest file missing: {rel}')
+            if re.search(r'(^|[\\/])database\.db(?:-wal|-shm)?$', rel, re.I):
+                raise SystemExit(f'DB file forbidden in candidate: {rel}')
+        if b.testzip() is not None:
+            raise SystemExit('candidate outer zip corrupt')
+
+    digest = sha(out_path.read_bytes())
+    (root / 'KafePin-Pro-Update-v4.0.3-CANDIDATE.sha256.txt').write_text(f'{digest}  {OUT_NAME}\n', encoding='ascii')
+    report = f'''# KafePin Pro v4.0.3 TEST/CANDIDATE — e-Devlet
+
+- Base: v4.0.2 STABLE
+- Base SHA256: `{base_sha}`
+- Candidate SHA256: `{digest}`
+- Outer değişen girdiler: `update.json`, `pro-components/yazici-pro.zip`
+- `server.js`, updater, rollback, DB güvenliği, EveryCafe, finans, session/spin ve diğer PRO paketleri byte-for-byte v4.0.2 ile aynıdır.
+- Yazıcı PRO değişen dosyalar: {', '.join(f'`{x}`' for x in sorted(ALLOWED_YAZICI))}
+- e-Devlet: aynı WebView2 penceresi, ayrı e-Devlet profili, popup same-window, oturum temizleme.
+- Fiyatlama: tek müşteri oturumunda bir kez e-Devlet hizmet bedeli; baskılar mevcut PrintService akışında ayrıca.
+- Gerçek hesap/CAPTCHA/kimlik bilgisi otomatikleştirilmez veya saklanmaz.
+- Bu paket yalnız TEST/CANDIDATE'dır; saha onayı olmadan STABLE yapılmaz.
+'''
+    (root / 'V4.0.3-EDEVLET-CANDIDATE-TEST-REPORT.md').write_text(report, encoding='utf-8')
+    print('V403_CANDIDATE_OK', digest, out_path.stat().st_size)
+
+if __name__ == '__main__':
+    main()
