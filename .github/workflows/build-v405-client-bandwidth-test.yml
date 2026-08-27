@@ -1,0 +1,68 @@
+name: BUILD v4.0.5 client bandwidth TEST pilot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install PyInstaller
+        shell: pwsh
+        run: python -m pip install --disable-pip-version-check pyinstaller
+
+      - name: Build Web Limit Agent
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --onefile --name KafePin_WebLimit_Agent dev/v405-client-bandwidth/KafePin_WebLimit_Agent.py
+          if (!(Test-Path dist/KafePin_WebLimit_Agent.exe)) { throw 'Agent EXE build failed' }
+
+      - name: Assemble pilot package
+        shell: pwsh
+        run: |
+          $root = Join-Path $PWD 'out\KafePin-v4.0.5-WebLimit-PILOT'
+          $agent = Join-Path $root 'client-agent'
+          $server = Join-Path $root 'server-clientperf-patch'
+          New-Item -ItemType Directory -Force -Path $agent,$server | Out-Null
+          Copy-Item dist/KafePin_WebLimit_Agent.exe $agent
+          Copy-Item dev/v405-client-bandwidth/install.ps1 $agent
+          Copy-Item dev/v405-client-bandwidth/uninstall.ps1 $agent
+          Copy-Item dev/v405-client-bandwidth/README.md $root
+          Copy-Item dev/v405-client-bandwidth/clientperf/* $server -Recurse -Force
+          $zip = Join-Path $PWD 'out\KafePin-v4.0.5-WebLimit-PILOT.zip'
+          Compress-Archive -Path "$root\*" -DestinationPath $zip -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          "$hash  KafePin-v4.0.5-WebLimit-PILOT.zip" | Set-Content -Encoding ascii (Join-Path $PWD 'out\KafePin-v4.0.5-WebLimit-PILOT.sha256.txt')
+
+      - name: Static safety checks
+        shell: pwsh
+        run: |
+          python -m py_compile dev/v405-client-bandwidth/KafePin_WebLimit_Agent.py dev/v405-client-bandwidth/clientperf/web_service.py
+          node --check dev/v405-client-bandwidth/clientperf/web/app.js
+          $agent = Get-Content dev/v405-client-bandwidth/KafePin_WebLimit_Agent.py -Raw
+          if ($agent -match 'WinDivert|netsh\s+winhttp|Internet Settings') { throw 'Forbidden global/kernel traffic hook detected' }
+          if ($agent -notmatch 'PROXY 127\.0\.0\.1') { throw 'PAC fail-open proxy declaration missing' }
+          if ($agent -notmatch 'DIRECT') { throw 'PAC DIRECT fallback missing' }
+          $perf = Get-Content dev/v405-client-bandwidth/clientperf/web_service.py -Raw
+          if ($perf -match 'sqlite3\.connect|INSERT\s+INTO|UPDATE\s+|DELETE\s+FROM') { throw 'Client Performans pilot unexpectedly touches DB/write SQL' }
+
+      - name: Upload pilot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v4.0.5-WebLimit-PILOT
+          path: |
+            out/KafePin-v4.0.5-WebLimit-PILOT.zip
+            out/KafePin-v4.0.5-WebLimit-PILOT.sha256.txt
+          if-no-files-found: error
+          retention-days: 14
