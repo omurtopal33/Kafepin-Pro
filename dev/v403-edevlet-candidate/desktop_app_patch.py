@@ -236,6 +236,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            }\n"
         "            edevletHome.BackColor = Color.FromArgb(24, 142, 98); edevletHome.FlatAppearance.BorderColor = Color.FromArgb(70, 220, 160);\n"
         "            edevletCharge.BackColor = Color.FromArgb(24, 142, 98); edevletCharge.FlatAppearance.BorderColor = Color.FromArgb(70, 220, 160);\n"
+        "            edevletCancelCharge.BackColor = Color.FromArgb(94, 65, 35); edevletDeleteCharge.BackColor = Color.FromArgb(123, 37, 53);\n"
         "            endSession.BackColor = Color.FromArgb(123, 37, 53); endSession.FlatAppearance.BorderColor = Color.FromArgb(218, 78, 102);\n"
         "            edevletHome.Click += async delegate { await OpenEdevletUrlAsync(EdevletHomeUrl); };\n"
         "            nufus.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/nvi-nufus-kayit-ornegi-belgesi-sorgulama\"); };\n"
