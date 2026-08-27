@@ -85,7 +85,7 @@ def main() -> None:
     ):
         if marker not in supervisor:
             raise AssertionError(f"Client Yonetim targeted activation marker missing: {marker}")
-    subprocess.run(["node", "--check", "-"], input=supervisor, text=True, check=True)
+    subprocess.run(["node", "--check", "-"], input=supervisor.encode("utf-8"), check=True)
 
     print("VERIFY_OK")
     print("OUTER_CHANGED=" + ",".join(sorted(changed_outer)))
