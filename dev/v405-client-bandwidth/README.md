@@ -7,6 +7,8 @@ Pilot hedefi: tum masalarda yalnız Chrome/Edge web trafiğini 50 Mbps indirme /
 - PAC: `http://127.0.0.1:17906/proxy.pac`.
 - Yalnız Chrome/Edge policy kullanılır; global WinINET/WinHTTP proxy değiştirilmez.
 - Private IPv4/LAN/localhost PAC tarafından `DIRECT` bırakılır.
+- Diskless/Super WKS kurulumu tamamlandığında ilk politika `AKTIF 50/10` olarak yazılır ve install akışı agent health ile kontrol endpoint'ini doğrular.
+- Sonraki Aç/Kapat işlemleri Client Performans PRO üzerinden yapılır; agent state dosyasına kaydedilir ve restart sonrası son durum korunur.
 - Client Performans PRO kartları agent canlı health olmadan `AKTİF` göstermez.
 - Tek masa ve toplu Aç/Kapat desteklenir.
 - EveryCafe DB erişimine hiçbir değişiklik yoktur.
