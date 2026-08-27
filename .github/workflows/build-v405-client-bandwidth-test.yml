@@ -1,6 +1,12 @@
 name: BUILD v4.0.5 client bandwidth TEST pilot
 
 on:
+  push:
+    branches:
+      - test/v405-client-bandwidth
+    paths:
+      - 'dev/v405-client-bandwidth/**'
+      - '.github/workflows/build-v405-client-bandwidth-test.yml'
   workflow_dispatch:
 
 permissions:
