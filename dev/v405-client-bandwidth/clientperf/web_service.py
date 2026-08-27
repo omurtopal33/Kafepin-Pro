@@ -22,6 +22,7 @@ WEB_LIMIT_UP_MBPS = 10.0
 WEB_LIMIT_KEY_FILE = Path(r"C:\ProgramData\KafePin\WebLimit\control.key")
 SAMPLE_CACHE_SECONDS = 2.5
 _cache: dict[str, tuple[float, dict]] = {}
+_agent_reachable: dict[str, bool] = {}
 
 
 def fetch_json(url: str, timeout: float = 1.8) -> object:
@@ -79,6 +80,22 @@ def control_agent(ip: str, enable: bool, down: float = WEB_LIMIT_DOWN_MBPS, up: 
         return data if isinstance(data, dict) else {"ok": False, "error": "bad response"}
     except Exception as exc:
         return {"ok": False, "error": str(exc)}
+
+
+def auto_enable_agent(ip: str, health: dict) -> dict:
+    """Enable 50/10 when an agent is first seen or reconnects; manual disable stays off until reconnect."""
+    if not ip:
+        return health
+    reachable = bool(health.get("reachable"))
+    was_reachable = _agent_reachable.get(ip, False)
+    _agent_reachable[ip] = reachable
+    if reachable and not was_reachable and not health.get("enabled"):
+        result = control_agent(ip, True)
+        if result.get("ok"):
+            return fetch_agent_health(ip)
+        health = dict(health)
+        health["error"] = str(result.get("error") or "otomatik 50/10 uygulanamadı")
+    return health
 
 
 def parse_number(value: object) -> float | None:
@@ -167,7 +184,10 @@ def read_client_sensor(client: dict, link_speeds: dict[int, float] | None = None
     }
     if not ip or not result["online"]:
         result["message"] = "Client kapalı / ulaşılamıyor"
-        result["webLimit"] = fetch_agent_health(ip) if ip else {"reachable": False, "enabled": False, "error": "IP yok"}
+        health = fetch_agent_health(ip) if ip else {"reachable": False, "enabled": False, "error": "IP yok"}
+        if ip:
+            _agent_reachable[ip] = bool(health.get("reachable"))
+        result["webLimit"] = health
         _cache[key] = (now, result)
         return dict(result)
     try:
@@ -186,7 +206,7 @@ def read_client_sensor(client: dict, link_speeds: dict[int, float] | None = None
     except Exception:
         result["message"] = "Libre Hardware Monitor servisi kapalı (http://IP:8085)"
         result["pingMs"] = ping_ms(ip)
-    result["webLimit"] = fetch_agent_health(ip)
+    result["webLimit"] = auto_enable_agent(ip, fetch_agent_health(ip))
     _cache[key] = (now, result)
     return dict(result)
 
@@ -226,6 +246,8 @@ class Handler(SimpleHTTPRequestHandler):
             path = urlparse(self.path).path; data = self.read_json_body()
             if path == "/api/web-limit":
                 ip = str(data.get("ip") or "").strip(); result = control_agent(ip, bool(data.get("enable")))
+                if result.get("ok") and ip:
+                    _agent_reachable[ip] = True
                 return self.send_json(result, 200 if result.get("ok") else 502)
             if path == "/api/web-limit/all":
                 enable = bool(data.get("enable")); source = fetch_json(CLIENT_MANAGER_URL, timeout=2.5); clients = source.get("clients") or [] if isinstance(source, dict) else []; outcomes = []
@@ -233,7 +255,10 @@ class Handler(SimpleHTTPRequestHandler):
                     ip = str(client.get("ClientIP") or "").strip(); name = str(client.get("ClientName") or client.get("ComputerName") or ip or "Masa")
                     if not ip or not bool(client.get("deviceOnline")):
                         outcomes.append({"name": name, "ip": ip, "ok": False, "skipped": True, "error": "offline/IP yok"}); continue
-                    r = control_agent(ip, enable); outcomes.append({"name": name, "ip": ip, **r})
+                    r = control_agent(ip, enable)
+                    if r.get("ok"):
+                        _agent_reachable[ip] = True
+                    outcomes.append({"name": name, "ip": ip, **r})
                 return self.send_json({"ok": True, "enable": enable, "results": outcomes})
             return self.send_json({"ok": False, "error": "Bulunamadı"}, 404)
         except Exception as exc:
@@ -241,9 +266,9 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         try:
             path = urlparse(self.path).path
-            if path == "/api/health": return self.send_json({"ok": True, "app": "Client Performans PRO", "port": PORT, "source": "Libre Hardware Monitor", "everyCafeReadOnly": True})
+            if path == "/api/health": return self.send_json({"ok": True, "app": "Client Performans PRO", "port": PORT, "source": "Libre Hardware Monitor", "everyCafeReadOnly": True, "autoWebLimitOnReconnect": True})
             if path == "/api/metrics":
-                metrics = list_metrics(); return self.send_json({"ok": True, "source": "Libre Hardware Monitor", "everyCafeReadOnly": True, "updatedAt": int(time.time() * 1000), "clients": metrics})
+                metrics = list_metrics(); return self.send_json({"ok": True, "source": "Libre Hardware Monitor", "everyCafeReadOnly": True, "autoWebLimitOnReconnect": True, "updatedAt": int(time.time() * 1000), "clients": metrics})
             self.serve_file("index.html" if path in ("/", "/index.html") else path.lstrip("/"))
         except Exception as exc:
             self.send_json({"ok": False, "error": str(exc)}, 500)
