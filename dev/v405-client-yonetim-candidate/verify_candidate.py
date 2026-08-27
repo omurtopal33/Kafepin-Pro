@@ -5,7 +5,6 @@ import hashlib
 import io
 import json
 import subprocess
-import tempfile
 import zipfile
 from pathlib import Path
 
@@ -86,10 +85,7 @@ def main() -> None:
     ):
         if marker not in supervisor:
             raise AssertionError(f"Client Yonetim targeted activation marker missing: {marker}")
-    with tempfile.TemporaryDirectory() as temp:
-        supervisor_path = Path(temp) / "KafePin_Update_Supervisor.js"
-        supervisor_path.write_text(supervisor, encoding="utf-8")
-        subprocess.run(["node", "--check", str(supervisor_path)], check=True)
+    subprocess.run(["node", "--check", "-"], input=supervisor, text=True, check=True)
 
     print("VERIFY_OK")
     print("OUTER_CHANGED=" + ",".join(sorted(changed_outer)))
