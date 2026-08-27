@@ -121,7 +121,10 @@ def patch_desktop_source(source: bytes) -> bytes:
         "        private readonly TabControl printerTabs;\n"
         "        private readonly Panel printerTabsHeaderFill;\n"
         "        private readonly TabPage printerPanelTab;\n"
-        "        private readonly TabPage edevletTab;\n",
+        "        private readonly TabPage edevletTab;\n"
+        "        private readonly NumericUpDown edevletFeeBox;\n"
+        "        private readonly ComboBox edevletPaymentBox;\n"
+        "        private readonly Label edevletPricingState;\n",
         "e-Devlet controls",
     )
     text = _replace(
@@ -129,7 +132,10 @@ def patch_desktop_source(source: bytes) -> bytes:
         "        private bool printerBrowserReady;\n",
         "        private bool printerBrowserReady;\n"
         "        private bool edevletBrowserReady;\n"
-        "        private Task<CoreWebView2Environment> edevletEnvironmentTask;\n",
+        "        private Task<CoreWebView2Environment> edevletEnvironmentTask;\n"
+        "        private bool edevletServiceCharged;\n"
+        "        private bool edevletChargeInProgress;\n"
+        "        private string edevletPendingTransactionId = string.Empty;\n",
         "e-Devlet state",
     )
     text = _replace(
@@ -150,8 +156,9 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            printerPanelTab.Controls.Add(printerBrowser);\n"
         "            TableLayoutPanel edevletLayout = new TableLayoutPanel();\n"
         "            edevletLayout.Dock = DockStyle.Fill; edevletLayout.Margin = Padding.Empty; edevletLayout.Padding = Padding.Empty;\n"
-        "            edevletLayout.ColumnCount = 1; edevletLayout.RowCount = 2;\n"
+        "            edevletLayout.ColumnCount = 1; edevletLayout.RowCount = 3;\n"
         "            edevletLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));\n"
+        "            edevletLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));\n"
         "            edevletLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 44F));\n"
         "            edevletLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));\n"
         "            edevletTab.Padding = Padding.Empty; edevletTab.Controls.Add(edevletLayout);\n"
@@ -160,17 +167,33 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            edevletBrowser.Margin = Padding.Empty;\n"
         "            edevletBrowser.DefaultBackgroundColor = Color.FromArgb(11, 20, 29);\n"
         "            edevletBrowser.Visible = true;\n"
-        "            edevletLayout.Controls.Add(edevletBrowser, 0, 1);\n"
+        "            edevletLayout.Controls.Add(edevletBrowser, 0, 2);\n"
+        "            FlowLayoutPanel edevletPricingBar = new FlowLayoutPanel();\n"
+        "            edevletPricingBar.Dock = DockStyle.Fill; edevletPricingBar.Margin = Padding.Empty; edevletPricingBar.WrapContents = false; edevletPricingBar.AutoScroll = true; edevletPricingBar.Padding = new Padding(6, 5, 6, 4);\n"
         "            FlowLayoutPanel edevletToolbar = new FlowLayoutPanel();\n"
         "            edevletToolbar.Dock = DockStyle.Fill; edevletToolbar.Margin = Padding.Empty; edevletToolbar.WrapContents = false; edevletToolbar.AutoScroll = true; edevletToolbar.Padding = new Padding(6, 5, 6, 4);\n"
         "            Button edevletHome = new Button(); edevletHome.Text = \"e-Devlet Ana\"; edevletHome.Width = 105; edevletHome.Height = 32;\n"
+        "            Button nufus = new Button(); nufus.Text = \"Nüfus Kayıt Örneği\"; nufus.Width = 145; nufus.Height = 32;\n"
         "            Button ikamet = new Button(); ikamet.Text = \"İkametgâh\"; ikamet.Width = 105; ikamet.Height = 32;\n"
         "            Button adli = new Button(); adli.Text = \"Adli Sicil\"; adli.Width = 105; adli.Height = 32;\n"
         "            Button sgk = new Button(); sgk.Text = \"SGK Dökümü\"; sgk.Width = 112; sgk.Height = 32;\n"
+        "            Button ogrenci = new Button(); ogrenci.Text = \"Öğrenci Belgesi\"; ogrenci.Width = 125; ogrenci.Height = 32;\n"
+        "            Button askerlik = new Button(); askerlik.Text = \"Askerlik Durum\"; askerlik.Width = 125; askerlik.Height = 32;\n"
+        "            Button mezun = new Button(); mezun.Text = \"Mezun Belgesi\"; mezun.Width = 118; mezun.Height = 32;\n"
+        "            Button emekli = new Button(); emekli.Text = \"Emekli Aylık ▾\"; emekli.Width = 118; emekli.Height = 32;\n"
+        "            Button iskur = new Button(); iskur.Text = \"İŞKUR Kayıt\"; iskur.Width = 110; iskur.Height = 32;\n"
+        "            Button myk = new Button(); myk.Text = \"MYK Belgesi\"; myk.Width = 105; myk.Height = 32;\n"
+        "            Button vergi = new Button(); vergi.Text = \"Vergi Borç Yazısı\"; vergi.Width = 135; vergi.Height = 32;\n"
+        "            Button edevletPrint = new Button(); edevletPrint.Text = \"Yazdır\"; edevletPrint.Width = 82; edevletPrint.Height = 32;\n"
+        "            Label feeLabel = new Label(); feeLabel.Text = \"Hizmet ₺\"; feeLabel.AutoSize = true; feeLabel.ForeColor = Color.White; feeLabel.Margin = new Padding(10, 9, 2, 0);\n"
+        "            edevletFeeBox = new NumericUpDown(); edevletFeeBox.Minimum = 0; edevletFeeBox.Maximum = 10000; edevletFeeBox.DecimalPlaces = 2; edevletFeeBox.Width = 82; edevletFeeBox.Height = 30; edevletFeeBox.Margin = new Padding(0, 5, 4, 0);\n"
+        "            edevletPaymentBox = new ComboBox(); edevletPaymentBox.Width = 82; edevletPaymentBox.DropDownStyle = ComboBoxStyle.DropDownList; edevletPaymentBox.Items.Add(\"NAKİT\"); edevletPaymentBox.Items.Add(\"KART\"); edevletPaymentBox.SelectedIndex = 0; edevletPaymentBox.Margin = new Padding(0, 5, 4, 0);\n"
+        "            Button edevletCharge = new Button(); edevletCharge.Text = \"KafePin'e İşle\"; edevletCharge.Width = 125; edevletCharge.Height = 32;\n"
         "            Button endSession = new Button(); endSession.Text = \"Oturumu Bitir\"; endSession.Width = 118; endSession.Height = 32;\n"
+        "            edevletPricingState = new Label(); edevletPricingState.Text = \"Ücret bekliyor\"; edevletPricingState.AutoSize = true; edevletPricingState.ForeColor = Color.FromArgb(200, 214, 225); edevletPricingState.Margin = new Padding(8, 9, 0, 0);\n"
         "            printerPanelTab.BackColor = Color.FromArgb(11, 20, 29); edevletTab.BackColor = Color.FromArgb(11, 20, 29);\n"
-        "            edevletToolbar.BackColor = Color.FromArgb(15, 29, 41);\n"
-        "            foreach (Button toolButton in new Button[] { edevletHome, ikamet, adli, sgk, endSession })\n"
+        "            edevletPricingBar.BackColor = Color.FromArgb(15, 29, 41); edevletToolbar.BackColor = Color.FromArgb(15, 29, 41);\n"
+        "            foreach (Button toolButton in new Button[] { edevletHome, nufus, ikamet, adli, sgk, ogrenci, askerlik, mezun, emekli, iskur, myk, vergi, edevletPrint, edevletCharge, endSession })\n"
         "            {\n"
         "                toolButton.FlatStyle = FlatStyle.Flat; toolButton.FlatAppearance.BorderSize = 1;\n"
         "                toolButton.FlatAppearance.BorderColor = Color.FromArgb(55, 82, 103);\n"
@@ -178,14 +201,32 @@ def patch_desktop_source(source: bytes) -> bytes:
         "                toolButton.Font = new Font(\"Segoe UI\", 9F, FontStyle.Bold); toolButton.Cursor = Cursors.Hand;\n"
         "            }\n"
         "            edevletHome.BackColor = Color.FromArgb(24, 142, 98); edevletHome.FlatAppearance.BorderColor = Color.FromArgb(70, 220, 160);\n"
+        "            edevletCharge.BackColor = Color.FromArgb(24, 142, 98); edevletCharge.FlatAppearance.BorderColor = Color.FromArgb(70, 220, 160);\n"
         "            endSession.BackColor = Color.FromArgb(123, 37, 53); endSession.FlatAppearance.BorderColor = Color.FromArgb(218, 78, 102);\n"
         "            edevletHome.Click += async delegate { await OpenEdevletUrlAsync(EdevletHomeUrl); };\n"
+        "            nufus.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/nvi-nufus-kayit-ornegi-belgesi-sorgulama\"); };\n"
         "            ikamet.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama\"); };\n"
         "            adli.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/adli-sicil-kaydi\"); };\n"
         "            sgk.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu\"); };\n"
+        "            ogrenci.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/yok-ogrenci-belgesi-sorgulama\"); };\n"
+        "            askerlik.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/mill-savunma-askerligim\"); };\n"
+        "            mezun.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/yuksekogretim-mezun-belgesi-sorgulama\"); };\n"
+        "            ContextMenuStrip emekliMenu = new ContextMenuStrip();\n"
+        "            ToolStripMenuItem emekli4A = new ToolStripMenuItem(\"4A Emekli Aylık Bilgisi\"); ToolStripMenuItem emekli4B = new ToolStripMenuItem(\"4B Emekli Aylık Bilgisi\"); ToolStripMenuItem emekli4C = new ToolStripMenuItem(\"4C Emekli Aylık Bilgisi\");\n"
+        "            emekliMenu.Items.Add(emekli4A); emekliMenu.Items.Add(emekli4B); emekliMenu.Items.Add(emekli4C);\n"
+        "            emekli4A.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/4a-emekli-aylik-bilgisi\"); };\n"
+        "            emekli4B.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/4b-emekli-aylik-bilgisi\"); };\n"
+        "            emekli4C.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/4c-emekli-aylik-bilgisi\"); };\n"
+        "            emekli.Click += delegate { emekliMenu.Show(emekli, new Point(0, emekli.Height)); };\n"
+        "            iskur.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/iskur-kayit-belgesi\"); };\n"
+        "            myk.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/myk-mesleki-yeterlilik-belgesi-sorgulama\"); };\n"
+        "            vergi.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/gib-borc-durum-yazisi-talep-girisi-gercek-kisi\"); };\n"
+        "            edevletCharge.Click += async delegate { await EnsureEdevletServiceChargedAsync(); };\n"
+        "            edevletPrint.Click += async delegate { if (await EnsureEdevletServiceChargedAsync()) { try { await edevletBrowser.CoreWebView2.ExecuteScriptAsync(\"window.print();\"); } catch (Exception ex) { MessageBox.Show(\"Yazdırma başlatılamadı:\\n\" + ex.Message, \"KafePin e-Devlet\", MessageBoxButtons.OK, MessageBoxIcon.Error); } } };\n"
         "            endSession.Click += async delegate { await ClearEdevletSessionAsync(); };\n"
-        "            edevletToolbar.Controls.Add(edevletHome); edevletToolbar.Controls.Add(ikamet); edevletToolbar.Controls.Add(adli); edevletToolbar.Controls.Add(sgk); edevletToolbar.Controls.Add(endSession);\n"
-        "            edevletLayout.Controls.Add(edevletToolbar, 0, 0);\n"
+        "            edevletPricingBar.Controls.Add(feeLabel); edevletPricingBar.Controls.Add(edevletFeeBox); edevletPricingBar.Controls.Add(edevletPaymentBox); edevletPricingBar.Controls.Add(edevletCharge); edevletPricingBar.Controls.Add(edevletPricingState);\n"
+        "            edevletToolbar.Controls.Add(edevletHome); edevletToolbar.Controls.Add(nufus); edevletToolbar.Controls.Add(ikamet); edevletToolbar.Controls.Add(adli); edevletToolbar.Controls.Add(sgk); edevletToolbar.Controls.Add(ogrenci); edevletToolbar.Controls.Add(askerlik); edevletToolbar.Controls.Add(mezun); edevletToolbar.Controls.Add(emekli); edevletToolbar.Controls.Add(iskur); edevletToolbar.Controls.Add(myk); edevletToolbar.Controls.Add(vergi); edevletToolbar.Controls.Add(edevletPrint); edevletToolbar.Controls.Add(endSession);\n"
+        "            edevletLayout.Controls.Add(edevletPricingBar, 0, 0); edevletLayout.Controls.Add(edevletToolbar, 0, 1);\n"
         "            printerTabs.TabPages.Add(printerPanelTab);\n"
         "            printerTabs.TabPages.Add(edevletTab);\n"
         "            printerTabs.SelectedIndexChanged += async delegate { if (printerTabs.SelectedTab == edevletTab) { try { await EnsureEdevletBrowserAsync(); } catch (Exception ex) { MessageBox.Show(\"e-Devlet açılamadı:\\n\" + ex.Message, \"KafePin e-Devlet\", MessageBoxButtons.OK, MessageBoxIcon.Error); } } };\n"
@@ -277,6 +318,74 @@ def patch_desktop_source(source: bytes) -> bytes:
             return edevletEnvironmentTask;
         }
 
+        private static async Task<string> PostYaziciRevenueJsonAsync(string path, string json)
+        {
+            return await Task.Run(delegate
+            {
+                byte[] body = Encoding.UTF8.GetBytes(json);
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:17893" + path);
+                req.Method = "POST"; req.ContentType = "application/json"; req.ContentLength = body.Length;
+                req.Timeout = 5000; req.ReadWriteTimeout = 5000;
+                using (Stream stream = req.GetRequestStream()) stream.Write(body, 0, body.Length);
+                using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
+                using (StreamReader reader = new StreamReader(response.GetResponseStream()))
+                {
+                    string result = reader.ReadToEnd();
+                    if ((int)response.StatusCode < 200 || (int)response.StatusCode >= 300 || result.IndexOf("\"ok\":true", StringComparison.OrdinalIgnoreCase) < 0)
+                        throw new InvalidOperationException("Yazıcı Gelir servisi işlemi reddetti: " + result);
+                    return result;
+                }
+            });
+        }
+
+        private async Task<bool> EnsureEdevletServiceChargedAsync()
+        {
+            if (edevletServiceCharged)
+            {
+                edevletPricingState.Text = "Bu müşteri için işlendi";
+                return true;
+            }
+            if (edevletChargeInProgress)
+            {
+                edevletPricingState.Text = "Aktarım devam ediyor…";
+                return false;
+            }
+            decimal fee = edevletFeeBox.Value;
+            if (fee <= 0)
+            {
+                MessageBox.Show("Önce e-Devlet hizmet bedelini gir.", "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                edevletFeeBox.Focus();
+                return false;
+            }
+            string payment = edevletPaymentBox.SelectedIndex == 1 ? "CARD" : "CASH";
+            edevletChargeInProgress = true;
+            try
+            {
+                edevletPricingState.Text = "KafePin'e işleniyor…";
+                if (string.IsNullOrWhiteSpace(edevletPendingTransactionId))
+                {
+                    string amount = fee.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                    string prepared = await PostYaziciRevenueJsonAsync("/service/prepare", "{\"service_type\":\"edevlet\",\"quantity\":1,\"payment_method\":\"" + payment + "\",\"title\":\"e-Devlet Hizmet Bedeli\",\"amount\":" + amount + "}");
+                    System.Text.RegularExpressions.Match idMatch = System.Text.RegularExpressions.Regex.Match(prepared, "\"id\"\\s*:\\s*\"([^\"]+)\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                    if (!idMatch.Success) throw new InvalidOperationException("Hizmet işlemi hazırlandı fakat işlem kimliği alınamadı.");
+                    edevletPendingTransactionId = idMatch.Groups[1].Value;
+                }
+                string safeId = edevletPendingTransactionId.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                await PostYaziciRevenueJsonAsync("/transaction/confirm", "{\"id\":\"" + safeId + "\",\"payment_method\":\"" + payment + "\"}");
+                edevletServiceCharged = true;
+                edevletFeeBox.Enabled = false; edevletPaymentBox.Enabled = false;
+                edevletPricingState.Text = fee.ToString("0.00") + " ₺ KafePin'e işlendi";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                edevletPricingState.Text = "Aktarım hatası";
+                MessageBox.Show("e-Devlet hizmet bedeli KafePin'e işlenemedi:\n" + ex.Message, "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            finally { edevletChargeInProgress = false; }
+        }
+
         private async Task OpenEdevletUrlAsync(string url)
         {
             await EnsureEdevletBrowserAsync();
@@ -334,6 +443,8 @@ def patch_desktop_source(source: bytes) -> bytes:
             try { await edevletBrowser.CoreWebView2.CallDevToolsProtocolMethodAsync("Network.clearBrowserCookies", "{}"); } catch { }
             try { edevletBrowser.Source = new Uri("about:blank"); } catch { }
             edevletBrowserReady = false;
+            edevletServiceCharged = false; edevletChargeInProgress = false; edevletPendingTransactionId = string.Empty;
+            edevletFeeBox.Enabled = true; edevletPaymentBox.Enabled = true; edevletPricingState.Text = "Yeni müşteri • ücret bekliyor";
         }
 
 '''
