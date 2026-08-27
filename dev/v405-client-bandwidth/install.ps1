@@ -11,7 +11,13 @@ Set-Content -LiteralPath 'C:\ProgramData\KafePin\WebLimit\control.key' -Value $C
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'KafePin_WebLimit_Agent.exe') -Destination (Join-Path $InstallRoot 'KafePin_WebLimit_Agent.exe') -Force
 $taskName = 'KafePin Web Limit Agent'
 $exe = Join-Path $InstallRoot 'KafePin_WebLimit_Agent.exe'
-& schtasks.exe /Delete /TN $taskName /F 2>$null | Out-Null
+$oldPref = $ErrorActionPreference
+$ErrorActionPreference = 'SilentlyContinue'
+& schtasks.exe /Query /TN $taskName *> $null
+if ($LASTEXITCODE -eq 0) { & schtasks.exe /Delete /TN $taskName /F *> $null }
+$ErrorActionPreference = $oldPref
 & schtasks.exe /Create /TN $taskName /SC ONSTART /RU SYSTEM /RL HIGHEST /TR ('"{0}"' -f $exe) /F | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "Zamanlanmis gorev olusturulamadi. schtasks exit=$LASTEXITCODE" }
 & schtasks.exe /Run /TN $taskName | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "Zamanlanmis gorev baslatilamadi. schtasks exit=$LASTEXITCODE" }
 Write-Host 'KafePin Web Limit Agent kuruldu. Varsayilan politika KAPALI; Client Performans PRO uzerinden acilabilir.'
