@@ -190,7 +190,6 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            edevletFeeBox = new NumericUpDown(); edevletFeeBox.Minimum = 0; edevletFeeBox.Maximum = 10000; edevletFeeBox.DecimalPlaces = 2; edevletFeeBox.Width = 82; edevletFeeBox.Height = 30; edevletFeeBox.Margin = new Padding(0, 5, 4, 0);\n"
         "            edevletPaymentBox = new ComboBox(); edevletPaymentBox.Width = 82; edevletPaymentBox.DropDownStyle = ComboBoxStyle.DropDownList; edevletPaymentBox.Items.Add(\"NAKİT\"); edevletPaymentBox.Items.Add(\"KART\"); edevletPaymentBox.SelectedIndex = 0; edevletPaymentBox.Margin = new Padding(0, 5, 4, 0);\n"
         "            Button edevletSavePrice = new Button(); edevletSavePrice.Text = \"Fiyatı Kaydet\"; edevletSavePrice.Width = 112; edevletSavePrice.Height = 32;\n"
-        "            Button edevletPrepare = new Button(); edevletPrepare.Text = \"Ücreti Hazırla\"; edevletPrepare.Width = 118; edevletPrepare.Height = 32;\n"
         "            Button edevletCharge = new Button(); edevletCharge.Text = \"KafePin'e İşle\"; edevletCharge.Width = 125; edevletCharge.Height = 32;\n"
         "            Button edevletCancelCharge = new Button(); edevletCancelCharge.Text = \"İptal (-1 Çıktı)\"; edevletCancelCharge.Width = 125; edevletCancelCharge.Height = 32;\n"
         "            Button edevletDeleteCharge = new Button(); edevletDeleteCharge.Text = \"Sil\"; edevletDeleteCharge.Width = 62; edevletDeleteCharge.Height = 32;\n"
@@ -198,7 +197,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            edevletPricingState = new Label(); edevletPricingState.Text = \"Ücret bekliyor\"; edevletPricingState.AutoSize = true; edevletPricingState.ForeColor = Color.FromArgb(200, 214, 225); edevletPricingState.Margin = new Padding(8, 9, 0, 0);\n"
         "            printerPanelTab.BackColor = Color.FromArgb(11, 20, 29); edevletTab.BackColor = Color.FromArgb(11, 20, 29);\n"
         "            edevletPricingBar.BackColor = Color.FromArgb(15, 29, 41); edevletToolbar.BackColor = Color.FromArgb(15, 29, 41);\n"
-        "            foreach (Button toolButton in new Button[] { edevletHome, nufus, ikamet, adli, sgk, ogrenci, askerlik, mezun, emekli, iskur, myk, vergi, edevletPrint, edevletSavePrice, edevletPrepare, edevletCharge, edevletCancelCharge, edevletDeleteCharge, endSession })\n"
+        "            foreach (Button toolButton in new Button[] { edevletHome, nufus, ikamet, adli, sgk, ogrenci, askerlik, mezun, emekli, iskur, myk, vergi, edevletPrint, edevletSavePrice, edevletCharge, edevletCancelCharge, edevletDeleteCharge, endSession })\n"
         "            {\n"
         "                toolButton.FlatStyle = FlatStyle.Flat; toolButton.FlatAppearance.BorderSize = 1;\n"
         "                toolButton.FlatAppearance.BorderColor = Color.FromArgb(55, 82, 103);\n"
@@ -227,13 +226,12 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            myk.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/myk-mesleki-yeterlilik-belgesi-sorgulama\"); };\n"
         "            vergi.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/gib-borc-durum-yazisi-talep-girisi-gercek-kisi\"); };\n"
         "            edevletSavePrice.Click += async delegate { await SaveEdevletPricingConfigAsync(true); };\n"
-        "            edevletPrepare.Click += async delegate { await PrepareEdevletServiceChargeAsync(); };\n"
         "            edevletCharge.Click += async delegate { await EnsureEdevletServiceChargedAsync(); };\n"
         "            edevletCancelCharge.Click += async delegate { await ClosePendingEdevletChargeAsync(false); };\n"
         "            edevletDeleteCharge.Click += async delegate { await ClosePendingEdevletChargeAsync(true); };\n"
         "            edevletPrint.Click += async delegate { await PrintEdevletDocumentAsync(); };\n"
         "            endSession.Click += async delegate { await ClearEdevletSessionAsync(); };\n"
-        "            edevletPricingBar.Controls.Add(feeLabel); edevletPricingBar.Controls.Add(edevletFeeBox); edevletPricingBar.Controls.Add(edevletPaymentBox); edevletPricingBar.Controls.Add(edevletSavePrice); edevletPricingBar.Controls.Add(edevletPrepare); edevletPricingBar.Controls.Add(edevletCharge); edevletPricingBar.Controls.Add(edevletCancelCharge); edevletPricingBar.Controls.Add(edevletDeleteCharge); edevletPricingBar.Controls.Add(edevletPricingState);\n"
+        "            edevletPricingBar.Controls.Add(feeLabel); edevletPricingBar.Controls.Add(edevletFeeBox); edevletPricingBar.Controls.Add(edevletPaymentBox); edevletPricingBar.Controls.Add(edevletSavePrice); edevletPricingBar.Controls.Add(edevletCharge); edevletPricingBar.Controls.Add(edevletCancelCharge); edevletPricingBar.Controls.Add(edevletDeleteCharge); edevletPricingBar.Controls.Add(edevletPricingState);\n"
         "            edevletToolbar.Controls.Add(edevletHome); edevletToolbar.Controls.Add(nufus); edevletToolbar.Controls.Add(ikamet); edevletToolbar.Controls.Add(adli); edevletToolbar.Controls.Add(sgk); edevletToolbar.Controls.Add(ogrenci); edevletToolbar.Controls.Add(askerlik); edevletToolbar.Controls.Add(mezun); edevletToolbar.Controls.Add(emekli); edevletToolbar.Controls.Add(iskur); edevletToolbar.Controls.Add(myk); edevletToolbar.Controls.Add(vergi); edevletToolbar.Controls.Add(edevletPrint); edevletToolbar.Controls.Add(endSession);\n"
         "            edevletLayout.Controls.Add(edevletPricingBar, 0, 0); edevletLayout.Controls.Add(edevletToolbar, 0, 1);\n"
         "            printerTabs.TabPages.Add(printerPanelTab);\n"
@@ -482,6 +480,7 @@ def patch_desktop_source(source: bytes) -> bytes:
                     edevletPricingState.Text = totalMatch.Success && decimal.TryParse(totalMatch.Groups[1].Value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out total)
                         ? "1 çıktı iptal edildi • toplam: " + total.ToString("0.00") + " ₺"
                         : "1 çıktı iptal edildi";
+                    edevletPricingState.ForeColor = Color.FromArgb(70, 220, 160);
                 }
             }
             catch (Exception ex) { MessageBox.Show((delete ? "Silme" : "İptal") + " başarısız:\n" + ex.Message, "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Error); }
@@ -507,6 +506,7 @@ def patch_desktop_source(source: bytes) -> bytes:
                 edevletPricingState.Text = totalMatch.Success && decimal.TryParse(totalMatch.Groups[1].Value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out total)
                     ? "Oturum toplamı: " + total.ToString("0.00") + " ₺ • iş bitince KafePin'e işle"
                     : "Çıktı oturum toplamına eklendi • iş bitince KafePin'e işle";
+                edevletPricingState.ForeColor = Color.FromArgb(70, 220, 160);
             }
             catch (Exception ex)
             {
