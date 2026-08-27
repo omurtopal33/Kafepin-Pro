@@ -49,6 +49,50 @@ def patch_revenue(text: str, target_version: str) -> str:
   return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"&&serviceType!=="edevlet"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep}});
 }'''
     text = replace_once(text, old, new, 'prepareService')
+    append_helper = '''function appendPrintJobsToTransaction(transactionId,events,type,payment){
+  const s=state(),tx=s.transactions[String(transactionId||"")];
+  if(!tx) throw new Error("e-Devlet oturum işlemi bulunamadı.");
+  if(tx.status!=="pending_confirmation") throw new Error("e-Devlet oturumu artık çıktı eklemeye uygun değil.");
+  const existing=new Set((tx.record_ids||[]).map(Number));
+  const fresh=[];
+  for(const e of events){
+    const rid=Number(e.record_id); if(!Number.isFinite(rid)||existing.has(rid)) continue;
+    const job=s.jobs[String(rid)]||e;
+    if(job.transaction_id&&String(job.transaction_id)!==String(tx.id)) throw new Error(`Yazdırma işi başka bir işleme bağlı: ${rid}`);
+    if(job.status&&!['pending','awaiting_confirmation'].includes(job.status)) throw new Error(`Yazdırma işi zaten kapatılmış: ${rid}`);
+    fresh.push(job); existing.add(rid);
+  }
+  if(!fresh.length) return tx;
+  const qty=fresh.reduce((n,e)=>n+Math.max(1,Number(e.pages)||1),0),c=config(),label=printLabel(type),unitPrice=Number(priceFor(type,c))||0;
+  const current=(tx.items||[]).find(x=>x.label===label&&Number(x.unitPrice)===unitPrice);
+  if(current) current.quantity=Math.max(1,Number(current.quantity)||1)+qty;
+  else (tx.items||(tx.items=[])).push({label,unitPrice,quantity:qty});
+  tx.items=normalizeItems(tx.items); tx.total=calcTotal(tx.items); tx.payment_method=normPayment(payment||tx.payment_method);
+  tx.record_ids=Array.from(existing); tx.meta={...(tx.meta||{}),service_type:'edevlet',print_pages:(Number(tx.meta&&tx.meta.print_pages)||0)+qty};
+  for(const job of fresh){const k=String(job.record_id);if(s.jobs[k]){s.jobs[k].status='awaiting_confirmation';s.jobs[k].transaction_id=tx.id;}}
+  saveState(s); return tx;
+}
+function removeOnePrintUnitFromTransaction(transactionId){
+  const s=state(),tx=s.transactions[String(transactionId||"")];
+  if(!tx) throw new Error("e-Devlet oturum işlemi bulunamadı.");
+  if(tx.status!=="pending_confirmation") throw new Error("e-Devlet oturumu düzeltmeye uygun değil.");
+  const printLabels=new Set(["S/B Çıktı","Renkli Çıktı","Kimlik Fotokopisi","Fotoğraf"]);
+  let item=null;
+  for(let i=(tx.items||[]).length-1;i>=0;i--){if(printLabels.has(String(tx.items[i].label))&&Number(tx.items[i].quantity)>0){item=tx.items[i];break;}}
+  if(!item) throw new Error("İptal edilecek çıktı bulunamadı; hizmet bedeli korunuyor.");
+  item.quantity=Number(item.quantity)-1;
+  if(item.quantity<=0) tx.items=tx.items.filter(x=>x!==item);
+  tx.items=normalizeItems(tx.items); tx.total=calcTotal(tx.items); tx.meta={...(tx.meta||{}),print_pages:Math.max(0,(Number(tx.meta&&tx.meta.print_pages)||0)-1)};
+  saveState(s); return tx;
+}
+'''
+    text = replace_once(text, 'function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){', append_helper + 'function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){', 'e-Devlet session print accumulator')
+    old_claim = 'const tx=preparePrintJobs(events,String(d.service_type||"bw"),String(d.payment_method||"CASH"),"claim",!!d.document_prep,""); return json(res,200,{ok:true,transaction:tx});'
+    new_claim = 'const tx=d.transaction_id?appendPrintJobsToTransaction(String(d.transaction_id),events,String(d.service_type||"bw"),String(d.payment_method||"CASH")):preparePrintJobs(events,String(d.service_type||"bw"),String(d.payment_method||"CASH"),"claim",!!d.document_prep,""); return json(res,200,{ok:true,transaction:tx});'
+    text = replace_once(text, old_claim, new_claim, 'e-Devlet claim accumulation route')
+    confirm_route = 'if(req.method==="POST"&&p==="/transaction/confirm"){ const d=await readBody(req); const tx=await confirmTransaction(String(d.id||""),String(d.payment_method||""),Object.prototype.hasOwnProperty.call(d,"total")?d.total:undefined); return json(res,200,{ok:true,transaction:tx}); }'
+    remove_route = 'if(req.method==="POST"&&p==="/edevlet/session/remove-print"){ const d=await readBody(req); const tx=removeOnePrintUnitFromTransaction(String(d.id||"")); return json(res,200,{ok:true,transaction:tx}); }'
+    text = replace_once(text, confirm_route, confirm_route + '\n    ' + remove_route, 'e-Devlet remove-one-print route')
     old_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||"")); return json(res,200,{ok:true,transaction:tx}); }'
     new_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||""),Object.prototype.hasOwnProperty.call(d,"amount")?d.amount:null); return json(res,200,{ok:true,transaction:tx}); }'
     return replace_once(text, old_route, new_route, 'service route')
