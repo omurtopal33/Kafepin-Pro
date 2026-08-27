@@ -47,12 +47,9 @@ def zip_bytes(entries: dict[str, bytes]) -> bytes:
     return target.getvalue()
 
 
-def component_bytes() -> bytes:
-    entries = {
-        path.relative_to(COMPONENT).as_posix(): path.read_bytes()
-        for path in COMPONENT.rglob("*")
-        if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"
-    }
+def component_bytes(source_component: bytes) -> bytes:
+    with zipfile.ZipFile(io.BytesIO(source_component)) as archive:
+        entries = {name: archive.read(name) for name in archive.namelist()}
     expected = {
         "START_CLIENT_YONETIM_PRO.cmd",
         "INSTALL_ELEVATED_SERVICE.ps1",
@@ -62,7 +59,11 @@ def component_bytes() -> bytes:
         "web/style.css",
     }
     if set(entries) != expected:
-        raise SystemExit(f"Unexpected Client Yonetim payload: {sorted(set(entries) ^ expected)}")
+        raise SystemExit(f"Unexpected locked Client Yonetim payload: {sorted(set(entries) ^ expected)}")
+    # Git for Windows may check text files out as CRLF. Canonical LF keeps the
+    # exact-SHA build reproducible while all untouched members come directly
+    # from the locked v4.0.4 nested ZIP.
+    entries["web_service.py"] = (COMPONENT / "web_service.py").read_bytes().replace(b"\r\n", b"\n")
     return zip_bytes(entries)
 
 
@@ -112,7 +113,7 @@ def main() -> None:
     if digest(entries["pro-components/client-yonetim-pro.zip"]) != SOURCE_COMPONENT_SHA256:
         raise SystemExit("Locked Client Yonetim baseline SHA-256 mismatch")
 
-    component = component_bytes()
+    component = component_bytes(entries["pro-components/client-yonetim-pro.zip"])
     original_update = json.loads(entries["update.json"].decode("utf-8-sig"))
     original_version = json.loads(entries["kafepin-pro-version.json"].decode("utf-8-sig"))
     entries["pro-components/client-yonetim-pro.zip"] = component
