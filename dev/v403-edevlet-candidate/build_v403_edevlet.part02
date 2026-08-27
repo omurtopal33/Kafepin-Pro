@@ -43,12 +43,30 @@ def patch_revenue(text: str, target_version: str) -> str:
   const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
   if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
   else if(serviceType==="document"){ items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1}); serviceLabel="Belge / Dilekçe Hazırlama"; }
-  else if(serviceType==="edevlet"){ const amount=money(amountOverride===null||amountOverride===undefined?c.price_edevlet:amountOverride); if(amount<=0) throw new Error("e-Devlet hizmet bedeli 0 TL olamaz."); items.push({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1}); serviceLabel="e-Devlet Hizmet Bedeli"; }
+  else if(serviceType==="edevlet"){ const amount=money(amountOverride===null||amountOverride===undefined?c.price_edevlet:amountOverride); if(amount<=0) throw new Error("e-Devlet hizmet bedeli 0 TL olamaz."); const s=state(),pending=Object.values(s.transactions||{}).filter(tx=>tx&&tx.status==="pending_confirmation"&&tx.meta&&tx.meta.service_type==="edevlet").sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0]; if(pending){pending.meta={...(pending.meta||{}),service_type:"edevlet",active_session:true};const feeItem=(pending.items||[]).find(x=>x.label==="e-Devlet Hizmet Bedeli");if(feeItem){feeItem.unitPrice=amount;feeItem.quantity=1;}else(pending.items||(pending.items=[])).unshift({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1});pending.items=normalizeItems(pending.items);pending.total=calcTotal(pending.items);pending.payment_method=normPayment(payment||pending.payment_method);saveState(s);return pending;} items.push({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1}); serviceLabel="e-Devlet Hizmet Bedeli"; }
   else throw new Error("Geçersiz hizmet türü.");
   if(documentPrep && serviceType!=="document" && serviceType!=="edevlet") items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1});
-  return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"&&serviceType!=="edevlet"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep}});
+  return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"&&serviceType!=="edevlet"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep,active_session:serviceType==="edevlet"}});
 }'''
     text = replace_once(text, old, new, 'prepareService')
+    old_poll = '''function pollQueue(){
+  const s=state(); const ev=readEvents(); const max=ev.reduce((m,e)=>Math.max(m,e.record_id),0);
+  if(!s.initialized){ s.initialized=true; s.lastSeenRecordId=max; saveState(s); return s; }
+  for(const e of ev){ if(e.record_id<=s.lastSeenRecordId) continue; const k=String(e.record_id); if(!s.jobs[k]) s.jobs[k]={...e,status:"pending",created_at:new Date().toISOString()}; }
+  s.lastSeenRecordId=Math.max(s.lastSeenRecordId,max); saveState(s); return s;
+}'''
+    new_poll = '''function pollQueue(){
+  const s=state(); const ev=readEvents(); const max=ev.reduce((m,e)=>Math.max(m,e.record_id),0); const fresh=[];
+  if(!s.initialized){ s.initialized=true; s.lastSeenRecordId=max; saveState(s); return s; }
+  for(const e of ev){ if(e.record_id<=s.lastSeenRecordId) continue; const k=String(e.record_id); if(!s.jobs[k]){s.jobs[k]={...e,status:"pending",created_at:new Date().toISOString()};fresh.push(s.jobs[k]);} }
+  s.lastSeenRecordId=Math.max(s.lastSeenRecordId,max); saveState(s);
+  if(fresh.length){
+    const active=Object.values(s.transactions||{}).filter(tx=>tx&&tx.status==="pending_confirmation"&&tx.meta&&tx.meta.service_type==="edevlet"&&tx.meta.active_session===true).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0];
+    if(active){try{appendPrintJobsToTransaction(active.id,fresh,"bw",active.payment_method||"CASH");}catch(e){log("e-Devlet canlı çıktı ekleme hatası: "+e.message);}}
+  }
+  return state();
+}'''
+    text = replace_once(text, old_poll, new_poll, 'e-Devlet automatic PrintService accumulation')
     append_helper = '''function appendPrintJobsToTransaction(transactionId,events,type,payment){
   const s=state(),tx=s.transactions[String(transactionId||"")];
   if(!tx) throw new Error("e-Devlet oturum işlemi bulunamadı.");
@@ -87,12 +105,16 @@ function removeOnePrintUnitFromTransaction(transactionId){
 }
 '''
     text = replace_once(text, 'function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){', append_helper + 'function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){', 'e-Devlet session print accumulator')
+    text = replace_once(text, 'waitEvents(after,String(d.printer||""),18)', 'waitEvents(after,String(d.printer||""),d.transaction_id?120:18)', 'e-Devlet print-dialog wait')
     old_claim = 'const tx=preparePrintJobs(events,String(d.service_type||"bw"),String(d.payment_method||"CASH"),"claim",!!d.document_prep,""); return json(res,200,{ok:true,transaction:tx});'
     new_claim = 'const tx=d.transaction_id?appendPrintJobsToTransaction(String(d.transaction_id),events,String(d.service_type||"bw"),String(d.payment_method||"CASH")):preparePrintJobs(events,String(d.service_type||"bw"),String(d.payment_method||"CASH"),"claim",!!d.document_prep,""); return json(res,200,{ok:true,transaction:tx});'
     text = replace_once(text, old_claim, new_claim, 'e-Devlet claim accumulation route')
     confirm_route = 'if(req.method==="POST"&&p==="/transaction/confirm"){ const d=await readBody(req); const tx=await confirmTransaction(String(d.id||""),String(d.payment_method||""),Object.prototype.hasOwnProperty.call(d,"total")?d.total:undefined); return json(res,200,{ok:true,transaction:tx}); }'
     remove_route = 'if(req.method==="POST"&&p==="/edevlet/session/remove-print"){ const d=await readBody(req); const tx=removeOnePrintUnitFromTransaction(String(d.id||"")); return json(res,200,{ok:true,transaction:tx}); }'
     text = replace_once(text, confirm_route, confirm_route + '\n    ' + remove_route, 'e-Devlet remove-one-print route')
+    transactions_route = 'if(req.method==="GET"&&p==="/transactions"){ const s=state(); const rows=Object.values(s.transactions||{}).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))).slice(0,100); return json(res,200,{ok:true,transactions:rows}); }'
+    transaction_routes = transactions_route + '\n    if(req.method==="GET"&&p==="/transaction"){ const tx=transaction(String(u.searchParams.get("id")||"")); return tx?json(res,200,{ok:true,transaction:tx}):json(res,404,{ok:false,error:"İşlem bulunamadı."}); }\n    if(req.method==="GET"&&p==="/edevlet/session/active"){ const s=state(),tx=Object.values(s.transactions||{}).filter(x=>x&&x.status==="pending_confirmation"&&x.meta&&x.meta.service_type==="edevlet"&&x.meta.active_session===true).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0]; return json(res,200,{ok:true,transaction:tx||null}); }'
+    text = replace_once(text, transactions_route, transaction_routes, 'e-Devlet live transaction routes')
     old_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||"")); return json(res,200,{ok:true,transaction:tx}); }'
     new_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||""),Object.prototype.hasOwnProperty.call(d,"amount")?d.amount:null); return json(res,200,{ok:true,transaction:tx}); }'
     return replace_once(text, old_route, new_route, 'service route')
