@@ -1,0 +1,51 @@
+name: Build v4.0.5 Client Yonetim TEST Candidate
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test/client-yonetim-everycafe-ui-v405
+    paths:
+      - "dev/v405-client-yonetim-candidate/**"
+      - ".github/workflows/build-v405-client-yonetim-test.yml"
+
+jobs:
+  windows-client-yonetim:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify exact checked-out commit
+        shell: pwsh
+        run: |
+          $head = (git rev-parse HEAD).Trim()
+          if ($head -ne '${{ github.sha }}') { throw "Checkout SHA mismatch: $head" }
+
+      - name: Syntax and Client Yonetim regression tests
+        shell: pwsh
+        run: |
+          py -3 -m py_compile dev/v405-client-yonetim-candidate/component/web_service.py
+          py -3 dev/v405-client-yonetim-candidate/test_client_automation.py
+
+      - name: Reproducible candidate build
+        shell: pwsh
+        run: |
+          py -3 dev/v405-client-yonetim-candidate/build_candidate.py --output-dir build-a
+          py -3 dev/v405-client-yonetim-candidate/build_candidate.py --output-dir build-b
+          $a = (Get-FileHash -Algorithm SHA256 build-a/KafePin-Pro-Update-v4.0.5-CLIENT-YONETIM-TEST-CANDIDATE.zip).Hash
+          $b = (Get-FileHash -Algorithm SHA256 build-b/KafePin-Pro-Update-v4.0.5-CLIENT-YONETIM-TEST-CANDIDATE.zip).Hash
+          if ($a -ne $b) { throw "Non-reproducible build: $a != $b" }
+          py -3 dev/v405-client-yonetim-candidate/verify_candidate.py build-a/KafePin-Pro-Update-v4.0.5-CLIENT-YONETIM-TEST-CANDIDATE.zip
+
+      - name: Upload exact-SHA candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v405-Client-Yonetim-TEST-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            build-a/KafePin-Pro-Update-v4.0.5-CLIENT-YONETIM-TEST-CANDIDATE.zip
+            build-a/KafePin-Pro-Update-v4.0.5-CLIENT-YONETIM-TEST-CANDIDATE.zip.sha256.txt
+            build-a/SHA256SUMS.json

@@ -1,0 +1,29 @@
+const $=s=>document.querySelector(s),clients=$('#clients'),tpl=$('#client-template'),toast=$('#toast');
+function say(message,error=false){toast.textContent=message;toast.className=(error?'error ':'')+'show';clearTimeout(say.timer);say.timer=setTimeout(()=>toast.className='',3600)}
+function date(ms){return ms?new Date(ms).toLocaleString('tr-TR',{hour12:false}):'-'}
+function remainingText(end){if(!end)return '-';const seconds=Math.max(0,Math.ceil((end-Date.now())/1000)),minutes=Math.floor(seconds/60),rest=seconds%60;return `${minutes} dk ${String(rest).padStart(2,'0')} sn`}
+function refreshCountdowns(){document.querySelectorAll('.remaining[data-end]').forEach(el=>{el.textContent=remainingText(Number(el.dataset.end))})}
+async function call(url,options){const r=await fetch(url,{cache:'no-store',...options});const d=await r.json();if(!d.ok)throw new Error(d.error||'İşlem başarısız');return d}
+async function action(client,name){try{const d=await call('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:name,client})});const text={wake:`${d.result.client} için WOL paketi gönderildi`,restart:`${d.result.client} için yeniden başlatma komutu gönderildi`,terminate_apps:`${d.result.client} üzerindeki çalışan uygulamalara sonlandırma komutu gönderildi`};say(text[name]||'Komut gönderildi');setTimeout(load,1200)}catch(e){say(e.message,true)}}
+function confirmTerminateApps(client){
+ const approved=window.confirm(`${client} üzerindeki çalışan kullanıcı uygulamaları topluca sonlandırılacak.\n\nKaydedilmemiş çalışmalar kaybolabilir. Windows veya EveryCafe oturumu kapatılmaz.\n\nDevam etmek istediğinize emin misiniz?`);
+ if(approved)action(client,'terminate_apps');
+}
+async function openSession(client,mode,minutes,status,buttons){
+ try{
+  buttons.forEach(b=>b.disabled=true);status.textContent='İşlem hazırlanıyor…';
+  const d=await call('/api/open-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client,mode,minutes})});
+  const watch=async()=>{try{const j=(await call('/api/session-job/'+d.job.id)).job;status.textContent=j.message;if(j.state==='done'){say(j.message);buttons.forEach(b=>b.disabled=false);load();return}if(j.state==='error'){say(j.message,true);buttons.forEach(b=>b.disabled=false);return}setTimeout(watch,900)}catch(e){say(e.message,true);buttons.forEach(b=>b.disabled=false)}};watch()
+ }catch(e){say(e.message,true);buttons.forEach(b=>b.disabled=false)}
+}
+async function addTime(client,minutes,status,buttons){
+ if(!Number.isInteger(minutes)||minutes<1||minutes>1440){say('Süre 1-1440 dakika arasında olmalı.',true);return}
+ try{
+  buttons.forEach(b=>b.disabled=true);status.textContent='Süre EveryCafe oturumuna ekleniyor…';
+  const d=await call('/api/add-time',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({client,minutes})});
+  const watch=async()=>{try{const j=(await call('/api/session-job/'+d.job.id)).job;status.textContent=j.message;if(j.state==='done'){say(j.message);buttons.forEach(b=>b.disabled=false);load();return}if(j.state==='error'){say(j.message,true);buttons.forEach(b=>b.disabled=false);return}setTimeout(watch,500)}catch(e){say(e.message,true);buttons.forEach(b=>b.disabled=false)}};watch()
+ }catch(e){say(e.message,true);buttons.forEach(b=>b.disabled=false)}
+}
+function render(items){const ordered=[...items].sort((a,b)=>{const group=x=>x.deviceOnline?0:1;return group(a)-group(b)||String(a.ClientName||'').localeCompare(String(b.ClientName||''),'tr',{numeric:true,sensitivity:'base'})});clients.replaceChildren();ordered.forEach(item=>{const n=tpl.content.cloneNode(true),el=n.querySelector('.client');n.querySelector('h2').textContent=item.ClientName;n.querySelector('.ip').textContent=item.ClientIP||'-';const b=n.querySelector('.badge');b.textContent=item.statusText;b.classList.add(item.statusClass);n.querySelector('.session').textContent=item.sessionMode;n.querySelector('.start').textContent=date(item.sessionStart);const remaining=n.querySelector('.remaining'),remainingBox=n.querySelector('.remaining-box');if(item.sessionOpen&&item.sessionEnd>0){remaining.dataset.end=String(item.sessionEnd);remaining.textContent=remainingText(item.sessionEnd);remainingBox.classList.add('timed-active')}else{remaining.textContent='-'}const unlimited=n.querySelector('.unlimited'),free=n.querySelector('.free'),timed=n.querySelector('.timed'),minutes=n.querySelector('.minutes'),addMinutes=n.querySelector('.add-minutes'),addButton=n.querySelector('.add-time'),status=n.querySelector('.job-status'),openButtons=[unlimited,free,timed],sessionButtons=[unlimited,free,timed,addButton];openButtons.forEach(x=>x.disabled=!!item.sessionOpen);addButton.disabled=!item.sessionOpen;unlimited.onclick=()=>openSession(item.ClientName,'unlimited',0,status,sessionButtons);free.onclick=()=>openSession(item.ClientName,'free',0,status,sessionButtons);timed.onclick=()=>openSession(item.ClientName,'timed',Number(minutes.value),status,sessionButtons);addButton.onclick=()=>addTime(item.ClientName,Number(addMinutes.value),status,sessionButtons);n.querySelector('.wake').onclick=()=>action(item.ClientName,'wake');n.querySelector('.restart').onclick=()=>action(item.ClientName,'restart');n.querySelector('.terminate-apps').onclick=()=>confirmTerminateApps(item.ClientName);clients.append(n)})}
+async function load(){try{const d=await call('/api/clients');render(d.clients);const open=d.clients.filter(x=>x.sessionOpen).length;$('#summary').textContent=`${d.clients.length} masa • ${open} açık EveryCafe oturumu`}catch(e){clients.innerHTML=`<article class="client"><h2>Durum okunamadı</h2><p class="pending">${e.message}</p></article>`;say(e.message,true)}}
+$('#refresh').onclick=load;load();setInterval(load,5000);setInterval(refreshCountdowns,1000);

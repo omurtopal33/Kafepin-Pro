@@ -1,0 +1,69 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KafePin • Client Yönetim PRO</title><link rel="stylesheet" href="style.css"></head><body>
+<header><div><div class="eyebrow">KAFEPIN PRO • BAĞIMSIZ MODÜL</div><h1>🖥️ Client Yönetim PRO</h1><p>EveryCafe masa durumu • WOL • güvenli istemci yönetimi</p></div><div class="actions"><button id="refresh">↻ Yenile</button></div></header>
+<section class="notice"><b>🛡 EveryCafe kaynağı salt okunur.</b><span>Oturum durumu EveryCafe’den canlı okunur; bu panel hesap kapatmaz, tahsilat yapmaz ve masa kapatmaz.</span></section>
+<section class="legend"><span><i class="open"></i> Oturum açık</span><span><i class="online"></i> Online</span><span><i class="idle"></i> Beklemede</span><span><i class="offline"></i> Kapalı</span><small id="summary">Yükleniyor…</small></section>
+<main id="clients" class="clients"></main><template id="client-template"><article class="client"><div class="client-top"><div class="client-identity"><h2></h2><p class="ip"></p><button class="terminate-apps" title="Donmuş oyun ve açık kullanıcı uygulamalarını yeniden başlatmadan kapatır">⚠ Çalışan uygulamaları sonlandır</button></div><span class="badge"></span></div><dl><div><dt>EveryCafe oturumu</dt><dd class="session"></dd></div><div><dt>Başlangıç zamanı</dt><dd class="start"></dd></div><div class="remaining-box"><dt>Kalan süre</dt><dd class="remaining"></dd></div></dl><div class="session-open"><b>EveryCafe Oturum Aç</b><div class="open-row"><button class="unlimited">▶ Süresiz</button><button class="free">🎁 Ücretsiz</button><select class="minutes"><option value="15">15 dk</option><option value="30">30 dk</option><option value="45">45 dk</option><option value="60" selected>60 dk</option><option value="90">90 dk</option><option value="120">120 dk</option><option value="180">180 dk</option></select><button class="timed">⏱ Süreli Aç</button></div><div class="add-time-row"><label>Aktif oturuma</label><input class="add-minutes" type="number" min="1" max="1440" step="1" value="15" inputmode="numeric"><span>dk</span><button class="add-time">＋ Süre Ekle</button></div><small class="job-status"></small></div><div class="buttons secondary"><button class="wake">⚡ Uyandır</button><button class="restart">↻ Yeniden başlat</button></div><p class="pending">Oturum açma önce WOL gönderir. Süre Ekle yalnız açık oturumda hemen uygulanır. Uygulama sonlandırma onay ister. Bilgisayarı ve hesabı kapatma ile tahsilat yalnız EveryCafe’dedir.</p></article></template>
+<div id="toast" role="status"></div><script src="app.js"></script>
+<style id="kafepin-general-keyboard-style">
+:focus-visible{outline:3px solid #5fc9ff!important;outline-offset:2px!important}
+[data-kbd-focus="1"]{box-shadow:0 0 0 2px rgba(95,201,255,.55)!important}
+</style>
+<script id="kafepin-general-keyboard">
+(()=>{
+  if(window.__kafepinGeneralKeyboardInstalled) return;
+  window.__kafepinGeneralKeyboardInstalled=true;
+  const ACTION='button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"]),[role="button"]';
+  const EDIT='input,textarea,select,[contenteditable="true"]';
+  const vis=(el)=>{ if(!el) return false; const s=getComputedStyle(el); const r=el.getBoundingClientRect(); return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0; };
+  const editable=(el)=>!!(el&&el.matches&&el.matches(EDIT));
+  const actions=(root=document)=>Array.from(root.querySelectorAll(ACTION)).filter(vis);
+  const scopeFor=(el)=>{
+    if(!el||el===document.body||el===document.documentElement) return document;
+    return el.closest('[role="dialog"],dialog,.modal,.release-modal,.card,.panel,section,main')||document;
+  };
+  const searchInput=()=>{
+    const all=Array.from(document.querySelectorAll('input,textarea')).filter(vis);
+    const ranked=all.map(el=>{
+      const s=((el.id||'')+' '+(el.name||'')+' '+(el.placeholder||'')+' '+(el.getAttribute('aria-label')||'')).toLocaleLowerCase('tr');
+      let score=0;
+      if(/arama|ara\b|search|filtre|filter/.test(s)) score=10;
+      else if(el.type==='search') score=9;
+      return [score,el];
+    }).sort((a,b)=>b[0]-a[0]);
+    return ranked.length&&ranked[0][0]>0?ranked[0][1]:null;
+  };
+  const closeVisibleModal=()=>{
+    const modals=Array.from(document.querySelectorAll('[role="dialog"],dialog,.modal,.release-modal')).filter(vis);
+    const m=modals.at(-1); if(!m) return false;
+    const btn=Array.from(m.querySelectorAll('button,[role="button"]')).filter(vis).find(b=>/kapat|close|vazge[cç]|iptal|×|✕/i.test((b.textContent||'')+' '+(b.title||'')+' '+(b.getAttribute('aria-label')||'')));
+    if(btn){ btn.click(); return true; }
+    return false;
+  };
+  const mp3Page=()=>!!document.querySelector('#winampSearch,#musicSearch,#songSearch')||/MP3 Bot PRO/i.test(document.title||'');
+  document.addEventListener('keydown',(e)=>{
+    const a=document.activeElement;
+    if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='f'){
+      const q=searchInput(); if(q){ e.preventDefault(); e.stopPropagation(); q.focus(); if(q.select) q.select(); }
+      return;
+    }
+    if(e.key==='Escape'){
+      if(closeVisibleModal()){ e.preventDefault(); e.stopPropagation(); return; }
+      if(editable(a)){ a.blur(); e.preventDefault(); return; }
+      return;
+    }
+    if(mp3Page()) return;
+    if(e.altKey||e.ctrlKey||e.metaKey||e.shiftKey) return;
+    if(e.key!=='ArrowDown'&&e.key!=='ArrowUp') return;
+    if(editable(a)) return;
+    const root=scopeFor(a);
+    let list=actions(root).filter(x=>!editable(x)||x.matches('button,a,[role="button"]'));
+    if(!list.length&&root!==document) list=actions(document).filter(x=>!editable(x)||x.matches('button,a,[role="button"]'));
+    if(!list.length) return;
+    let i=list.indexOf(a);
+    if(i<0) i=e.key==='ArrowDown'?-1:list.length;
+    const n=e.key==='ArrowDown'?Math.min(i+1,list.length-1):Math.max(i-1,0);
+    if(list[n]){ e.preventDefault(); e.stopPropagation(); list[n].focus(); list[n].scrollIntoView({block:'nearest',inline:'nearest'}); }
+  },true);
+})();
+</script>
+</body></html>
