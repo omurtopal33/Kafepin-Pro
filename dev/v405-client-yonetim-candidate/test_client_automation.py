@@ -168,6 +168,17 @@ class ClientAutomationTests(unittest.TestCase):
         ):
             self.assertIn(marker, source)
 
+    def test_candidate_builder_uses_targeted_client_activation(self):
+        builder = (HERE / "build_candidate.py").read_text(encoding="utf-8")
+        for marker in (
+            "const clientYonetimOnly=",
+            "'-Component','client-yonetim-pro'",
+            "17894,'/api/health?_supervisor=",
+            "health.json.everyCafeReadOnly===true",
+            "desktop shell and other PRO refresh skipped",
+        ):
+            self.assertIn(marker, builder)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

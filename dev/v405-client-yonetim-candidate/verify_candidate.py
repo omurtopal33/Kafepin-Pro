@@ -4,13 +4,15 @@ import argparse
 import hashlib
 import io
 import json
+import subprocess
+import tempfile
 import zipfile
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[2]
 BASE = ROOT / "KafePin-Pro-Update-v4.0.4.zip"
-ALLOWED_OUTER = {"pro-components/client-yonetim-pro.zip", "update.json", "kafepin-pro-version.json"}
+ALLOWED_OUTER = {"KafePin_Update_Supervisor.js", "pro-components/client-yonetim-pro.zip", "update.json", "kafepin-pro-version.json"}
 ALLOWED_INNER = {"web_service.py"}
 
 
@@ -68,11 +70,26 @@ def main() -> None:
             "baseVersion": "3.1.64",
             "futureUpdateBase": "3.1.64",
             "cumulative": True,
-            "files": ["pro-components/client-yonetim-pro.zip"],
+            "files": ["KafePin_Update_Supervisor.js", "pro-components/client-yonetim-pro.zip"],
         }
         for key, value in expected.items():
             if metadata.get(key) != value:
                 raise AssertionError(f"{metadata_name} {key} mismatch")
+
+    supervisor = candidate["KafePin_Update_Supervisor.js"].decode("utf-8")
+    for marker in (
+        "const clientYonetimOnly=",
+        "'-Component','client-yonetim-pro'",
+        "17894,'/api/health?_supervisor=",
+        "health.json.everyCafeReadOnly===true",
+        "desktop shell and other PRO refresh skipped",
+    ):
+        if marker not in supervisor:
+            raise AssertionError(f"Client Yonetim targeted activation marker missing: {marker}")
+    with tempfile.TemporaryDirectory() as temp:
+        supervisor_path = Path(temp) / "KafePin_Update_Supervisor.js"
+        supervisor_path.write_text(supervisor, encoding="utf-8")
+        subprocess.run(["node", "--check", str(supervisor_path)], check=True)
 
     print("VERIFY_OK")
     print("OUTER_CHANGED=" + ",".join(sorted(changed_outer)))

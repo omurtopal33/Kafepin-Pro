@@ -67,6 +67,59 @@ def component_bytes(source_component: bytes) -> bytes:
     return zip_bytes(entries)
 
 
+def supervisor_bytes(source: bytes) -> bytes:
+    text = source.decode("utf-8-sig").replace("\r\n", "\n")
+    old_detection = """    const componentOnly=unifiedTarget || (updateFiles.length===2 && updateFiles.includes('KafePin_Update_Supervisor.js') && updateFiles.includes('pro-components/yazici-pro.zip'));
+"""
+    new_detection = """    const yaziciOnly=updateFiles.length===2 && updateFiles.includes('KafePin_Update_Supervisor.js') && updateFiles.includes('pro-components/yazici-pro.zip');
+    const clientYonetimOnly=updateFiles.length===2 && updateFiles.includes('KafePin_Update_Supervisor.js') && updateFiles.includes('pro-components/client-yonetim-pro.zip');
+    const componentOnly=unifiedTarget || yaziciOnly || clientYonetimOnly;
+"""
+    if text.count(old_detection) != 1:
+        raise SystemExit("Locked supervisor component detection anchor mismatch")
+    text = text.replace(old_detection, new_detection)
+
+    manager_anchor = """      const manager=path.join(installRoot,'KafePin_Pro_Component_Manager.ps1');
+      if(!fs.existsSync(manager)) throw new Error('Yazici PRO component manager bulunamadi');
+"""
+    manager_replacement = """      if(unifiedTarget || yaziciOnly){
+      const manager=path.join(installRoot,'KafePin_Pro_Component_Manager.ps1');
+      if(!fs.existsSync(manager)) throw new Error('Yazici PRO component manager bulunamadi');
+"""
+    if text.count(manager_anchor) != 1:
+        raise SystemExit("Locked supervisor Yazici manager anchor mismatch")
+    text = text.replace(manager_anchor, manager_replacement)
+
+    health_anchor = """      log(installRoot,'component-only Yazici PRO health/version verified: '+yazici.details);
+    } else {
+"""
+    health_replacement = """      log(installRoot,'component-only Yazici PRO health/version verified: '+yazici.details);
+      } else if(clientYonetimOnly){
+        const manager=path.join(installRoot,'KafePin_Pro_Component_Manager.ps1');
+        if(!fs.existsSync(manager)) throw new Error('Client Yonetim PRO component manager bulunamadi');
+        const r=run('powershell.exe',['-NoProfile','-NonInteractive','-ExecutionPolicy','Bypass','-WindowStyle','Hidden','-File',manager,'-Action','repair','-Component','client-yonetim-pro'],{timeout:120000});
+        if(r.code!==0) throw new Error(`Client Yonetim PRO hedefli guncelleme basarisiz: ${(r.stderr||r.stdout).trim().slice(0,1800)}`);
+        componentsSynced=true; proServicesRefreshed=true;
+        log(installRoot,'component-only activation: Client Yonetim PRO repaired; desktop shell and other PRO refresh skipped');
+        const end=Date.now()+20000;
+        let clientYonetim={ok:false,details:''};
+        while(Date.now()<end){
+          const health=await httpJson(17894,'/api/health?_supervisor='+Date.now(),1500);
+          const valid=health.ok&&health.json&&health.json.ok===true&&health.json.everyCafeReadOnly===true;
+          if(valid){ clientYonetim={ok:true,details:'17894 health/read-only OK'}; break; }
+          clientYonetim={ok:false,details:JSON.stringify(health.json||null)};
+          await sleep(250);
+        }
+        if(!clientYonetim.ok) throw new Error(`Client Yonetim PRO 17894 health/read-only dogrulamasi basarisiz: ${clientYonetim.details}`);
+        log(installRoot,'component-only Client Yonetim PRO health/read-only verified: '+clientYonetim.details);
+      }
+    } else {
+"""
+    if text.count(health_anchor) != 1:
+        raise SystemExit("Locked supervisor Yazici health anchor mismatch")
+    return text.replace(health_anchor, health_replacement).encode("utf-8")
+
+
 def candidate_metadata(source: dict, commit: str) -> dict:
     result = dict(source)
     result.update(
@@ -79,7 +132,7 @@ def candidate_metadata(source: dict, commit: str) -> dict:
             "futureUpdateBase": "3.1.64",
             "cumulative": True,
             "publishedAt": "2026-08-27T12:00:00+03:00",
-            "files": ["pro-components/client-yonetim-pro.zip"],
+            "files": ["KafePin_Update_Supervisor.js", "pro-components/client-yonetim-pro.zip"],
             "buildRevision": REVISION,
             "candidateSourceCommit": commit,
         }
@@ -117,6 +170,7 @@ def main() -> None:
     original_update = json.loads(entries["update.json"].decode("utf-8-sig"))
     original_version = json.loads(entries["kafepin-pro-version.json"].decode("utf-8-sig"))
     entries["pro-components/client-yonetim-pro.zip"] = component
+    entries["KafePin_Update_Supervisor.js"] = supervisor_bytes(entries["KafePin_Update_Supervisor.js"])
     entries["update.json"] = (json.dumps(candidate_metadata(original_update, commit), ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     entries["kafepin-pro-version.json"] = (json.dumps(candidate_metadata(original_version, commit), ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 
