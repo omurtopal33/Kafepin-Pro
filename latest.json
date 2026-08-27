@@ -1,24 +1,24 @@
 {
-  "version": "4.0.2",
+  "version": "4.0.4",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "3.1.64",
   "baseVersion": "3.1.64",
   "futureUpdateBase": "3.1.64",
   "cumulative": true,
-  "sourceVersion": "4.0.1",
-  "sourceSha256": "c60a975f0fd391743432cc6a4558c285db51b265cda991c49cccac4d83f68f52",
-  "publishedAt": "2026-08-26T00:00:00+03:00",
+  "sourceVersion": "4.0.2",
+  "sourceSha256": "c8b54f38b7360828d47c52b15b44e83231a533fe7fd3f15ab35b2247ca035979",
+  "publishedAt": "2026-08-27T12:05:00+03:00",
   "notes": [
-    "v4.0.2 KÜMÜLATİF STABLE: saha-onaylı FIX5 paketini ve önceki STABLE davranışlarını içerir.",
-    "Hızlı hedefli program rollback; gerçek disk I/O için 90 saniye watchdog ve çift update/backup yarışı engeli.",
-    "DB update paketinde yasaktır; update sırasında database.db, -wal ve -shm dosyalarına dokunulmaz.",
-    "Client Performans bağlantı hızı göstergesi ve 1000 Mbps altı bağlantı uyarısı; 17896 portunda tek-instance koruması.",
-    "EveryCafe SQLITE_BUSY için bounded retry; Manager → Recovery sağlık doğrulaması korunur.",
+    "v4.0.4 KÜMÜLATİF STABLE: saha-onaylı fail-safe, Yazıcı PRO/e-Devlet, gün sonu kalıcı onay ve EveryCafe eksik aktarım recovery düzeltmelerini içerir.",
+    "Yazıcı PRO 17891/17893 gerçek sağlık ve metadata sürüm doğrulaması; e-Devlet aynı KafePin WebView2 görünümünde çalışır.",
+    "e-Devlet hizmet bedeli başarılı girişte bir kez eklenir; gerçek baskılar mevcut Yazıcı PRO fiyatıyla canlı toplamı artırır ve duplicate gelir engellenir.",
+    "Fail-safe update lock, runChildTracked yarış düzeltmesi, hızlı hedefli rollback ve DB-dokunmama politikası korunur.",
+    "EveryCafe salt-okunur kalır; Manuel Aktar / Yeniden İşle idempotenttir ve gün sonu onayı restartlar arasında kalıcıdır.",
     "Yeni kafe dağıtım tabanı v3.1.64 olarak sabit kalır."
   ],
   "files": [],
-  "buildRevision": "v402-stable-fast-update-client-performance-r5",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.2.zip",
-  "sha256": "c8b54f38b7360828d47c52b15b44e83231a533fe7fd3f15ab35b2247ca035979"
+  "buildRevision": "v404-stable-unified-edevlet-r1",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.4.zip",
+  "sha256": "b19eba57237cf3d023740733ed01f166d4e8a881dae3b15ee3d8462a77f0614e"
 }
