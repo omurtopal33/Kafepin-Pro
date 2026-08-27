@@ -28,6 +28,9 @@ def patch_revenue(text: str, target_version: str) -> str:
     text, count = re.subn(r'const VERSION = "[^"]+";', dynamic, text, count=1)
     if count != 1:
         raise SystemExit('Yazici revenue VERSION assignment missing')
+    text = replace_once(text, '  price_document:30,\n  payment_method:"CASH",', '  price_document:30,\n  price_edevlet:0,\n  payment_method:"CASH",', 'e-Devlet saved price default')
+    text = replace_once(text, '["price_bw","price_color","price_identity","price_photo","price_scan","price_document"]', '["price_bw","price_color","price_identity","price_photo","price_scan","price_document","price_edevlet"]', 'e-Devlet saved price validation')
+    text = replace_once(text, '["price_bw","price_color","price_identity","price_photo","price_scan","price_document","payment_method","delete_download_after_print"]', '["price_bw","price_color","price_identity","price_photo","price_scan","price_document","price_edevlet","payment_method","delete_download_after_print"]', 'e-Devlet saved price config route')
     old = '''function prepareService(serviceType,quantity,payment,documentPrep=false,title=""){
   const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
   if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
@@ -40,7 +43,7 @@ def patch_revenue(text: str, target_version: str) -> str:
   const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
   if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
   else if(serviceType==="document"){ items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1}); serviceLabel="Belge / Dilekçe Hazırlama"; }
-  else if(serviceType==="edevlet"){ const amount=money(amountOverride); if(amount<=0) throw new Error("e-Devlet hizmet bedeli 0 TL olamaz."); items.push({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1}); serviceLabel="e-Devlet Hizmet Bedeli"; }
+  else if(serviceType==="edevlet"){ const amount=money(amountOverride===null||amountOverride===undefined?c.price_edevlet:amountOverride); if(amount<=0) throw new Error("e-Devlet hizmet bedeli 0 TL olamaz."); items.push({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1}); serviceLabel="e-Devlet Hizmet Bedeli"; }
   else throw new Error("Geçersiz hizmet türü.");
   if(documentPrep && serviceType!=="document" && serviceType!=="edevlet") items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1});
   return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"&&serviceType!=="edevlet"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep}});

@@ -135,6 +135,7 @@ def patch_desktop_source(source: bytes) -> bytes:
         "        private Task<CoreWebView2Environment> edevletEnvironmentTask;\n"
         "        private bool edevletServiceCharged;\n"
         "        private bool edevletChargeInProgress;\n"
+        "        private bool edevletPricingLoaded;\n"
         "        private string edevletPendingTransactionId = string.Empty;\n",
         "e-Devlet state",
     )
@@ -188,12 +189,16 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            Label feeLabel = new Label(); feeLabel.Text = \"Hizmet ₺\"; feeLabel.AutoSize = true; feeLabel.ForeColor = Color.White; feeLabel.Margin = new Padding(10, 9, 2, 0);\n"
         "            edevletFeeBox = new NumericUpDown(); edevletFeeBox.Minimum = 0; edevletFeeBox.Maximum = 10000; edevletFeeBox.DecimalPlaces = 2; edevletFeeBox.Width = 82; edevletFeeBox.Height = 30; edevletFeeBox.Margin = new Padding(0, 5, 4, 0);\n"
         "            edevletPaymentBox = new ComboBox(); edevletPaymentBox.Width = 82; edevletPaymentBox.DropDownStyle = ComboBoxStyle.DropDownList; edevletPaymentBox.Items.Add(\"NAKİT\"); edevletPaymentBox.Items.Add(\"KART\"); edevletPaymentBox.SelectedIndex = 0; edevletPaymentBox.Margin = new Padding(0, 5, 4, 0);\n"
+        "            Button edevletSavePrice = new Button(); edevletSavePrice.Text = \"Fiyatı Kaydet\"; edevletSavePrice.Width = 112; edevletSavePrice.Height = 32;\n"
+        "            Button edevletPrepare = new Button(); edevletPrepare.Text = \"Ücreti Hazırla\"; edevletPrepare.Width = 118; edevletPrepare.Height = 32;\n"
         "            Button edevletCharge = new Button(); edevletCharge.Text = \"KafePin'e İşle\"; edevletCharge.Width = 125; edevletCharge.Height = 32;\n"
+        "            Button edevletCancelCharge = new Button(); edevletCancelCharge.Text = \"İptal\"; edevletCancelCharge.Width = 72; edevletCancelCharge.Height = 32;\n"
+        "            Button edevletDeleteCharge = new Button(); edevletDeleteCharge.Text = \"Sil\"; edevletDeleteCharge.Width = 62; edevletDeleteCharge.Height = 32;\n"
         "            Button endSession = new Button(); endSession.Text = \"Oturumu Bitir\"; endSession.Width = 118; endSession.Height = 32;\n"
         "            edevletPricingState = new Label(); edevletPricingState.Text = \"Ücret bekliyor\"; edevletPricingState.AutoSize = true; edevletPricingState.ForeColor = Color.FromArgb(200, 214, 225); edevletPricingState.Margin = new Padding(8, 9, 0, 0);\n"
         "            printerPanelTab.BackColor = Color.FromArgb(11, 20, 29); edevletTab.BackColor = Color.FromArgb(11, 20, 29);\n"
         "            edevletPricingBar.BackColor = Color.FromArgb(15, 29, 41); edevletToolbar.BackColor = Color.FromArgb(15, 29, 41);\n"
-        "            foreach (Button toolButton in new Button[] { edevletHome, nufus, ikamet, adli, sgk, ogrenci, askerlik, mezun, emekli, iskur, myk, vergi, edevletPrint, edevletCharge, endSession })\n"
+        "            foreach (Button toolButton in new Button[] { edevletHome, nufus, ikamet, adli, sgk, ogrenci, askerlik, mezun, emekli, iskur, myk, vergi, edevletPrint, edevletSavePrice, edevletPrepare, edevletCharge, edevletCancelCharge, edevletDeleteCharge, endSession })\n"
         "            {\n"
         "                toolButton.FlatStyle = FlatStyle.Flat; toolButton.FlatAppearance.BorderSize = 1;\n"
         "                toolButton.FlatAppearance.BorderColor = Color.FromArgb(55, 82, 103);\n"
@@ -221,15 +226,19 @@ def patch_desktop_source(source: bytes) -> bytes:
         "            iskur.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/iskur-kayit-belgesi\"); };\n"
         "            myk.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/myk-mesleki-yeterlilik-belgesi-sorgulama\"); };\n"
         "            vergi.Click += async delegate { await OpenEdevletUrlAsync(\"https://www.turkiye.gov.tr/gib-borc-durum-yazisi-talep-girisi-gercek-kisi\"); };\n"
+        "            edevletSavePrice.Click += async delegate { await SaveEdevletPricingConfigAsync(true); };\n"
+        "            edevletPrepare.Click += async delegate { await PrepareEdevletServiceChargeAsync(); };\n"
         "            edevletCharge.Click += async delegate { await EnsureEdevletServiceChargedAsync(); };\n"
-        "            edevletPrint.Click += async delegate { if (await EnsureEdevletServiceChargedAsync()) { try { await edevletBrowser.CoreWebView2.ExecuteScriptAsync(\"window.print();\"); } catch (Exception ex) { MessageBox.Show(\"Yazdırma başlatılamadı:\\n\" + ex.Message, \"KafePin e-Devlet\", MessageBoxButtons.OK, MessageBoxIcon.Error); } } };\n"
+        "            edevletCancelCharge.Click += async delegate { await ClosePendingEdevletChargeAsync(false); };\n"
+        "            edevletDeleteCharge.Click += async delegate { await ClosePendingEdevletChargeAsync(true); };\n"
+        "            edevletPrint.Click += async delegate { try { await EnsureEdevletBrowserAsync(); await edevletBrowser.CoreWebView2.ExecuteScriptAsync(\"window.print();\"); } catch (Exception ex) { MessageBox.Show(\"Yazdırma başlatılamadı:\\n\" + ex.Message, \"KafePin e-Devlet\", MessageBoxButtons.OK, MessageBoxIcon.Error); } };\n"
         "            endSession.Click += async delegate { await ClearEdevletSessionAsync(); };\n"
-        "            edevletPricingBar.Controls.Add(feeLabel); edevletPricingBar.Controls.Add(edevletFeeBox); edevletPricingBar.Controls.Add(edevletPaymentBox); edevletPricingBar.Controls.Add(edevletCharge); edevletPricingBar.Controls.Add(edevletPricingState);\n"
+        "            edevletPricingBar.Controls.Add(feeLabel); edevletPricingBar.Controls.Add(edevletFeeBox); edevletPricingBar.Controls.Add(edevletPaymentBox); edevletPricingBar.Controls.Add(edevletSavePrice); edevletPricingBar.Controls.Add(edevletPrepare); edevletPricingBar.Controls.Add(edevletCharge); edevletPricingBar.Controls.Add(edevletCancelCharge); edevletPricingBar.Controls.Add(edevletDeleteCharge); edevletPricingBar.Controls.Add(edevletPricingState);\n"
         "            edevletToolbar.Controls.Add(edevletHome); edevletToolbar.Controls.Add(nufus); edevletToolbar.Controls.Add(ikamet); edevletToolbar.Controls.Add(adli); edevletToolbar.Controls.Add(sgk); edevletToolbar.Controls.Add(ogrenci); edevletToolbar.Controls.Add(askerlik); edevletToolbar.Controls.Add(mezun); edevletToolbar.Controls.Add(emekli); edevletToolbar.Controls.Add(iskur); edevletToolbar.Controls.Add(myk); edevletToolbar.Controls.Add(vergi); edevletToolbar.Controls.Add(edevletPrint); edevletToolbar.Controls.Add(endSession);\n"
         "            edevletLayout.Controls.Add(edevletPricingBar, 0, 0); edevletLayout.Controls.Add(edevletToolbar, 0, 1);\n"
         "            printerTabs.TabPages.Add(printerPanelTab);\n"
         "            printerTabs.TabPages.Add(edevletTab);\n"
-        "            printerTabs.SelectedIndexChanged += async delegate { if (printerTabs.SelectedTab == edevletTab) { try { await EnsureEdevletBrowserAsync(); } catch (Exception ex) { MessageBox.Show(\"e-Devlet açılamadı:\\n\" + ex.Message, \"KafePin e-Devlet\", MessageBoxButtons.OK, MessageBoxIcon.Error); } } };\n"
+        "            printerTabs.SelectedIndexChanged += async delegate { if (printerTabs.SelectedTab == edevletTab) { try { await EnsureEdevletBrowserAsync(); await LoadEdevletPricingConfigAsync(); } catch (Exception ex) { MessageBox.Show(\"e-Devlet açılamadı:\\n\" + ex.Message, \"KafePin e-Devlet\", MessageBoxButtons.OK, MessageBoxIcon.Error); } } };\n"
         "            contentPanel.Controls.Add(printerTabs);\n"
         "            printerTabsHeaderFill = new Panel();\n"
         "            printerTabsHeaderFill.BackColor = Color.FromArgb(11, 20, 29);\n"
@@ -338,7 +347,54 @@ def patch_desktop_source(source: bytes) -> bytes:
             });
         }
 
-        private async Task<bool> EnsureEdevletServiceChargedAsync()
+        private static async Task<string> GetYaziciRevenueJsonAsync(string path)
+        {
+            return await Task.Run(delegate
+            {
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create("http://127.0.0.1:17893" + path);
+                req.Method = "GET"; req.Timeout = 4000; req.ReadWriteTimeout = 4000;
+                using (HttpWebResponse response = (HttpWebResponse)req.GetResponse())
+                using (StreamReader reader = new StreamReader(response.GetResponseStream())) return reader.ReadToEnd();
+            });
+        }
+
+        private async Task LoadEdevletPricingConfigAsync()
+        {
+            if (edevletPricingLoaded) return;
+            try
+            {
+                string json = await GetYaziciRevenueJsonAsync("/config");
+                System.Text.RegularExpressions.Match priceMatch = System.Text.RegularExpressions.Regex.Match(json, "\"price_edevlet\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                decimal price;
+                if (priceMatch.Success && decimal.TryParse(priceMatch.Groups[1].Value, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out price))
+                    edevletFeeBox.Value = Math.Max(edevletFeeBox.Minimum, Math.Min(edevletFeeBox.Maximum, price));
+                edevletPaymentBox.SelectedIndex = json.IndexOf("\"payment_method\":\"CARD\"", StringComparison.OrdinalIgnoreCase) >= 0 ? 1 : 0;
+                edevletPricingLoaded = true;
+                edevletPricingState.Text = edevletFeeBox.Value > 0 ? "Kayıtlı ücret hazır" : "Ücreti girip kaydet";
+            }
+            catch (Exception ex) { edevletPricingState.Text = "Fiyat okunamadı: " + ex.Message; }
+        }
+
+        private async Task<bool> SaveEdevletPricingConfigAsync(bool notify)
+        {
+            try
+            {
+                string amount = edevletFeeBox.Value.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                string payment = edevletPaymentBox.SelectedIndex == 1 ? "CARD" : "CASH";
+                await PostYaziciRevenueJsonAsync("/config", "{\"price_edevlet\":" + amount + ",\"payment_method\":\"" + payment + "\"}");
+                edevletPricingLoaded = true; edevletPricingState.Text = "Fiyat kaydedildi";
+                if (notify) MessageBox.Show("e-Devlet hizmet bedeli kaydedildi.", "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                edevletPricingState.Text = "Fiyat kaydedilemedi";
+                MessageBox.Show("e-Devlet hizmet bedeli kaydedilemedi:\n" + ex.Message, "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+        }
+
+        private async Task<bool> PrepareEdevletServiceChargeAsync()
         {
             if (edevletServiceCharged)
             {
@@ -361,28 +417,67 @@ def patch_desktop_source(source: bytes) -> bytes:
             edevletChargeInProgress = true;
             try
             {
-                edevletPricingState.Text = "KafePin'e işleniyor…";
-                if (string.IsNullOrWhiteSpace(edevletPendingTransactionId))
-                {
-                    string amount = fee.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
-                    string prepared = await PostYaziciRevenueJsonAsync("/service/prepare", "{\"service_type\":\"edevlet\",\"quantity\":1,\"payment_method\":\"" + payment + "\",\"title\":\"e-Devlet Hizmet Bedeli\",\"amount\":" + amount + "}");
-                    System.Text.RegularExpressions.Match idMatch = System.Text.RegularExpressions.Regex.Match(prepared, "\"id\"\\s*:\\s*\"([^\"]+)\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-                    if (!idMatch.Success) throw new InvalidOperationException("Hizmet işlemi hazırlandı fakat işlem kimliği alınamadı.");
-                    edevletPendingTransactionId = idMatch.Groups[1].Value;
-                }
-                string safeId = edevletPendingTransactionId.Replace("\\", "\\\\").Replace("\"", "\\\"");
-                await PostYaziciRevenueJsonAsync("/transaction/confirm", "{\"id\":\"" + safeId + "\",\"payment_method\":\"" + payment + "\"}");
-                edevletServiceCharged = true;
-                edevletFeeBox.Enabled = false; edevletPaymentBox.Enabled = false;
-                edevletPricingState.Text = fee.ToString("0.00") + " ₺ KafePin'e işlendi";
+                if (!await SaveEdevletPricingConfigAsync(false)) return false;
+                if (!string.IsNullOrWhiteSpace(edevletPendingTransactionId)) { edevletPricingState.Text = "Onay bekliyor • KafePin'e gönderilmedi"; return true; }
+                string amount = fee.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+                string prepared = await PostYaziciRevenueJsonAsync("/service/prepare", "{\"service_type\":\"edevlet\",\"quantity\":1,\"payment_method\":\"" + payment + "\",\"title\":\"e-Devlet Hizmet Bedeli\",\"amount\":" + amount + "}");
+                System.Text.RegularExpressions.Match idMatch = System.Text.RegularExpressions.Regex.Match(prepared, "\"id\"\\s*:\\s*\"([^\"]+)\"", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                if (!idMatch.Success) throw new InvalidOperationException("Hizmet işlemi hazırlandı fakat işlem kimliği alınamadı.");
+                edevletPendingTransactionId = idMatch.Groups[1].Value;
+                edevletPricingState.Text = fee.ToString("0.00") + " ₺ onay bekliyor • henüz KafePin'e gönderilmedi";
                 return true;
             }
             catch (Exception ex)
             {
-                edevletPricingState.Text = "Aktarım hatası";
+                edevletPricingState.Text = "Hazırlama hatası";
+                MessageBox.Show("e-Devlet hizmet bedeli hazırlanamadı:\n" + ex.Message, "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            finally { edevletChargeInProgress = false; }
+        }
+
+        private async Task<bool> EnsureEdevletServiceChargedAsync()
+        {
+            if (edevletServiceCharged) { edevletPricingState.Text = "Bu müşteri için işlendi"; return true; }
+            if (string.IsNullOrWhiteSpace(edevletPendingTransactionId))
+            {
+                MessageBox.Show("Önce Ücreti Hazırla düğmesine bas. KafePin'e aktarım yalnız ayrı onaydan sonra yapılır.", "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return false;
+            }
+            if (edevletChargeInProgress) return false;
+            edevletChargeInProgress = true;
+            try
+            {
+                string payment = edevletPaymentBox.SelectedIndex == 1 ? "CARD" : "CASH";
+                string safeId = edevletPendingTransactionId.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                await PostYaziciRevenueJsonAsync("/transaction/confirm", "{\"id\":\"" + safeId + "\",\"payment_method\":\"" + payment + "\"}");
+                edevletServiceCharged = true; edevletFeeBox.Enabled = false; edevletPaymentBox.Enabled = false;
+                edevletPricingState.Text = edevletFeeBox.Value.ToString("0.00") + " ₺ KafePin'e işlendi • bu oturumda tekrar eklenmez";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                edevletPricingState.Text = "Aktarım hatası • kayıt onay bekliyor";
                 MessageBox.Show("e-Devlet hizmet bedeli KafePin'e işlenemedi:\n" + ex.Message, "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
+            finally { edevletChargeInProgress = false; }
+        }
+
+        private async Task ClosePendingEdevletChargeAsync(bool delete)
+        {
+            if (edevletServiceCharged) { MessageBox.Show("Bu hizmet bedeli zaten KafePin'e işlendi; iptal veya silme yapılamaz.", "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Information); return; }
+            if (string.IsNullOrWhiteSpace(edevletPendingTransactionId)) { edevletPricingState.Text = "Onay bekleyen ücret yok"; return; }
+            if (edevletChargeInProgress) return;
+            edevletChargeInProgress = true;
+            try
+            {
+                string safeId = edevletPendingTransactionId.Replace("\\", "\\\\").Replace("\"", "\\\"");
+                await PostYaziciRevenueJsonAsync(delete ? "/transaction/delete" : "/transaction/cancel", "{\"id\":\"" + safeId + "\"}");
+                edevletPendingTransactionId = string.Empty;
+                edevletPricingState.Text = delete ? "Bekleyen ücret silindi • KafePin'e gönderilmedi" : "Ücret iptal edildi • KafePin'e gönderilmedi";
+            }
+            catch (Exception ex) { MessageBox.Show((delete ? "Silme" : "İptal") + " başarısız:\n" + ex.Message, "KafePin e-Devlet", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             finally { edevletChargeInProgress = false; }
         }
 
@@ -444,7 +539,7 @@ def patch_desktop_source(source: bytes) -> bytes:
             try { edevletBrowser.Source = new Uri("about:blank"); } catch { }
             edevletBrowserReady = false;
             edevletServiceCharged = false; edevletChargeInProgress = false; edevletPendingTransactionId = string.Empty;
-            edevletFeeBox.Enabled = true; edevletPaymentBox.Enabled = true; edevletPricingState.Text = "Yeni müşteri • ücret bekliyor";
+            edevletFeeBox.Enabled = true; edevletPaymentBox.Enabled = true; edevletPricingState.Text = "Yeni müşteri • kayıtlı ücret hazır";
         }
 
 '''
