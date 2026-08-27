@@ -12,6 +12,8 @@ on:
 jobs:
   windows-client-yonetim:
     runs-on: windows-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     permissions:
       contents: read
     steps:

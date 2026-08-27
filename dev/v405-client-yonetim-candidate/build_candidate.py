@@ -104,8 +104,8 @@ def main() -> None:
     if file_digest(SOURCE) != SOURCE_SHA256:
         raise SystemExit("Locked v4.0.4 source SHA-256 mismatch")
     commit = git_value("rev-parse", "HEAD")
-    if git_value("status", "--porcelain"):
-        raise SystemExit("Build requires a clean exact source commit")
+    if git_value("status", "--porcelain", "--untracked-files=no"):
+        raise SystemExit("Build requires no tracked changes beyond the exact source commit")
 
     with zipfile.ZipFile(SOURCE) as archive:
         entries = {name: archive.read(name) for name in archive.namelist()}
