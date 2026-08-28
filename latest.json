@@ -1,5 +1,5 @@
 {
-  "version": "4.0.2",
+  "version": "4.0.6",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "3.1.64",
@@ -8,17 +8,14 @@
   "cumulative": true,
   "sourceVersion": "4.0.1",
   "sourceSha256": "c60a975f0fd391743432cc6a4558c285db51b265cda991c49cccac4d83f68f52",
-  "publishedAt": "2026-08-26T00:00:00+03:00",
+  "publishedAt": "2026-08-28T06:00:00+03:00",
   "notes": [
-    "v4.0.2 KÜMÜLATİF STABLE: saha-onaylı FIX5 paketini ve önceki STABLE davranışlarını içerir.",
-    "Hızlı hedefli program rollback; gerçek disk I/O için 90 saniye watchdog ve çift update/backup yarışı engeli.",
+    "v4.0.6 STABLE: mevcut çalışan yapı korunarak CLIENT-PERFORMANS-UNIFIED-TEST-R2 paketi yayınlandı.",
     "DB update paketinde yasaktır; update sırasında database.db, -wal ve -shm dosyalarına dokunulmaz.",
-    "Client Performans bağlantı hızı göstergesi ve 1000 Mbps altı bağlantı uyarısı; 17896 portunda tek-instance koruması.",
-    "EveryCafe SQLITE_BUSY için bounded retry; Manager → Recovery sağlık doğrulaması korunur.",
     "Yeni kafe dağıtım tabanı v3.1.64 olarak sabit kalır."
   ],
   "files": [],
-  "buildRevision": "v402-stable-fast-update-client-performance-r5",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.2.zip",
-  "sha256": "c8b54f38b7360828d47c52b15b44e83231a533fe7fd3f15ab35b2247ca035979"
+  "buildRevision": "v406-client-performans-unified-test-r2",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/release/v4.0.6-stable/KafePin-Pro-Update-v4.0.6-CLIENT-PERFORMANS-UNIFIED-TEST-R2.zip",
+  "sha256": "bceae3b96db509121b7232439848dd0dc9860b177ac45e6a49ea20fa039d395c"
 }
