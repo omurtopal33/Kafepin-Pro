@@ -28,6 +28,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Use pinned reproducible Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13.15"
+
       - name: Verify exact checkout
         shell: pwsh
         run: |
@@ -36,13 +41,14 @@ jobs:
 
       - name: Verify committed source and STABLE artifacts
         shell: pwsh
-        run: py -3 dev/v406-release-fix/verify_v406_release.py
+        run: python dev/v406-release-fix/verify_v406_release.py
 
       - name: Verify reproducible metadata-only build
         shell: pwsh
         run: |
-          py -3 dev/v406-release-fix/build_v406_stable.py --output-dir build-a
-          py -3 dev/v406-release-fix/build_v406_stable.py --output-dir build-b
+          python --version
+          python dev/v406-release-fix/build_v406_stable.py --output-dir build-a
+          python dev/v406-release-fix/build_v406_stable.py --output-dir build-b
           $committed = (Get-FileHash -Algorithm SHA256 KafePin-Pro-Update-v4.0.6-STABLE.zip).Hash
           $a = (Get-FileHash -Algorithm SHA256 build-a/KafePin-Pro-Update-v4.0.6-STABLE.zip).Hash
           $b = (Get-FileHash -Algorithm SHA256 build-b/KafePin-Pro-Update-v4.0.6-STABLE.zip).Hash

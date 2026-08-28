@@ -13,5 +13,5 @@
   ],
   "payloadMembersUnchanged": true,
   "databasePayloadPresent": false,
-  "build": "Python stdlib zipfile, DEFLATE level 9, fixed timestamp 2026-08-28T06:00:00"
+  "build": "Windows Python 3.13.15 stdlib zipfile, DEFLATE level 9, fixed timestamp 2026-08-28T06:00:00"
 }

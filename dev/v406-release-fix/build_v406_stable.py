@@ -117,7 +117,7 @@ def main() -> None:
         "changedArchiveMembers": sorted(METADATA_FILES),
         "payloadMembersUnchanged": True,
         "databasePayloadPresent": False,
-        "build": "Python stdlib zipfile, DEFLATE level 9, fixed timestamp 2026-08-28T06:00:00",
+        "build": "Windows Python 3.13.15 stdlib zipfile, DEFLATE level 9, fixed timestamp 2026-08-28T06:00:00",
     }
     (output_dir / "V4.0.6-STABLE-SHA256SUMS.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     (output_dir / f"{STABLE_NAME}.sha256.txt").write_text(f"{stable_sha}  {STABLE_NAME}\n", encoding="ascii")
