@@ -1,0 +1,78 @@
+name: v4.0.7 TEST e-Devlet Print Total
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - test/v407-edevlet-print-total
+    paths:
+      - "KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip"
+      - "KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip.sha256.txt"
+      - "V4.0.7-TEST-SHA256SUMS.json"
+      - "dev/v407-edevlet-print/**"
+      - ".github/workflows/v407-edevlet-print-test.yml"
+
+jobs:
+  verify-v407-test:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13.15"
+
+      - name: Verify exact TEST checkout
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD).Trim() -ne '${{ github.sha }}') { throw 'Checkout SHA mismatch' }
+
+      - name: Verify v4.0.6 locked base and v4.0.7 candidate
+        shell: pwsh
+        run: python dev/v407-edevlet-print/verify_v407_test.py
+
+      - name: Verify deterministic metadata-only candidate build
+        shell: pwsh
+        run: |
+          python dev/v407-edevlet-print/build_v407_test.py --output-dir build-a
+          python dev/v407-edevlet-print/build_v407_test.py --output-dir build-b
+          $committed=(Get-FileHash -Algorithm SHA256 KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip).Hash
+          $a=(Get-FileHash -Algorithm SHA256 build-a/KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip).Hash
+          $b=(Get-FileHash -Algorithm SHA256 build-b/KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip).Hash
+          if($committed -ne $a -or $a -ne $b){throw "Reproducible build mismatch: committed=$committed a=$a b=$b"}
+
+      - name: Simulate same-version stale Yazici PRO repair
+        shell: pwsh
+        run: ./dev/v407-edevlet-print/test_targeted_yazici_repair.ps1 -CandidateZip ./KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip
+
+      - name: Start repaired 17893 service and verify dynamic component version
+        shell: pwsh
+        run: |
+          $root=Join-Path $env:RUNNER_TEMP 'v407-service-health'
+          $candidate=Join-Path $root 'candidate'; $yazici=Join-Path $root 'YaziciPRO'; $data=Join-Path $root 'LocalAppData'
+          New-Item -ItemType Directory -Force -Path $candidate,$yazici,$data | Out-Null
+          Expand-Archive ./KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip $candidate -Force
+          Expand-Archive (Join-Path $candidate 'pro-components/yazici-pro.zip') $yazici -Force
+          $env:KAFEPIN_YAZICI_TEST_MODE='1'; $env:LOCALAPPDATA=$data
+          $proc=Start-Process node -ArgumentList @((Join-Path $yazici 'KafePin_YaziciGelir_Service.js')) -PassThru -WindowStyle Hidden
+          try {
+            $health=$null
+            for($i=0;$i -lt 30;$i++){try{$health=Invoke-RestMethod 'http://127.0.0.1:17893/health' -TimeoutSec 1;break}catch{Start-Sleep -Milliseconds 250}}
+            if(-not $health.ok -or [string]$health.version -ne '3.1.62'){throw ('17893 health/version failed: '+($health|ConvertTo-Json -Compress))}
+            'YAZICI_17893_HEALTH_PASS version=3.1.62'
+          } finally { if($proc -and -not $proc.HasExited){Stop-Process -Id $proc.Id -Force} }
+
+      - name: Upload TEST candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v407-TEST-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 30
+          path: |
+            KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip
+            KafePin-Pro-Update-v4.0.7-TEST-EDEVLET-PRINT-TOTAL-R1.zip.sha256.txt
+            V4.0.7-TEST-SHA256SUMS.json
