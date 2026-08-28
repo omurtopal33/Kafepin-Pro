@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "version": "4.0.6",
+  "sourceArtifact": "KafePin-Pro-Update-v4.0.6-CLIENT-PERFORMANS-UNIFIED-TEST-R2.zip",
+  "sourceArtifactSize": 835801,
+  "sourceArtifactSha256": "bceae3b96db509121b7232439848dd0dc9860b177ac45e6a49ea20fa039d395c",
+  "stableArtifact": "KafePin-Pro-Update-v4.0.6-STABLE.zip",
+  "stableArtifactSize": 835933,
+  "stableArtifactSha256": "f6446ef5538eec9cd2cb4df2c6d72efc702b02df329e293333506e41ec74a6a4",
+  "changedArchiveMembers": [
+    "kafepin-pro-version.json",
+    "update.json"
+  ],
+  "payloadMembersUnchanged": true,
+  "databasePayloadPresent": false,
+  "build": "Python stdlib zipfile, DEFLATE level 9, fixed timestamp 2026-08-28T06:00:00"
+}

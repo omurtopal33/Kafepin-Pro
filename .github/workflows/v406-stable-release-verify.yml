@@ -1,0 +1,61 @@
+name: v4.0.6 STABLE Release Verify
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - release/v4.0.6-stable
+    paths:
+      - "KafePin-Pro-Update-v4.0.6-CLIENT-PERFORMANS-UNIFIED-TEST-R2.zip"
+      - "KafePin-Pro-Update-v4.0.6-CLIENT-PERFORMANS-UNIFIED-TEST-R2.zip.sha256.txt"
+      - "KafePin-Pro-Update-v4.0.6-STABLE.zip"
+      - "KafePin-Pro-Update-v4.0.6-STABLE.sha256.txt"
+      - "V4.0.6-STABLE-SHA256SUMS.json"
+      - "latest.json"
+      - "latest-test.json"
+      - "STABLE_LOCK-v4.0.6.md"
+      - "RELEASE_NOTES-v4.0.6.md"
+      - "dev/v406-release-fix/**"
+      - ".github/workflows/v406-stable-release-verify.yml"
+
+jobs:
+  verify-v406-stable:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify exact checkout
+        shell: pwsh
+        run: |
+          $head = (git rev-parse HEAD).Trim()
+          if ($head -ne '${{ github.sha }}') { throw "Checkout SHA mismatch: $head" }
+
+      - name: Verify committed source and STABLE artifacts
+        shell: pwsh
+        run: py -3 dev/v406-release-fix/verify_v406_release.py
+
+      - name: Verify reproducible metadata-only build
+        shell: pwsh
+        run: |
+          py -3 dev/v406-release-fix/build_v406_stable.py --output-dir build-a
+          py -3 dev/v406-release-fix/build_v406_stable.py --output-dir build-b
+          $committed = (Get-FileHash -Algorithm SHA256 KafePin-Pro-Update-v4.0.6-STABLE.zip).Hash
+          $a = (Get-FileHash -Algorithm SHA256 build-a/KafePin-Pro-Update-v4.0.6-STABLE.zip).Hash
+          $b = (Get-FileHash -Algorithm SHA256 build-b/KafePin-Pro-Update-v4.0.6-STABLE.zip).Hash
+          if ($committed -ne $a -or $a -ne $b) { throw "Reproducible build mismatch: committed=$committed a=$a b=$b" }
+
+      - name: Upload immutable verification evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-v406-STABLE-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 90
+          path: |
+            KafePin-Pro-Update-v4.0.6-STABLE.zip
+            KafePin-Pro-Update-v4.0.6-STABLE.sha256.txt
+            KafePin-Pro-Update-v4.0.6-CLIENT-PERFORMANS-UNIFIED-TEST-R2.zip.sha256.txt
+            V4.0.6-STABLE-SHA256SUMS.json
