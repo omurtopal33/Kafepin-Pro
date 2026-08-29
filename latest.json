@@ -7,6 +7,7 @@
   "futureUpdateBase": "3.1.64",
   "cumulative": true,
   "sourceVersion": "4.0.10",
+  "sourceSha256": "e3f3bd785e23f6f2eac6b42d90f780942480fe6d74937f75d1ebc2fe626db978",
   "publishedAt": "2026-08-29T08:47:00+03:00",
   "notes": [
     "v4.0.10 STABLE: saha testinde hızlı, kararlı ve kullanıcı tarafından onaylanan 4.0.10 yapı birebir kilitlendi.",
@@ -30,5 +31,6 @@
   "installedAt": "",
   "payloadSourceUnchanged": true,
   "targetedPayloadChange": "Onaylanan v4.0.10 saha yapısı kırpılmadan STABLE/FINAL olarak kilitlendi.",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.10.zip"
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.10.zip",
+  "sha256": "e3f3bd785e23f6f2eac6b42d90f780942480fe6d74937f75d1ebc2fe626db978"
 }
