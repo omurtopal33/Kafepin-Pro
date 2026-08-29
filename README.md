@@ -2,7 +2,7 @@
 
 ## Güncel sürüm düzeni
 
-- **v4.0.6 STABLE:** Güncel kümülatif saha sürümüdür; saha-onaylı çalışan v4.0.6 R2 yapısının metadata-only STABLE yayınıdır.
+- **v4.0.11 STABLE/FINAL:** Güncel saha sürümüdür; v4.0.10 STABLE tam tabanı korunarak v4.0.11 R4 WebLimit ve TV monitör modu exact olarak kilitlenmiştir.
 - **Yeni kafe dağıtımı değişmez:** `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` çevrimdışı kurulum tabanıdır. Her STABLE sürüm için yeni bir yeni-kafe ZIP'i üretilmez.
 - Yeni kafe v3.1.64 FINAL ile kurulur; internet varsa yalnız `latest.json` içindeki daha yeni STABLE sürümü tek adımda alır.
 - Ara sürümlerin tek tek kurulması gerekmez.
@@ -22,7 +22,11 @@ PRO klasör düzeni korunur:
 - Teknik Servis PRO: `C:\KafePinPro\TeknikServisPRO`
 - Client Performans PRO: `C:\KafePinPro\ClientPerformansPRO`
 
-## v4.0.6 STABLE kilitleri
+## v4.0.11 STABLE kilitleri
+
+- Client Performans PRO WebLimit: tek masa ve tüm masalar ayarları ayrıdır; offline masaların toplu ayarı reconnect sırasında yeniden uygulanır; `Kapat` tercihi kalıcıdır.
+- Monitor TV modu yalnız `monitor.html?tv=1` ile açılır; aynı anda 3 online masa gösterilir, ping/Mbps/süre/ücret/ödül bilgileri korunur ve sayfalar 9 saniyede değişir. Normal monitor görünümü değişmez.
+- v4.0.10 STABLE ZIP’indeki tüm gerçek dosyalar korunmuştur; v4.0.11 R4 overlay’leri byte düzeyinde doğrulanmıştır.
 
 - Önceki onaylı kümülatif düzeltmeler korunur.
 - Yönetim merkezi; Kafe & Çark, EveryCafe, Anlık Finans ve Kasa & Muhasebe içinde son açık paneli ile kaydırma konumunu saklar. Başka sekmeden dönünce kullanıcı aynı yerde kalır.
@@ -52,8 +56,8 @@ Korunacak temel dağıtımlar:
 
 - `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` — yeni kafe çevrimdışı tabanı.
 - `KafePin-Client-v3.1.64.zip` — eşleşen Client dağıtımı.
-- Güncel `KafePin-Pro-Update-v4.0.6-STABLE.zip` — aktif STABLE kümülatif update.
+- Güncel `KafePin-Pro-Update-v4.0.11-STABLE.zip` — aktif STABLE update.
 
 Eski ara sunucu update ZIP/SHA ve eski ara release notları, v4.0.6 ZIP GitHub'a başarıyla yerleşip `latest.json` doğrulandıktan sonra arşivlenebilir. Yeni-kafe FINAL v3.1.64 ve gerekli Client/kurulum referansları korunur.
 
-Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.6.md`.
+Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.11.md`.
