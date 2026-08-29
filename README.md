@@ -21,6 +21,7 @@ PRO klasör düzeni korunur:
 - Yazıcı PRO: `C:\KafePinPro\YaziciPRO`
 - Teknik Servis PRO: `C:\KafePinPro\TeknikServisPRO`
 - Client Performans PRO: `C:\KafePinPro\ClientPerformansPRO`
+- CV Oluştur PRO: `C:\KafePinPro\CVOlusturPRO`
 
 ## v4.0.11 STABLE kilitleri
 
@@ -28,24 +29,17 @@ PRO klasör düzeni korunur:
 - Monitor TV modu yalnız `monitor.html?tv=1` ile açılır; aynı anda 3 online masa gösterilir, ping/Mbps/süre/ücret/ödül bilgileri korunur ve sayfalar 9 saniyede değişir. Normal monitor görünümü değişmez.
 - v4.0.10 STABLE ZIP’indeki tüm gerçek dosyalar korunmuştur; v4.0.11 R4 overlay’leri byte düzeyinde doğrulanmıştır.
 
-- Önceki onaylı kümülatif düzeltmeler korunur.
-- Yönetim merkezi; Kafe & Çark, EveryCafe, Anlık Finans ve Kasa & Muhasebe içinde son açık paneli ile kaydırma konumunu saklar. Başka sekmeden dönünce kullanıcı aynı yerde kalır.
-- Monitor, TV / Chrome %175 ölçekte kart metnini okunur büyüklükte tutar; içerik taşarsa yalnız ilgili kartın metni otomatik sığar.
-- EveryCafe kapanışında ücretsiz masa monitörden hemen kalkar; süresiz son gerçek tutar kartı 30 saniye, süreli son gerçek tutar kartı 40 saniye kalır. Bu yalnız görünüm bekletmesidir; session/runtime/finans temizliği hemen sürer.
-- MP3 Bot PRO Winamp klasör gezgini, kalıcı klasör seçimi, hızlı arama, favoriler ve metadata başlıkları korunur.
-- USB MP3 / Film / Oyun sol seçim–sağ hesap listesi, seçili boyut/fiyat, USB boş alan ve güvenli aktarım hazırlığı korunur.
-- PRO modülleri kurulu seçimleri mevcut kafelerde aynen korur; yeni kafe v3.1.64 tabanından güncellenir.
-- Güncelleme sırasında masaüstü EXE/DLL dosyaları önce uygulama kapatılıp dosya kilidi doğrulanmadan değiştirilmez; EBUSY/EPERM yarım kurulum bırakmaz. Hedefli rollback için gerçek disk I/O watchdog 90 saniyedir.
-- Update paketi `database.db`, `database.db-wal` ve `database.db-shm` içermez; update sırasında DB'ye dokunulmaz. Çift update/backup yarışı engellenir.
-- Client Performans bağlantı hızı göstergesi, 1000 Mbps altı uyarı ve 17896 portunda tek-instance koruması; EveryCafe `SQLITE_BUSY` bounded retry ve Manager → Recovery sağlık doğrulaması korunur.
-- Güncelleme veya açılış sonrasında 3000/DB sağlığı gelmezse masaüstü önce Windows Server Manager, ardından güvenli recovery akışını otomatik çalıştırır; yalnız bu iki doğrulanmış adım başarısızsa manuel onarım gösterilir.
-- Çarktan çıkan **hediye süre**, masa kapanışında onaylandıktan sonra EveryCafe bilet geliriyle tekil eşleşirse `Promosyon / Çark Hediyesi` olarak sınıflandırılır ve normal gelire eklenmez.
-- Eşleşmeyen EveryCafe bilet hareketi gerçek satış olarak normal gelirde kalır.
-- İçecek/atıştırmalık ödülleri hediye-süre bilet eşleştirmesine girmez.
+- v4.0.10 saha adayı çalışan haliyle korunur; özellik kırpılmaz.
+- ÖSYM / AİS tam koyu mod görünümü ve mevcut arayüz davranışları korunur.
+- MP3 Bot PRO, Yazıcı PRO, Teknik Servis PRO, Client Performans PRO ve CV Oluştur PRO payloadları korunur.
+- EveryCafe veritabanı yalnız salt-okunur erişimle kullanılır; finans, spin/session, 45 dakika yaşam döngüsü ve 20:00 işletme günü davranışları değiştirilmez.
+- Güncelleme paketi veritabanı dosyalarını taşımaz; çalışan DB'ye dokunulmaz.
+- Saha kontrolünde KafePin Pro boşta CPU/RAM tüketimi düşük, pencere açılışı hızlı ve PRO servisleri kararlı gözlenmiştir.
+- MP3 Bot tarafında yalnız geçici Chrome cache alanları temizlenmiştir; profil yapısı, `.venv`, servis dosyaları ve runtime kodu korunur.
 
 ## Güvenlik ve ana yapı
 
-- EveryCafe veritabanı yalnız `sqlite3.OPEN_READONLY` ile okunur; EveryCafe'ye yazma yapılmaz.
+- EveryCafe veritabanı yalnız `sqlite3.OPEN_READONLY` / salt-okunur yöntemlerle okunur; EveryCafe'ye yazma yapılmaz.
 - KafePin session, spin, 45 dakika yaşam döngüsü, 20:00 işletme günü, Telegram ve ana finans davranışları onaysız değiştirilmez.
 - Monitor/Admin tema ve kart yapısı onaysız değiştirilmez.
 - Aynı EveryCafe hareketi ikinci kez gelir veya promosyon olarak kaydedilmez.
@@ -58,6 +52,6 @@ Korunacak temel dağıtımlar:
 - `KafePin-Client-v3.1.64.zip` — eşleşen Client dağıtımı.
 - Güncel `KafePin-Pro-Update-v4.0.11-STABLE.zip` — aktif STABLE update.
 
-Eski ara sunucu update ZIP/SHA ve eski ara release notları, v4.0.6 ZIP GitHub'a başarıyla yerleşip `latest.json` doğrulandıktan sonra arşivlenebilir. Yeni-kafe FINAL v3.1.64 ve gerekli Client/kurulum referansları korunur.
+Aktif güncelleme kaynağı `latest.json` üzerinden doğrudan `KafePin-Pro-Update-v4.0.11-STABLE.zip` dosyasına gider. Eski ara sunucu update paketleri aktif dağıtım zincirinde kullanılmaz.
 
 Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.11.md`.
