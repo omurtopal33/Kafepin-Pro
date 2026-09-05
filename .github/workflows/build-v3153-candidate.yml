@@ -1,0 +1,130 @@
+name: Validate v3.1.53 Candidate
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: kafepin-v3153-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  validate-candidate:
+    if: startsWith(github.head_ref, 'candidate/v3.1.53-') || startsWith(github.ref_name, 'candidate/v3.1.53-')
+    runs-on: windows-latest
+    steps:
+      - name: Checkout candidate branch
+        uses: actions/checkout@v4
+        with:
+          ref: candidate/v3.1.53-ci
+          fetch-depth: 0
+
+      - name: Detect already published candidate
+        shell: powershell
+        run: |
+          if (Test-Path 'KafePin-Pro-Update-v3.1.53.zip') {
+            'CANDIDATE_ALREADY_COMMITTED=true' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          } else {
+            'CANDIDATE_ALREADY_COMMITTED=false' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          }
+
+      - name: Setup Python
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install AI test dependencies
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        shell: powershell
+        run: python -m pip install --disable-pip-version-check flask pillow
+
+      - name: Rebuild and verify v3.1.53 sources
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        shell: powershell
+        run: |
+          $srcRoot = 'dev/v3153-candidate'
+          $dst = Join-Path $srcRoot 'src'
+          $zip = Join-Path $srcRoot 'source-bundle.rebuilt.zip'
+          if (Test-Path $dst) { Remove-Item -Recurse -Force $dst }
+          New-Item -ItemType Directory -Force -Path $dst | Out-Null
+          $parts = Get-ChildItem -LiteralPath $srcRoot -Filter 'source-bundle.b64.part*' | Sort-Object Name
+          if ($parts.Count -ne 11) { throw "Expected 11 source chunks, got $($parts.Count)" }
+          $b64 = (($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName).Trim() }) -join '')
+          [IO.File]::WriteAllBytes($zip, [Convert]::FromBase64String($b64))
+          $sha = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          if ($sha -ne '69af4bbf217ed3a520e4079cc3db7348bb8f6befb424ef5e8e90eb2a0743713a') { throw "Source bundle SHA mismatch: $sha" }
+          Expand-Archive -LiteralPath $zip -DestinationPath $dst -Force
+          Get-ChildItem -LiteralPath $dst -File | Copy-Item -Destination $srcRoot -Force
+
+      - name: Build and run full v3.1.53 tests
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        shell: powershell
+        run: python dev/v3153-candidate/build_v3153.py
+
+      - name: Create SHA and candidate feed
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        shell: powershell
+        run: |
+          $sha=(Get-FileHash -Algorithm SHA256 'KafePin-Pro-Update-v3.1.53.zip').Hash.ToLowerInvariant()
+          "$sha  KafePin-Pro-Update-v3.1.53.zip" | Set-Content -Encoding ASCII 'KafePin-Pro-Update-v3.1.53.sha256.txt'
+          $feed=[ordered]@{
+            version='3.1.53'; channel='candidate'; stableVersion='3.1.49'; baseVersion='3.1.49'; cumulative=$false;
+            downloadUrl='https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v3.1.53.zip';
+            sha256=$sha;
+            notes='v3.1.53 ADAY: WhatsApp Web Yazıcı PRO içinde WebView2; Belge/Dilekçe & AI sekmesi; Word Aç; fotoğraf/tarayıcı/son WhatsApp görselinden OpenAI ile metne çevirme ve Word’e aktar; onay ekranında İptal/Sil; v3.1.52 gelir/fotokopi/tarama ve v3.1.51 Telegram düzeltmeleri korunur.'
+          }
+          $feed | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 'latest-candidate.json'
+
+      - name: Verify generated candidate
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        shell: powershell
+        run: |
+          foreach($p in @('KafePin-Pro-Update-v3.1.53.zip','KafePin-Pro-Update-v3.1.53.sha256.txt','V3.1.53-CANDIDATE-TEST-REPORT.md','RELEASE_NOTES-v3.1.53.md','latest-candidate.json')) { if(-not(Test-Path $p)){throw "missing $p"} }
+          $r=Get-Content 'V3.1.53-CANDIDATE-TEST-REPORT.md' -Raw
+          foreach($m in @('WebView2','İptal','Sil','onay öncesi 0 satış','OpenAI Responses API','Word','DPAPI','MP3 PRO','kitle')) { if($r.IndexOf($m,[StringComparison]::OrdinalIgnoreCase)-lt 0){throw "report marker missing: $m"} }
+          $n=Get-Content 'RELEASE_NOTES-v3.1.53.md' -Raw
+          foreach($m in @('WhatsApp Web','BELGE / DİLEKÇE & AI','WORD AÇ','CHATGPT İLE METNE ÇEVİR','WORD''E AKTAR','İptal','Sil','Telegram','EveryCafe')) { if($n.IndexOf($m,[StringComparison]::OrdinalIgnoreCase)-lt 0){throw "release marker missing: $m"} }
+
+      - name: Upload tested candidate artifact
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: kafepin-v3.1.53-candidate
+          path: |
+            KafePin-Pro-Update-v3.1.53.zip
+            KafePin-Pro-Update-v3.1.53.sha256.txt
+            V3.1.53-CANDIDATE-TEST-REPORT.md
+            RELEASE_NOTES-v3.1.53.md
+            latest-candidate.json
+          retention-days: 7
+
+      - name: Commit tested candidate to candidate branch
+        if: env.CANDIDATE_ALREADY_COMMITTED != 'true'
+        shell: bash
+        run: |
+          git config user.name 'KafePin Candidate Bot'
+          git config user.email 'actions@users.noreply.github.com'
+          git add KafePin-Pro-Update-v3.1.53.zip KafePin-Pro-Update-v3.1.53.sha256.txt V3.1.53-CANDIDATE-TEST-REPORT.md RELEASE_NOTES-v3.1.53.md latest-candidate.json
+          git commit -m 'candidate: publish Windows-tested KafePin Pro v3.1.53'
+          git pull --rebase origin candidate/v3.1.53-ci
+          git push origin HEAD:candidate/v3.1.53-ci
+
+      - name: Verify committed candidate on follow-up run
+        if: env.CANDIDATE_ALREADY_COMMITTED == 'true'
+        shell: powershell
+        run: |
+          foreach($p in @('KafePin-Pro-Update-v3.1.53.zip','KafePin-Pro-Update-v3.1.53.sha256.txt','V3.1.53-CANDIDATE-TEST-REPORT.md','RELEASE_NOTES-v3.1.53.md','latest-candidate.json')) { if(-not(Test-Path $p)){throw "published candidate missing $p"} }
+          $expected=((Get-Content 'KafePin-Pro-Update-v3.1.53.sha256.txt' -Raw).Trim().Split(' ')[0]).ToLowerInvariant()
+          $actual=(Get-FileHash -Algorithm SHA256 'KafePin-Pro-Update-v3.1.53.zip').Hash.ToLowerInvariant()
+          if($expected -ne $actual){throw "published SHA mismatch $expected != $actual"}
