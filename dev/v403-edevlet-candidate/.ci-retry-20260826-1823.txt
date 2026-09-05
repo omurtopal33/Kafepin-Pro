@@ -1,0 +1,2 @@
+CI retry marker only. No application or package payload change.
+Reason: previous GitHub-hosted Windows runs ended with startup_failure before any job steps started.

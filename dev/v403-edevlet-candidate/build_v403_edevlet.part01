@@ -1,0 +1,87 @@
+  $feeBox=New-Object System.Windows.Forms.NumericUpDown; $feeBox.Minimum=0; $feeBox.Maximum=10000; $feeBox.DecimalPlaces=2; $feeBox.Width=84; $feeBox.Height=30; $feeBox.Value=0
+  $payBox=New-Object System.Windows.Forms.ComboBox; $payBox.Width=86; $payBox.DropDownStyle=[System.Windows.Forms.ComboBoxStyle]::DropDownList; [void]$payBox.Items.Add('NAKİT'); [void]$payBox.Items.Add('KART'); $payBox.SelectedIndex=0
+  $btnEnd=AddBarButton 'Oturumu Bitir' 122
+  $sessionLabel=New-Object System.Windows.Forms.Label; $sessionLabel.Text='Yeni müşteri bekleniyor'; $sessionLabel.AutoSize=$true; $sessionLabel.Margin=New-Object System.Windows.Forms.Padding(10,9,0,0)
+  foreach($c in @($btnBack,$btnHome,$btnIkamet,$btnAdli,$btnSgk,$btnPrint,$feeLabel,$feeBox,$payBox,$btnEnd,$sessionLabel)){[void]$bar.Controls.Add($c)}
+  $edevletTab.Controls.Add($edevletView); $edevletTab.Controls.Add($bar); $bar.BringToFront()
+
+  $form.Show(); [System.Windows.Forms.Application]::DoEvents()
+  $profileDir=Join-Path $env:LOCALAPPDATA 'KafePinPro\WebView2Profile'; New-Item -ItemType Directory -Force -Path $profileDir | Out-Null
+  $envTask=[Microsoft.Web.WebView2.Core.CoreWebView2Environment]::CreateAsync($null,$profileDir,$null); $sharedEnv=WaitTask $envTask
+  WaitTask ($localView.EnsureCoreWebView2Async($sharedEnv)) | Out-Null
+  WaitTask ($waView.EnsureCoreWebView2Async($sharedEnv)) | Out-Null
+
+  # e-Devlet, WhatsApp oturumundan tamamen ayrıdır. Oturum temizliği WhatsApp'a dokunmaz.
+  $edevletProfile=Join-Path $env:LOCALAPPDATA 'KafePinPro\WebView2Profile-eDevlet'; New-Item -ItemType Directory -Force -Path $edevletProfile | Out-Null
+  $edevletEnv=WaitTask ([Microsoft.Web.WebView2.Core.CoreWebView2Environment]::CreateAsync($null,$edevletProfile,$null))
+  WaitTask ($edevletView.EnsureCoreWebView2Async($edevletEnv)) | Out-Null
+
+  $localView.CoreWebView2.Settings.IsWebMessageEnabled=$true
+  $script:KafePinTabs=$tabs; $script:KafePinWhatsAppTab=$waTab; $script:EdevletView=$edevletView; $script:EdevletServiceCharged=$false
+  $localView.CoreWebView2.add_WebMessageReceived({param($s,$e) try{if($e.TryGetWebMessageAsString() -eq 'open-whatsapp'){$script:KafePinTabs.SelectedTab=$script:KafePinWhatsAppTab}}catch{}})
+  $waView.CoreWebView2.Settings.AreDefaultContextMenusEnabled=$true; $waView.CoreWebView2.Settings.AreDevToolsEnabled=$false
+  $edevletView.CoreWebView2.Settings.AreDefaultContextMenusEnabled=$true; $edevletView.CoreWebView2.Settings.AreDevToolsEnabled=$false
+  $edevletView.CoreWebView2.add_NewWindowRequested({
+    param($sender,$args)
+    try { $u=[string]$args.Uri; $args.Handled=$true; if($u){$script:EdevletView.Source=[Uri]$u; Log ('e-Devlet popup ayni sekmeye alindi: '+$u)} } catch { Log ('NewWindowRequested hata: '+$_.Exception.Message) }
+  })
+
+  try { $cfg=Invoke-RestMethod 'http://127.0.0.1:17893/config' -TimeoutSec 3; if([string]$cfg.config.payment_method -eq 'CARD'){$payBox.SelectedIndex=1} } catch {}
+
+  function Charge-EdevletOnce {
+    if($script:EdevletServiceCharged){return $true}
+    $fee=[double]$feeBox.Value
+    if($fee -le 0){[System.Windows.Forms.MessageBox]::Show('Önce bu müşteri için e-Devlet hizmet bedelini gir.','KafePin e-Devlet')|Out-Null; return $false}
+    $payment=if($payBox.SelectedIndex -eq 1){'CARD'}else{'CASH'}
+    try {
+      $p=PostLocalJson 'http://127.0.0.1:17893/service/prepare' ([ordered]@{service_type='edevlet';quantity=1;payment_method=$payment;title='e-Devlet Hizmet Bedeli';amount=$fee})
+      if(-not $p.ok -or -not $p.transaction.id){throw 'Hizmet işlemi hazırlanamadı.'}
+      $c=PostLocalJson 'http://127.0.0.1:17893/transaction/confirm' ([ordered]@{id=[string]$p.transaction.id;payment_method=$payment})
+      if(-not $c.ok){throw 'Hizmet satışı KafePin’e işlenemedi.'}
+      $script:EdevletServiceCharged=$true; $feeBox.Enabled=$false; $payBox.Enabled=$false
+      $sessionLabel.Text=('Hizmet bedeli 1 kez eklendi • '+('{0:N2}' -f $fee)+' ₺')
+      Log ('e-Devlet hizmet bedeli tek oturum icin eklendi: '+$fee+' '+$payment)
+      return $true
+    } catch {
+      [System.Windows.Forms.MessageBox]::Show(('Hizmet bedeli eklenemedi; e-Devlet sayfası açılmadı.`r`n`r`n'+$_.Exception.Message),'KafePin e-Devlet')|Out-Null
+      Log ('e-Devlet hizmet bedeli hata: '+$_.Exception.Message); return $false
+    }
+  }
+  function Open-Edevlet([string]$Url) {
+    if(-not (Charge-EdevletOnce)){return}
+    $tabs.SelectedTab=$edevletTab; $edevletView.Source=[Uri]$Url
+  }
+  function Clear-EdevletSession {
+    try { if($edevletView.CoreWebView2){ [void](WaitTask ($edevletView.CoreWebView2.ExecuteScriptAsync("try{localStorage.clear();sessionStorage.clear();}catch(e){}"))); $edevletView.CoreWebView2.CookieManager.DeleteAllCookies(); try{[void](WaitTask ($edevletView.CoreWebView2.CallDevToolsProtocolMethodAsync('Network.clearBrowserCache','{}')))}catch{}; try{[void](WaitTask ($edevletView.CoreWebView2.CallDevToolsProtocolMethodAsync('Network.clearBrowserCookies','{}')))}catch{} } } catch { Log ('e-Devlet temizleme uyari: '+$_.Exception.Message) }
+    try { $edevletView.Source=[Uri]'about:blank' } catch {}
+    $script:EdevletServiceCharged=$false; $feeBox.Enabled=$true; $payBox.Enabled=$true; $sessionLabel.Text='Oturum temizlendi • yeni müşteri hazır'
+    Log 'e-Devlet musteri oturumu/cookie temizlendi.'
+  }
+
+  $btnBack.Add_Click({try{if($edevletView.CanGoBack){$edevletView.GoBack()}}catch{}})
+  $btnHome.Add_Click({Open-Edevlet 'https://www.turkiye.gov.tr/'})
+  $btnIkamet.Add_Click({Open-Edevlet 'https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama'})
+  $btnAdli.Add_Click({Open-Edevlet 'https://www.turkiye.gov.tr/adli-sicil-kaydi'})
+  $btnSgk.Add_Click({Open-Edevlet 'https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu'})
+  $btnPrint.Add_Click({try{if(-not $script:EdevletServiceCharged){[System.Windows.Forms.MessageBox]::Show('Önce e-Devlet hizmetini başlat.','KafePin e-Devlet')|Out-Null;return}; [void](WaitTask ($edevletView.CoreWebView2.ExecuteScriptAsync('window.print();')))}catch{[System.Windows.Forms.MessageBox]::Show(('Yazdırma başlatılamadı: '+$_.Exception.Message),'KafePin e-Devlet')|Out-Null}})
+  $btnEnd.Add_Click({Clear-EdevletSession})
+  $form.add_FormClosing({try{if($script:EdevletView -and $script:EdevletView.CoreWebView2){$script:EdevletView.CoreWebView2.CookieManager.DeleteAllCookies()}}catch{}})
+
+  $localView.Source=[Uri]$LocalUrl; $waView.Source=[Uri]'https://web.whatsapp.com/'; $edevletView.Source=[Uri]'about:blank'
+  Log 'Yazici PRO + WhatsApp + e-Devlet ayni KafePin penceresinde baslatildi.'
+  [System.Windows.Forms.Application]::Run($form)
+  exit 0
+} catch { Fail $_.Exception.Message }
+'''
+
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def read_expected_sha(root: Path) -> str:
+    p = root / 'KafePin-Pro-Update-v4.0.2.sha256.txt'
+    if not p.exists():
+        raise SystemExit(f'missing {p.name}')
+    m = re.search(r'\b([0-9a-fA-F]{64})\b', p.read_text(encoding='ascii', errors='ignore'))
+    if not m:

@@ -1,0 +1,177 @@
+name: BUILD v4.0.3 unified TEST candidate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dev/v403-edevlet-candidate/**'
+      - 'dev/failsafe-update-lock/**'
+      - '.github/workflows/build-v403-edevlet-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Reconstruct and patch unified builder
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $dir='dev/v403-edevlet-candidate'
+          $parts=Get-ChildItem "$dir/build_v403_edevlet.part*" | Sort-Object Name
+          if($parts.Count -ne 4){ throw "Expected 4 builder parts, found $($parts.Count)" }
+          $out=Join-Path $env:GITHUB_WORKSPACE "$dir/build_v403_edevlet.py"
+          $utf8NoBom=New-Object System.Text.UTF8Encoding($false)
+          $text=($parts | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join ''
+          $text=$text.Replace([string][char]0x2019,'')
+          [IO.File]::WriteAllText($out,$text,$utf8NoBom)
+          python "$dir/patch_candidate2.py"
+          python "$dir/patch_candidate3_desktop.py"
+          python -m py_compile $out
+
+      - name: Build one unified v4.0.3 TEST candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python dev/v403-edevlet-candidate/build_v403_edevlet.py
+
+      - name: Windows fail-safe and runtime regression tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          powershell -NoProfile -ExecutionPolicy Bypass -File dev/failsafe-update-lock/test_failsafe_update_lock.ps1
+
+      - name: Validate unified update, rollback safety and UI payload
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $base='KafePin-Pro-Update-v4.0.2.zip'
+          $cand='KafePin-Pro-Update-v4.0.3-UNIFIED-TEST-CANDIDATE.zip'
+          if(-not (Test-Path $cand)){throw 'unified candidate missing'}
+          $td1=Join-Path $env:RUNNER_TEMP 'v402-unified-final'; $td2=Join-Path $env:RUNNER_TEMP 'v403-unified-final'
+          Expand-Archive $base $td1 -Force; Expand-Archive $cand $td2 -Force
+          $u=Get-Content (Join-Path $td2 'update.json') -Raw | ConvertFrom-Json
+          $expected=@('KafePin_Update_Supervisor.js','pro-components/yazici-pro.zip','desktop-app/KafePinProDesktop.cs','server.js','public/admin.html','KafePin_System_Manager.ps1','KafePin_Manager_Ensure.ps1')
+          $actual=@($u.files)
+          if($actual.Count -ne 7 -or @($expected|Where-Object{$_ -notin $actual}).Count -ne 0){throw ('Targeted files list wrong: '+($actual -join ','))}
+          foreach($rel in @('database.db','database.db-wal','database.db-shm')) { if(Test-Path (Join-Path $td2 $rel)){throw "DB payload forbidden: $rel"} }
+          $protected=@('KafePin_Desktop_App_Setup.ps1','KafePin_Desktop_Helper_Ensure.ps1','KafePin_Recovery.ps1','desktop-app/desktop-app-version.json','pro-components/mp3-bot-pro.zip','pro-components/teknik-servis-pro.zip','pro-components/client-yonetim-pro.zip','pro-components/client-performans-pro.zip','pro-components/cv-olustur-pro.zip','services/spinService.js','utils/fee.js')
+          foreach($rel in $protected){$a=Join-Path $td1 $rel;$b=Join-Path $td2 $rel;if((Test-Path $a)-and(Test-Path $b)){if((Get-FileHash $a -Algorithm SHA256).Hash -ne (Get-FileHash $b -Algorithm SHA256).Hash){throw "Protected file changed: $rel"}}}
+          node --check (Join-Path $td2 'server.js')
+          node --check (Join-Path $td2 'KafePin_Update_Supervisor.js')
+          node (Join-Path $td2 'KafePin_Update_Supervisor.js') --self-test
+          $server=Get-Content (Join-Path $td2 'server.js') -Raw
+          foreach($marker in @('recoverRecentEveryCafeMissingImports','/admin/everycafe/retry-missing','withSqliteBusyRetry','DAILY_ROLLOVER_ACK_FILE','getEffectiveRolloverStatus','runChildTracked')){if($server -notmatch [regex]::Escape($marker)){throw "server marker missing: $marker"}}
+          if($server -notmatch 'OPEN_READONLY'){throw 'EveryCafe read-only guard missing'}
+          if(([regex]::Matches($server,'isEveryCafeFreeSession\(sourceSession\)')).Count -ne 1){throw 'EveryCafe active-session sourceSession guard missing or duplicated'}
+          if(([regex]::Matches($server,'if \(!isEveryCafeFreeSession\(session\)\)')).Count -ne 1){throw 'EveryCafe closed-session session guard missing or duplicated'}
+          if(([regex]::Matches($server,'importEveryCafeSession\(session, cb, busyAttempt \+ 1\)')).Count -ne 2){throw 'EveryCafe bounded BEGIN retry must exist at both transaction entries'}
+          if(([regex]::Matches($server,'getEffectiveRolloverStatus\(last\)')).Count -lt 5){throw 'durable day-end acknowledgement is not used by every status/repair/catch-up reader'}
+          $admin=Get-Content (Join-Path $td2 'public/admin.html') -Raw
+          foreach($marker in @('MANUEL AKTAR / YENİDEN İŞLE','retryEveryCafeMissing')){if($admin -notmatch [regex]::Escape($marker)){throw "admin recovery marker missing: $marker"}}
+          $desktop=Get-Content (Join-Path $td2 'desktop-app/KafePinProDesktop.cs') -Raw
+          foreach($marker in @('e-Devlet / Resmî Belgeler','İkametgâh','Adli Sicil','SGK','NewWindowRequested','ClearEdevletSessionAsync','17891')){if($desktop -notmatch [regex]::Escape($marker)){throw "desktop marker missing: $marker"}}
+          if(([regex]::Matches($desktop,'edevletBrowser\.Visible = true')).Count -lt 2){throw 'e-Devlet browser visibility regression'}
+          if($desktop -notmatch '(?s)ShowPrinterView\(\).*?printerBrowser\.Visible = true;.*?edevletBrowser\.Visible = true;.*?printerTabs\.Visible = true;'){throw 'Yazici tab visibility restore missing'}
+          if($desktop -notmatch 'SpecialFolder\.LocalApplicationData\), "KafePinPro", "pro-services-started\.marker"'){throw 'PRO startup marker is not user-writable'}
+          if($desktop -notmatch '(?s)Shown \+= async delegate.*?EnsureProServicesReadyAtStartupAsync\(\);.*?serverWatchTimer\.Start'){throw 'non-blocking PRO startup trigger missing from visible form'}
+          if($desktop -notmatch 'WaitForClientPerformanceAsync\(35\)'){throw 'Client Performance bounded readiness wait missing'}
+          if($desktop -notmatch 'allReady = mp3Ready && printerReady && serviceReady && clientReady && performanceReady && cvReady'){throw 'allReady omits an installed PRO service'}
+          foreach($marker in @('TabDrawMode.OwnerDrawFixed','Color.FromArgb(24, 142, 98)','Color.FromArgb(24, 42, 58)','TextFormatFlags.HorizontalCenter')){if($desktop -notmatch [regex]::Escape($marker)){throw "themed Yazici tab marker missing: $marker"}}
+          foreach($marker in @('DefaultBackgroundColor = Color.FromArgb(11, 20, 29)','Emulation.setAutoDarkModeOverride','edevletToolbar.BackColor = Color.FromArgb(15, 29, 41)')){if($desktop -notmatch [regex]::Escape($marker)){throw "dark e-Devlet marker missing: $marker"}}
+          foreach($marker in @('TableLayoutPanel edevletLayout','edevletLayout.RowCount = 3','edevletLayout.Controls.Add(edevletBrowser, 0, 2)','edevletLayout.Controls.Add(edevletPricingBar, 0, 0)','edevletLayout.Controls.Add(edevletToolbar, 0, 1)')){if($desktop -notmatch [regex]::Escape($marker)){throw "e-Devlet unclipped layout marker missing: $marker"}}
+          foreach($marker in @('Hizmet ₺','Fiyatı Kaydet','KafePin''e İşle','İptal (-1 Çıktı)','Sil','LoadEdevletPricingConfigAsync','SaveEdevletPricingConfigAsync','PrepareEdevletServiceChargeAsync','EnsureEdevletServiceChargedAsync','ClosePendingEdevletChargeAsync','/service/prepare','/transaction/confirm','/edevlet/session/remove-print','/transaction/delete','edevletPendingTransactionId','edevletChargeInProgress','Color.FromArgb(70, 220, 160)')){if($desktop -notmatch [regex]::Escape($marker)){throw "e-Devlet pricing marker missing: $marker"}}
+          if($desktop -match [regex]::Escape('Button edevletPrepare')){throw 'manual e-Devlet prepare button must not be visible'}
+          if($desktop -match [regex]::Escape('Button edevletPrint')){throw 'separate desktop e-Devlet print button must not be visible'}
+          $prepareMethod=[regex]::Match($desktop,'(?s)private async Task<bool> PrepareEdevletServiceChargeAsync\(\).*?(?=private async Task<bool> EnsureEdevletServiceChargedAsync\(\))').Value
+          if(-not $prepareMethod -or $prepareMethod -match [regex]::Escape('/transaction/confirm')){throw 'e-Devlet prepare must remain pending and must not confirm finance'}
+          $confirmMethod=[regex]::Match($desktop,'(?s)private async Task<bool> EnsureEdevletServiceChargedAsync\(\).*?(?=private async Task ClosePendingEdevletChargeAsync\(bool delete\))').Value
+          if(-not $confirmMethod -or $confirmMethod -notmatch [regex]::Escape('/transaction/confirm')){throw 'e-Devlet explicit finance confirmation is missing'}
+          $closeMethod=[regex]::Match($desktop,'(?s)private async Task ClosePendingEdevletChargeAsync\(bool delete\).*?(?=private async Task OpenEdevletUrlAsync\(string url\))').Value
+          if(-not $closeMethod -or $closeMethod -notmatch [regex]::Escape('/edevlet/session/remove-print') -or $closeMethod -notmatch [regex]::Escape('/transaction/delete') -or $closeMethod -match [regex]::Escape('/transaction/confirm')){throw 'e-Devlet remove-one/delete must adjust pending session without finance confirmation'}
+          foreach($marker in @('IsEdevletLoginUrl','edevletLoginObserved','host == "giris.turkiye.gov.tr"','else if (edevletLoginObserved && string.IsNullOrWhiteSpace(edevletPendingTransactionId) && edevletFeeBox.Value > 0)','edevletTotalTimer.Interval = 1500','RefreshEdevletSessionTotalAsync','/edevlet/session/active','/transaction?id=','Oturum toplamı:','baskılar otomatik eklenir')){if($desktop -notmatch [regex]::Escape($marker)){throw "e-Devlet post-login automatic PrintService total marker missing: $marker"}}
+          if($desktop -match [regex]::Escape('edevletSavePrice.Click += async delegate { if (await SaveEdevletPricingConfigAsync(true))')){throw 'saving e-Devlet price must not start a charge before login'}
+          foreach($marker in @('nvi-nufus-kayit-ornegi-belgesi-sorgulama','nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama','adli-sicil-kaydi','sgk-tescil-ve-hizmet-dokumu','yok-ogrenci-belgesi-sorgulama','mill-savunma-askerligim','yuksekogretim-mezun-belgesi-sorgulama','4a-emekli-aylik-bilgisi','4b-emekli-aylik-bilgisi','4c-emekli-aylik-bilgisi','iskur-kayit-belgesi','myk-mesleki-yeterlilik-belgesi-sorgulama','gib-borc-durum-yazisi-talep-girisi-gercek-kisi')){if($desktop -notmatch [regex]::Escape($marker)){throw "e-Devlet quick service missing: $marker"}}
+          if($desktop -notmatch '(?s)OpenEdevletUrlAsync\(string url\).*?IsEdevletUrl\(url\)\) edevletBrowser\.CoreWebView2\.Navigate\(url\)'){throw 'e-Devlet quick links are not direct same-WebView navigation'}
+          foreach($marker in @('printerTabsHeaderFill.BackColor = Color.FromArgb(11, 20, 29)','printerTabsHeaderFill.SetBounds(420, 0','printerTabsHeaderFill.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right')){if($desktop -notmatch [regex]::Escape($marker)){throw "Yazici header fill marker missing: $marker"}}
+          if($desktop -notmatch 'serverConsecutiveHealthMisses'){throw 'desktop watchdog threshold missing'}
+          if($desktop -notmatch 'serverWatchTimer\.Interval = 3500'){throw 'desktop watchdog interval missing'}
+          $csc=Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
+          $core=Get-ChildItem (Join-Path $td1 'desktop-app') -Recurse -Filter 'Microsoft.Web.WebView2.Core.dll' -File | Select-Object -First 1
+          $forms=Get-ChildItem (Join-Path $td1 'desktop-app') -Recurse -Filter 'Microsoft.Web.WebView2.WinForms.dll' -File | Select-Object -First 1
+          if(-not $core -or -not $forms){
+            $sdkRoot=Join-Path $env:RUNNER_TEMP 'webview2-sdk-compile'
+            $sdkPkg=Join-Path $env:RUNNER_TEMP 'webview2-sdk-compile.nupkg'
+            $sdkZip=Join-Path $env:RUNNER_TEMP 'webview2-sdk-compile.zip'
+            Invoke-WebRequest -UseBasicParsing -Uri 'https://www.nuget.org/api/v2/package/Microsoft.Web.WebView2/1.0.4129.50' -OutFile $sdkPkg
+            Copy-Item -LiteralPath $sdkPkg -Destination $sdkZip -Force
+            Expand-Archive -LiteralPath $sdkZip -DestinationPath $sdkRoot -Force
+            $core=Get-ChildItem $sdkRoot -Recurse -Filter 'Microsoft.Web.WebView2.Core.dll' -File | Where-Object { $_.FullName -match 'net4(5|6|62)' } | Select-Object -First 1
+            $forms=Get-ChildItem $sdkRoot -Recurse -Filter 'Microsoft.Web.WebView2.WinForms.dll' -File | Where-Object { $_.FullName -match 'net4(5|6|62)' } | Select-Object -First 1
+          }
+          if(-not $core -or -not $forms -or -not (Test-Path $csc)){throw 'desktop compile prerequisites missing'}
+          $desktopExe=Join-Path $env:RUNNER_TEMP 'v403-unified-desktop-compile.exe'
+          & $csc /nologo /target:winexe /out:$desktopExe /reference:System.dll /reference:System.Core.dll /reference:System.Drawing.dll /reference:System.Windows.Forms.dll ("/reference:"+$core.FullName) ("/reference:"+$forms.FullName) (Join-Path $td2 'desktop-app/KafePinProDesktop.cs')
+          if($LASTEXITCODE -ne 0 -or -not (Test-Path $desktopExe)){throw 'candidate desktop C# compile failed'}
+          $yz=Join-Path $env:RUNNER_TEMP 'v403-unified-yazici'; Expand-Archive (Join-Path $td2 'pro-components/yazici-pro.zip') $yz -Force
+          $revenue=Get-Content (Join-Path $yz 'KafePin_YaziciGelir_Service.js') -Raw
+          foreach($marker in @('price_edevlet:0','"price_edevlet"','amountOverride===null||amountOverride===undefined?c.price_edevlet:amountOverride','quantity:qty','const qty=events.reduce','appendPrintJobsToTransaction','removeOnePrintUnitFromTransaction','/edevlet/session/remove-print','/edevlet/session/active','meta.active_session===true','e-Devlet canlı çıktı ekleme hatası','tx.total=calcTotal(tx.items)','print_pages')){if($revenue -notmatch [regex]::Escape($marker)){throw "e-Devlet saved fee/automatic PrintService total marker missing: $marker"}}
+          foreach($f in @('KafePin_YaziciPRO_ServiceHost.ps1','KafePin_YaziciPRO_WebView2.ps1')){$e=$null;$t=$null;[System.Management.Automation.Language.Parser]::ParseFile((Join-Path $yz $f),[ref]$t,[ref]$e)|Out-Null;if($e.Count){throw "PowerShell syntax failed: $f"}}
+          node dev/v403-edevlet-candidate/test_edevlet_session_total.js (Join-Path $yz 'KafePin_YaziciGelir_Service.js')
+
+          # Yazıcı PRO sürümünün tek source-of-truth'i payload metadata'sıdır.
+          # Runtime/desktop/updater kodu belirli 3.1.x değerlerini karşılaştırmamalı.
+          $meta=Get-Content (Join-Path $yz 'yazici-pro-version.json') -Raw | ConvertFrom-Json
+          $yzVersion=[string]$meta.version
+          if($yzVersion -notmatch '^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$'){throw "Invalid Yazici metadata version: $yzVersion"}
+          $supervisor=Get-Content (Join-Path $td2 'KafePin_Update_Supervisor.js') -Raw
+          foreach($required in @('yazici-pro-version.json','ReadInstalledYaziciVersion')){
+            if(($supervisor+$desktop) -notmatch [regex]::Escape($required)){throw "metadata source-of-truth marker missing: $required"}
+          }
+          $runtimeFiles=@(
+            (Join-Path $yz 'KafePin_YaziciGelir_Service.js'),
+            (Join-Path $yz 'web_service.py'),
+            (Join-Path $yz 'KafePin_YaziciPRO_ServiceHost.ps1'),
+            (Join-Path $yz 'KafePin_YaziciPRO_WebView2.ps1')
+          )
+          foreach($file in $runtimeFiles){
+            $text=Get-Content $file -Raw
+            if($text -notmatch 'yazici-pro-version\.json'){throw "runtime does not read Yazici metadata: $file"}
+            if($text -match '(?i)(?:-eq|===|IndexOf\(|APP_VERSION\s*=|const\s+VERSION\s*=|\$Expected\s*=).*3\.1\.\d+'){throw "hard-coded Yazici version comparison remains: $file"}
+          }
+          $readyBlock=[regex]::Match($desktop,'(?s)private async Task<bool> IsPrinterProReadyOnceAsync\(\).*?private async Task<bool> WaitForPrinterProAsync').Value
+          if($readyBlock -match '3\.1\.\d+'){throw 'desktop readiness block contains hard-coded Yazici version'}
+          if($desktop -notmatch 'ReadInstalledYaziciVersion'){throw 'desktop metadata version reader missing'}
+          if($supervisor -match '===[''\"]3\.1\.\d+'){throw 'supervisor contains hard-coded Yazici version comparison'}
+          $manager=Get-Content (Join-Path $td2 'KafePin_System_Manager.ps1') -Raw
+          if($manager -match 'if \(\$null -ne \$fast\) \{ return @\(\$fast\) \}'){throw 'manager still returns early from PID-file process'}
+          foreach($marker in @('SYNC restart iptal','ASYNC restart iptal','Kuyruk restart iptal','control server stop failed PID=')){if($manager -notmatch [regex]::Escape($marker)){throw "manager duplicate-server guard missing: $marker"}}
+          $parseErrors=$null; [System.Management.Automation.Language.Parser]::ParseInput($manager,[ref]$null,[ref]$parseErrors)|Out-Null
+          if($parseErrors.Count){throw ('manager PowerShell parse failed: '+(($parseErrors|ForEach-Object{$_.Message}) -join '; '))}
+          $managerEnsure=Get-Content (Join-Path $td2 'KafePin_Manager_Ensure.ps1') -Raw
+          foreach($marker in @('$managerChanged','Get-FileHash','/End','/Run')){if($managerEnsure -notmatch [regex]::Escape($marker)){throw "manager ensure reload marker missing: $marker"}}
+          $ensureErrors=$null; [System.Management.Automation.Language.Parser]::ParseInput($managerEnsure,[ref]$null,[ref]$ensureErrors)|Out-Null
+          if($ensureErrors.Count){throw ('manager ensure PowerShell parse failed: '+(($ensureErrors|ForEach-Object{$_.Message}) -join '; '))}
+          if($supervisor -notmatch 'unified activation: Server Manager payload synchronized'){throw 'supervisor does not activate updated Manager payload'}
+          Write-Host "YAZICI_VERSION_SOURCE_OF_TRUTH_PASS version=$yzVersion"
+          $digest=(Get-FileHash $cand -Algorithm SHA256).Hash.ToLowerInvariant()
+          "UNIFIED_CANDIDATE_PASS outer_sha256=$digest" | Tee-Object -FilePath unified-candidate-ci-result.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-Pro-v4.0.3-UNIFIED-TEST-CANDIDATE
+          path: |
+            KafePin-Pro-Update-v4.0.3-UNIFIED-TEST-CANDIDATE.zip
+            KafePin-Pro-Update-v4.0.3-UNIFIED-TEST-CANDIDATE.sha256.txt
+            V4.0.3-UNIFIED-TEST-CANDIDATE-REPORT.md
+            unified-candidate-ci-result.txt
+          if-no-files-found: error
+          retention-days: 30

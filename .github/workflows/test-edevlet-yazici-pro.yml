@@ -1,0 +1,93 @@
+name: TEST e-Devlet Yazici PRO Feasibility
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/test-edevlet-yazici-pro.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Reconstruct Yazici PRO source payload from tested v3.1.54 delta
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $out=Join-Path $env:RUNNER_TEMP 'kp-yazici-src'
+          New-Item -ItemType Directory -Force -Path $out|Out-Null
+          $parts=Get-ChildItem 'dev/v3154-candidate/delta.b64.part*' | Sort-Object Name
+          if(-not $parts){throw 'v3154 delta parts missing'}
+          $b64=($parts|ForEach-Object{(Get-Content $_.FullName -Raw).Trim()}) -join ''
+          $tgz=Join-Path $env:RUNNER_TEMP 'delta.tar.gz'
+          [IO.File]::WriteAllBytes($tgz,[Convert]::FromBase64String($b64))
+          tar -xzf $tgz -C $out
+          $files=Get-ChildItem $out -Recurse -File -Filter 'KafePin_YaziciPRO_WebView2.ps1'
+          if($files.Count -ne 1){throw "Expected one WebView2 host in source payload, found $($files.Count)"}
+          "KP_WEBVIEW_FILE=$($files[0].FullName)"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
+          "KP_SOURCE_ROOT=$out"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Verify WebView2 same-window capability
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $s=Get-Content $env:KP_WEBVIEW_FILE -Raw -Encoding UTF8
+          foreach($must in @('EnsureCoreWebView2Async','CoreWebView2','web.whatsapp.com')){if(-not $s.Contains($must)){throw "Missing marker $must"}}
+          foreach($m in @('NewWindowRequested','NavigationStarting','NavigationCompleted','WebMessageReceived','Navigate','Source')){if($s.Contains($m)){Write-Host "HOOK_PRESENT=$m"}else{Write-Host "HOOK_ABSENT=$m"}}
+
+      - name: Probe official e-Devlet service entry points
+        shell: pwsh
+        run: |
+          [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
+          $ok=0
+          foreach($u in @('https://www.turkiye.gov.tr/nvi-yerlesim-yeri-ve-diger-adres-belgesi-sorgulama','https://www.turkiye.gov.tr/adli-sicil-kaydi','https://www.turkiye.gov.tr/sgk-tescil-ve-hizmet-dokumu')){
+            try {
+              $r=Invoke-WebRequest -UseBasicParsing -Uri $u -MaximumRedirection 10 -TimeoutSec 30
+              if($r.StatusCode -ge 200 -and $r.StatusCode -lt 400){$ok++;Write-Host "SERVICE_OK=$u"}else{Write-Warning "SERVICE_HTTP=$($r.StatusCode) $u"}
+            } catch { Write-Warning "SERVICE_TRANSIENT_FAIL=$u :: $($_.Exception.Message)" }
+          }
+          if($ok -lt 2){throw "Too few reachable official e-Devlet services: $ok/3"}
+
+      - name: Validate session pricing model
+        shell: pwsh
+        run: |
+          $s=[ordered]@{serviceCharged=$false;serviceCount=0;printedPages=0;copies=0}
+          function AddPrint([int]$pages,[int]$copies){if(-not $s.serviceCharged){$s.serviceCharged=$true;$s.serviceCount++};$s.printedPages+=($pages*$copies);$s.copies+=$copies}
+          AddPrint 1 3; AddPrint 2 1; AddPrint 1 2
+          if($s.serviceCount -ne 1){throw 'service fee repeated'}
+          if($s.printedPages -ne 7){throw 'page accounting wrong'}
+
+      - name: Capture v4.0.2 updater layout and current Yazici PRO
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $stable=Join-Path $env:RUNNER_TEMP 'v402'
+          Expand-Archive 'KafePin-Pro-Update-v4.0.2.zip' $stable -Force
+          $dst=Join-Path $env:RUNNER_TEMP 'v403-inspect'
+          New-Item -ItemType Directory -Force -Path $dst|Out-Null
+          Get-ChildItem $stable -Recurse -File | ForEach-Object { $_.FullName.Substring($stable.Length+1) } | Set-Content (Join-Path $dst 'v402-file-list.txt') -Encoding utf8
+          foreach($name in @('update.json','server.js','KafePin_Manager_Ensure.ps1')){
+            $f=Get-ChildItem $stable -Recurse -File -Filter $name|Select-Object -First 1
+            if($f){Copy-Item $f.FullName (Join-Path $dst $name)}
+          }
+          $yz=Join-Path $stable 'pro-components\yazici-pro.zip'
+          if(-not (Test-Path $yz)){throw 'v4.0.2 yazici-pro.zip missing'}
+          $current=Join-Path $dst 'current-yazici-pro'
+          Expand-Archive $yz $current -Force
+          Get-ChildItem $current -Recurse -File | ForEach-Object { $_.FullName.Substring($current.Length+1) } | Set-Content (Join-Path $dst 'current-yazici-file-list.txt') -Encoding utf8
+          "KP_ARTIFACT_DIR=$dst"|Out-File $env:GITHUB_ENV -Append -Encoding utf8
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: v403-current-yazici-inspection
+          path: ${{ env.KP_ARTIFACT_DIR }}
+          if-no-files-found: error
