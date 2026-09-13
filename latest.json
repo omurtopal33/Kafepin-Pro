@@ -1,31 +1,36 @@
 {
-  "version": "4.0.11",
+  "version": "4.0.15",
   "channel": "stable",
   "finalStable": true,
-  "stableBase": "4.0.10",
-  "baseVersion": "4.0.10",
-  "futureUpdateBase": "4.0.10",
-  "cumulative": false,
-  "sourceVersion": "4.0.10",
-  "publishedAt": "2026-08-29T19:00:00+03:00",
+  "stableBase": "4.0.11",
+  "baseVersion": "4.0.11",
+  "futureUpdateBase": "4.0.15",
+  "cumulative": true,
+  "sourceVersion": "4.0.15",
+  "publishedAt": "2026-09-13T06:56:44+03:00",
   "notes": [
-    "v4.0.11 STABLE/FINAL: v4.0.11 TEST R4 WebLimit exact per-table payloadi ve mevcut tam monitor.html, v4.0.10 STABLE tam tabani korunarak kilitlendi.",
-    "TV modu yalniz monitor.html?tv=1 ile etkinlesir; normal monitor gorunumu korunur. TV modunda online masalar 3 kartlik sirali sayfalar halinde gosterilir; ping, Mbps, son ping, sure, ucret ve odul satirlari korunur.",
-    "Stable paketinde v4.0.10 tam ZIP uyeleri kirpilmadi; yalniz v4.0.11 R4 TEST ZIPindeki exact overlay girdileri ve tam public/monitor.html guncellendi.",
-    "DB/WAL/SHM pakete eklenmedi."
+    "v4.0.15 STABLE/FINAL: Sahada test edilen mevcut çalışan v4.0.15 yapısı kullanıcı onayıyla kırpılmadan kilitlendi.",
+    "v4.0.12-v4.0.15 Client Performans, CV Oluştur PRO, Yazıcı PRO, MP3/USB, EveryCafe gelir, ödül ve bekleme düzeltmeleri birlikte korunur.",
+    "Aktif EveryCafe oturumu olmayan takılı bekleme kartları Admin panelinden güvenli kapatılabilir; gelir ve ödül geçmişine dokunulmaz.",
+    "v4.0.11 tam stable ZIP üyeleri korunmuştur; database.db, WAL ve SHM pakete alınmamıştır."
   ],
   "files": [
     "KafePin_Update_Supervisor.js",
+    "server.js",
+    "services/everycafe-session-charges.js",
+    "services/everycafe-charge-backfill.js",
+    "public/admin.html",
+    "public/monitor.html",
+    "desktop-app/KafePinProDesktop.cs",
+    "desktop-app/desktop-app-version.json",
     "pro-components/client-performans-pro.zip",
+    "pro-components/cv-olustur-pro.zip",
     "pro-components/mp3-bot-pro.zip",
-    "pro-components/yazici-pro.zip",
-    "public/monitor.html"
+    "pro-components/yazici-pro.zip"
   ],
-  "buildRevision": "v411-stable-r4-weblimit-exact-plus-monitor-tv",
-  "promotedFromArtifact": "KafePin-Pro-Update-v4.0.11-TEST-R4-WEBLIMIT-EXACT-PER-TABLE-ALL.zip",
-  "promotedFromSha256": "A8CE3105626F3B8C06DE24FBC7427F524150AD61B71556C6783398D574ECDA57",
-  "baseStableArtifact": "KafePin-Pro-Update-v4.0.10-STABLE.zip",
-  "baseStableSha256": "E3F3BD785E23F6F2EAC6B42D90F780942480FE6D74937F75D1EBC2FE626DB978",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.11-STABLE.zip",
-  "sha256": "6FB99583BD2B3DFAE39EC980CE8BF2A62D301C7C99A1D0BFA331919A24CC45B5"
+  "buildRevision": "v415-stable-final-live-locked-r1",
+  "baseStableArtifact": "KafePin-Pro-Update-v4.0.11-STABLE.zip",
+  "baseStableSha256": "6FB99583BD2B3DFAE39EC980CE8BF2A62D301C7C99A1D0BFA331919A24CC45B5",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.15-STABLE-FINAL.zip",
+  "sha256": "25B1E553254BF3AC8F25FF6E026AA6F6A21F730400DB99CF330D61F9FBC97BAC"
 }
