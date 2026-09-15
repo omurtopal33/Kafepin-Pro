@@ -2,7 +2,7 @@
 
 ## Güncel sürüm düzeni
 
-- **v4.0.11 STABLE/FINAL:** Güncel saha sürümüdür; v4.0.10 STABLE tam tabanı korunarak v4.0.11 R4 WebLimit ve TV monitör modu exact olarak kilitlenmiştir.
+- **v4.0.16 STABLE/FINAL:** Güncel saha sürümüdür; v4.0.15 STABLE tam tabanı korunarak Donanım sekmesi ve CV A4 yazdırma akışı kilitlenmiştir.
 - **Yeni kafe dağıtımı değişmez:** `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` çevrimdışı kurulum tabanıdır. Her STABLE sürüm için yeni bir yeni-kafe ZIP'i üretilmez.
 - Yeni kafe v3.1.64 FINAL ile kurulur; internet varsa yalnız `latest.json` içindeki daha yeni STABLE sürümü tek adımda alır.
 - Ara sürümlerin tek tek kurulması gerekmez.
@@ -50,8 +50,8 @@ Korunacak temel dağıtımlar:
 
 - `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` — yeni kafe çevrimdışı tabanı.
 - `KafePin-Client-v3.1.64.zip` — eşleşen Client dağıtımı.
-- Güncel `KafePin-Pro-Update-v4.0.11-STABLE.zip` — aktif STABLE update.
+- Güncel `KafePin-Pro-Update-v4.0.16-STABLE-FINAL.zip` — aktif STABLE update.
 
-Aktif güncelleme kaynağı `latest.json` üzerinden doğrudan `KafePin-Pro-Update-v4.0.11-STABLE.zip` dosyasına gider. Eski ara sunucu update paketleri aktif dağıtım zincirinde kullanılmaz.
+Aktif güncelleme kaynağı `latest.json` üzerinden doğrudan `KafePin-Pro-Update-v4.0.16-STABLE-FINAL.zip` dosyasına gider. Eski ara sunucu update paketleri aktif dağıtım zincirinde kullanılmaz.
 
-Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.11.md`.
+Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.16.md`.

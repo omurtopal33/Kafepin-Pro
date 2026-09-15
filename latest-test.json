@@ -1,9 +1,9 @@
 {
   "channel": "test",
-  "stableVersion": "4.0.15",
+  "stableVersion": "4.0.16",
   "available": false,
   "version": null,
-  "notes": "TEST kanalı boş. Onaylanan mevcut v4.0.15 yapı FINAL / STABLE olarak kilitlendi.",
+  "notes": "TEST kanalı boş. Onaylanan mevcut yapı v4.0.16 FINAL / STABLE olarak kilitlendi.",
   "downloadUrl": "",
   "sha256": ""
 }

@@ -1,18 +1,19 @@
 {
-  "version": "4.0.15",
+  "version": "4.0.16",
   "channel": "stable",
   "finalStable": true,
   "stableBase": "4.0.11",
   "baseVersion": "4.0.11",
-  "futureUpdateBase": "4.0.15",
+  "futureUpdateBase": "4.0.16",
   "cumulative": true,
-  "sourceVersion": "4.0.15",
-  "publishedAt": "2026-09-13T06:56:44+03:00",
+  "sourceVersion": "4.0.16",
+  "publishedAt": "2026-09-15T10:30:00+03:00",
   "notes": [
-    "v4.0.15 STABLE/FINAL: Sahada test edilen mevcut çalışan v4.0.15 yapısı kullanıcı onayıyla kırpılmadan kilitlendi.",
+    "v4.0.16 STABLE/FINAL: Onaylanan mevcut çalışan yapı, kilitli v4.0.15 değiştirilmeden yeni sürüm olarak yayımlandı.",
     "v4.0.12-v4.0.15 Client Performans, CV Oluştur PRO, Yazıcı PRO, MP3/USB, EveryCafe gelir, ödül ve bekleme düzeltmeleri birlikte korunur.",
-    "Aktif EveryCafe oturumu olmayan takılı bekleme kartları Admin panelinden güvenli kapatılabilir; gelir ve ödül geçmişine dokunulmaz.",
-    "v4.0.11 tam stable ZIP üyeleri korunmuştur; database.db, WAL ve SHM pakete alınmamıştır."
+    "Client Performans yanındaki Donanım sekmesi işlemci, RAM, ekran kartı, anakart, ağ kartı, bağlantı hızı ve client sürümünü gösterir; disk sorgulamaz.",
+    "CV Oluştur PRO A4 yazdır düğmesi ve tam sayfa yazdırma akışı stable olarak kilitlendi.",
+    "v4.0.15 tam stable ZIP üyeleri korunmuştur; database.db, WAL ve SHM pakete alınmamıştır."
   ],
   "files": [
     "KafePin_Update_Supervisor.js",
@@ -28,9 +29,9 @@
     "pro-components/mp3-bot-pro.zip",
     "pro-components/yazici-pro.zip"
   ],
-  "buildRevision": "v415-stable-final-live-locked-r1",
-  "baseStableArtifact": "KafePin-Pro-Update-v4.0.11-STABLE.zip",
-  "baseStableSha256": "6FB99583BD2B3DFAE39EC980CE8BF2A62D301C7C99A1D0BFA331919A24CC45B5",
-  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.15-STABLE-FINAL.zip",
-  "sha256": "25B1E553254BF3AC8F25FF6E026AA6F6A21F730400DB99CF330D61F9FBC97BAC"
+  "buildRevision": "v416-stable-final-hardware-cv-r1",
+  "baseStableArtifact": "KafePin-Pro-Update-v4.0.15-STABLE-FINAL.zip",
+  "baseStableSha256": "25B1E553254BF3AC8F25FF6E026AA6F6A21F730400DB99CF330D61F9FBC97BAC",
+  "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.16-STABLE-FINAL.zip",
+  "sha256": "AB7C346AAF59E4F5BCF231CFD1B59AD32228B70FF8EE8BE1DE860CD3639E6A2D"
 }
