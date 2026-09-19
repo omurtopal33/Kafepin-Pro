@@ -1,0 +1,57 @@
+name: Diagnose real v3.1.59 Yazici field startup
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-v3159-real-yazici.yml'
+permissions:
+  contents: read
+jobs:
+  real-field-start:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Expand exact published v3.1.59
+        shell: pwsh
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3159-real'
+          Expand-Archive 'KafePin-Pro-Update-v3.1.59.zip' $pkg -Force
+          Write-Host '=== PAYLOAD FILES ==='
+          Get-ChildItem "$pkg/v3157-yazici-payload" -Recurse -File | ForEach-Object { $_.FullName.Substring($pkg.Length+1) }
+          Write-Host '=== REQUIRED FILE PRESENCE ==='
+          foreach($n in @('KURULUM.cmd','config.py','document_engine.py','pdf_engine.py','web_service.py','KafePin_YaziciGelir_Service.js','KafePin_YaziciPRO_ServiceHost.ps1')){
+            $m=Get-ChildItem "$pkg/v3157-yazici-payload" -Recurse -File -Filter $n -ErrorAction SilentlyContinue|Select-Object -First 1
+            Write-Host ($n+'='+[bool]$m)
+          }
+      - name: Reproduce desktop field start WITHOUT PythonPath
+        shell: pwsh
+        continue-on-error: true
+        run: |
+          $pkg=Join-Path $env:RUNNER_TEMP 'v3159-real'
+          $root=Join-Path $env:RUNNER_TEMP 'field-KafePinYaziciPRO'
+          New-Item -ItemType Directory -Force -Path $root|Out-Null
+          Copy-Item "$pkg/v3157-yazici-payload/*" $root -Recurse -Force
+          $host=Join-Path $root 'KafePin_YaziciPRO_ServiceHost.ps1'
+          Write-Host "HOST=$host"
+          & powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File $host -InstallRoot $root
+          $ec=$LASTEXITCODE
+          Write-Host "SERVICE_HOST_EXIT=$ec"
+          foreach($f in @(
+            "$env:ProgramData/KafePinPro/logs/v3156-yazici-startup.log",
+            "$env:ProgramData/KafePinPro/logs/v3156-webservice.err.log",
+            "$env:ProgramData/KafePinPro/logs/v3156-revenue.err.log"
+          )){
+            Write-Host ('=== '+$f+' ===')
+            if(Test-Path $f){Get-Content $f -Tail 50}else{Write-Host 'MISSING'}
+          }
+          foreach($u in @('http://127.0.0.1:17891/api/health','http://127.0.0.1:17893/health')){
+            try{$r=Invoke-WebRequest -UseBasicParsing $u -TimeoutSec 3;Write-Host ($u+' STATUS='+$r.StatusCode+' BODY='+$r.Content)}catch{Write-Host ($u+' FAIL='+$_.Exception.Message)}
+          }
+          exit $ec
