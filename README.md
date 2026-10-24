@@ -2,16 +2,16 @@
 
 ## Güncel sürüm düzeni
 
-- **v4.0.16 STABLE/FINAL:** Güncel saha sürümüdür; v4.0.15 STABLE tam tabanı korunarak Donanım sekmesi ve CV A4 yazdırma akışı kilitlenmiştir.
-- **Yeni kafe dağıtımı değişmez:** `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` çevrimdışı kurulum tabanıdır. Her STABLE sürüm için yeni bir yeni-kafe ZIP'i üretilmez.
-- Yeni kafe v3.1.64 FINAL ile kurulur; internet varsa yalnız `latest.json` içindeki daha yeni STABLE sürümü tek adımda alır.
+- **v4.0.80 STABLE/FINAL:** Güncel saha sürümüdür; mevcut çalışan KafePin Pro ve Mining Pro yapısı kilitlenmiştir.
+- **Yeni kafe dağıtımı:** `KafePin-Pro-Yeni-Kafe-FINAL-v4.0.80.zip` çevrimdışı tam kurulum paketidir.
+- Yeni-kafe kurulumunda Mining Pro bağımsız olarak sorulur; bütün cüzdan ve API alanları boş gelir.
 - Ara sürümlerin tek tek kurulması gerekmez.
 - TEST paketleri STABLE dağıtım kaynağı değildir; `latest.json` yalnız güncel STABLE güncellemeyi gösterir.
 
 ## Yeni Kafe kurulumu
 
-1. `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` içindeki `KURULUMU_BASLAT.cmd` çalıştırılır.
-2. Kurucu internet olmasa da v3.1.64 FINAL tabanını kurabilir.
+1. `KafePin-Pro-Yeni-Kafe-FINAL-v4.0.80.zip` içindeki `KURULUMU_BASLAT.cmd` çalıştırılır.
+2. Kurucu internet olmasa da v4.0.80 FINAL tabanını kurabilir.
 3. İnternet varsa `latest.json` kontrol edilir; daha yeni STABLE varsa doğrudan güncel kümülatif STABLE'a yükseltilir.
 4. Ara update sürümleri kurulmaz.
 
@@ -22,6 +22,7 @@ PRO klasör düzeni korunur:
 - Teknik Servis PRO: `C:\KafePinPro\TeknikServisPRO`
 - Client Performans PRO: `C:\KafePinPro\ClientPerformansPRO`
 - CV Oluştur PRO: `C:\KafePinPro\CVOlusturPRO`
+- Mining PRO: `C:\KafePinPro\MiningPRO` (isteğe bağlı; cüzdan/API alanları boş)
 
 ## v4.0.11 STABLE kilitleri
 
@@ -48,10 +49,10 @@ PRO klasör düzeni korunur:
 
 Korunacak temel dağıtımlar:
 
-- `KafePin-Pro-Yeni-Kafe-FINAL-v3.1.64.zip` — yeni kafe çevrimdışı tabanı.
+- `KafePin-Pro-Yeni-Kafe-FINAL-v4.0.80.zip` — yeni kafe çevrimdışı tam kurulum.
 - `KafePin-Client-v3.1.64.zip` — eşleşen Client dağıtımı.
-- Güncel `KafePin-Pro-Update-v4.0.16-STABLE-FINAL.zip` — aktif STABLE update.
+- Güncel `KafePin-Pro-Update-v4.0.80-STABLE-FINAL.zip` — aktif STABLE update.
 
-Aktif güncelleme kaynağı `latest.json` üzerinden doğrudan `KafePin-Pro-Update-v4.0.16-STABLE-FINAL.zip` dosyasına gider. Eski ara sunucu update paketleri aktif dağıtım zincirinde kullanılmaz.
+Aktif güncelleme kaynağı `latest.json` üzerinden doğrudan `KafePin-Pro-Update-v4.0.80-STABLE-FINAL.zip` dosyasına gider. Eski ara sunucu update paketleri aktif dağıtım zincirinde kullanılmaz.
 
-Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.16.md`.
+Ayrıntılı değişmez saha kilidi: `STABLE_LOCK-v4.0.80.md`.
