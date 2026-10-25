@@ -9,13 +9,14 @@
   "sourceVersion": "4.0.62",
   "publishedAt": "2026-10-24T00:00:00+03:00",
   "notes": [
-    "v4.0.80 STABLE/FINAL: mevcut çalışan KafePin Pro ve Mining Pro yapısı kilitlendi.",
+    "v4.0.80 STABLE/FINAL: ana KafePin payloadı mevcut çalışan saha kurulumundan kaynak-kilitli olarak alındı; Mining Pro v4.0.80 zorunlu bileşen olarak pakete dahildir.",
     "TV monitöründe üye oturumu bakiye, süre, bonus ve hesaptan bilgileriyle diğer ücretli masalarla aynı büyük kart düzeninde; sayfa başına iki büyük kart gösterilir.",
     "Ücretsiz ve beklemedeki masalar TV monitöründe gösterilmez.",
     "Yeni-kafe kurulumunda Mining Pro bağımsız seçenek olarak sorulur; bütün cüzdan ve API alanları boş gelir.",
     "Mevcut data/config, veritabanı, müşteri kayıtları ve işletme ayarları pakete alınmaz veya silinmez.",
     "Mining 17897 self-heal, non-blocking PRO başlangıcı, ANA-PC BAT davranışı, 15 dakika OFFLINE, iOS/Tailscale ve finans hesapları korunur.",
-    "Client HOTFIX8 byte-for-byte değiştirilmemiştir."
+    "Client HOTFIX8 byte-for-byte değiştirilmemiştir.",
+    "Disk sağlık uyarısı yalnız boş alan 10 GB altına düştüğünde görünür; 10 GB ve üzeri normaldir."
   ],
   "files": [
     "server.js",
@@ -29,11 +30,11 @@
     "MiningPro/web/index.html",
     "pro-components/mining-pro.zip"
   ],
-  "buildRevision": "v480-stable-final-current-lock",
+  "buildRevision": "v480-stable-final-live-source-lock-disk10gb",
   "baseStableArtifact": "KafePin-Pro-Update-v4.0.16-STABLE-FINAL.zip",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.80-STABLE-FINAL.zip",
-  "sha256": "F4A45D3EF89081B9A27A11E28B1C2E9A2A6AA2996DCFE5D6F50324C2B212EE5C",
+  "sha256": "9824A78AE8FDAD65148EDE131BD492E2763B6C498A5C34D2B3AD623E758CF695",
   "newCafeArtifact": "KafePin-Pro-Yeni-Kafe-FINAL-v4.0.80.zip",
   "newCafeDownloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Yeni-Kafe-FINAL-v4.0.80.zip",
-  "newCafeSha256": "19DB6D4C625C9BCFB5E430436CB7C15B70289416705D10F4DBED33CCD195D0CA"
+  "newCafeSha256": "084361818573FC1E237A42FC3674BE42D64B1C27AF849FED133321524AA67FA9"
 }

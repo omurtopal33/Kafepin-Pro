@@ -4,13 +4,14 @@ Yayın tarihi: 24.10.2026
 
 ## Kilitlenen yapı
 
-- Mevcut çalışan KafePin Pro ve Mining Pro davranışı kümülatif FINAL paket olarak kilitlendi.
+- Ana KafePin payloadı mevcut çalışan saha kurulumundan kaynak-kilitli alınarak kümülatif FINAL pakete eklendi; Mining Pro v4.0.80 zorunlu bileşen olarak korunur.
 - TV monitöründe üye oturumu bakiye, süre, bonus ve hesaptan bilgileriyle diğer ücretli masalarla aynı büyük kart düzeninde; sayfa başına iki büyük kart gösterilir.
 - Ücretsiz ve EveryCafe bekleme masaları monitörde gösterilmez.
 - Ana pencere ve PRO başlangıçları non-blocking/health-first çalışır; çalışan servis gereksiz yere öldürülmez.
 - Mining Pro 17897 startup self-heal, health JSON whitespace düzeltmesi ve 15 dakika heartbeat yoksa OFFLINE davranışı korunur.
 - ANA-PC SRBMiner BAT `ShellExecute/Open`, BAT klasörü working directory ve mining sırasında monitörün açık kalması korunur.
 - iOS/Tailscale KafePin Admin Mining Pro sekmesi; BigONE, Binance BEP20, net kâr ve elektrik hesapları korunur.
+- Disk sağlık uyarısı yalnız boş alan 10 GB altına düştüğünde görünür; 10 GB ve üzeri normaldir.
 
 ## Yeni kafe paketi
 
