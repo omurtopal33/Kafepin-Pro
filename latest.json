@@ -32,8 +32,8 @@
   "buildRevision": "v480-stable-final-current-lock",
   "baseStableArtifact": "KafePin-Pro-Update-v4.0.16-STABLE-FINAL.zip",
   "downloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Update-v4.0.80-STABLE-FINAL.zip",
-  "sha256": "272BBBBAD869806DE7AA4EF564FC98A526E21F379233C86E318BA2FCE1440832",
+  "sha256": "F4A45D3EF89081B9A27A11E28B1C2E9A2A6AA2996DCFE5D6F50324C2B212EE5C",
   "newCafeArtifact": "KafePin-Pro-Yeni-Kafe-FINAL-v4.0.80.zip",
   "newCafeDownloadUrl": "https://raw.githubusercontent.com/omurtopal33/Kafepin-Pro/main/KafePin-Pro-Yeni-Kafe-FINAL-v4.0.80.zip",
-  "newCafeSha256": "A81DFD07A594DC5A5D551468342463C3B4BDE74695A45C79B12ABE51A706E38C"
+  "newCafeSha256": "19DB6D4C625C9BCFB5E430436CB7C15B70289416705D10F4DBED33CCD195D0CA"
 }
