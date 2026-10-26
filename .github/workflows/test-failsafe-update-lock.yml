@@ -1,0 +1,51 @@
+name: TEST fail-safe update lock
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [test/edevlet-yazici-pro-2]
+    paths:
+      - 'dev/failsafe-update-lock/**'
+      - '.github/workflows/test-failsafe-update-lock.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-tests:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Windows fail-safe lock scenarios
+        shell: pwsh
+        run: .\dev\failsafe-update-lock\test_failsafe_update_lock.ps1
+
+      - name: Build and verify TEST candidate
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          python dev/failsafe-update-lock/build_candidate.py
+          $zip='KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.zip'
+          $td=Join-Path $env:RUNNER_TEMP 'failsafe-candidate'
+          Expand-Archive $zip $td -Force
+          node --check (Join-Path $td 'server.js')
+          $u=Get-Content (Join-Path $td 'update.json') -Raw | ConvertFrom-Json
+          if($u.version -ne '4.0.3' -or $u.channel -ne 'candidate' -or $u.finalStable){throw 'candidate metadata invalid'}
+          if(@($u.files).Count -ne 1 -or @($u.files)[0] -ne 'server.js'){throw 'candidate files list invalid'}
+          $base=Join-Path $env:GITHUB_WORKSPACE 'KafePin-Pro-Update-v4.0.2.zip'
+          $baseDir=Join-Path $env:RUNNER_TEMP 'v402-base'
+          Expand-Archive $base $baseDir -Force
+          foreach($rel in @('desktop-app/KafePinProDesktop.cs','services/spinService.js','utils/fee.js','pro-components/mp3-bot-pro.zip','pro-components/yazici-pro.zip')){
+            if((Get-FileHash (Join-Path $baseDir $rel)).Hash -ne (Get-FileHash (Join-Path $td $rel)).Hash){throw "protected file changed: $rel"}
+          }
+          Write-Host 'FAILSAFE_UPDATE_LOCK_WINDOWS_PASS'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KafePin-Pro-v4.0.3-FAILSAFE-CANDIDATE
+          path: |
+            KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.zip
+            KafePin-Pro-Update-v4.0.3-FAILSAFE-CANDIDATE5.sha256.txt
+          if-no-files-found: error

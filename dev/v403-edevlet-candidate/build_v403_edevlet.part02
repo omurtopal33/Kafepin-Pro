@@ -1,0 +1,210 @@
+        raise SystemExit('v4.0.2 sha file invalid')
+    return m.group(1).lower()
+
+
+def replace_once(text: str, old: str, new: str, label: str) -> str:
+    n = text.count(old)
+    if n != 1:
+        raise SystemExit(f'{label}: expected one occurrence, found {n}')
+    return text.replace(old, new, 1)
+
+
+def read_yazici_version(root: Path) -> str:
+    source = root / 'dev' / 'v403-edevlet-candidate' / 'yazici-version.json'
+    try:
+        value = str(json.loads(source.read_text(encoding='utf-8')).get('version') or '').strip()
+    except Exception as exc:
+        raise SystemExit(f'Yazici version source invalid: {source}: {exc}')
+    if not re.fullmatch(r'\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?', value):
+        raise SystemExit(f'Yazici version source invalid value: {value!r}')
+    return value
+
+
+def patch_revenue(text: str, target_version: str) -> str:
+    dynamic = '''const VERSION = (() => {
+  try { return String(JSON.parse(fs.readFileSync(path.join(__dirname, "yazici-pro-version.json"), "utf8")).version || "unknown"); }
+  catch (_) { return "unknown"; }
+})();'''
+    text, count = re.subn(r'const VERSION = "[^"]+";', dynamic, text, count=1)
+    if count != 1:
+        raise SystemExit('Yazici revenue VERSION assignment missing')
+    text = replace_once(text, '  price_document:30,\n  payment_method:"CASH",', '  price_document:30,\n  price_edevlet:0,\n  payment_method:"CASH",', 'e-Devlet saved price default')
+    text = replace_once(text, '["price_bw","price_color","price_identity","price_photo","price_scan","price_document"]', '["price_bw","price_color","price_identity","price_photo","price_scan","price_document","price_edevlet"]', 'e-Devlet saved price validation')
+    text = replace_once(text, '["price_bw","price_color","price_identity","price_photo","price_scan","price_document","payment_method","delete_download_after_print"]', '["price_bw","price_color","price_identity","price_photo","price_scan","price_document","price_edevlet","payment_method","delete_download_after_print"]', 'e-Devlet saved price config route')
+    old = '''function prepareService(serviceType,quantity,payment,documentPrep=false,title=""){
+  const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
+  if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
+  else if(serviceType==="document"){ items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1}); serviceLabel="Belge / Dilekçe Hazırlama"; }
+  else throw new Error("Geçersiz hizmet türü.");
+  if(documentPrep && serviceType!=="document") items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1});
+  return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep}});
+}'''
+    new = '''function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){
+  const c=config(); const qty=Math.max(1,Math.min(999,Number(quantity)||1)); const items=[]; let serviceLabel="Tarama";
+  if(serviceType==="scan"){ items.push({label:"Tarama",unitPrice:Number(c.price_scan)||0,quantity:qty}); serviceLabel="Tarama"; }
+  else if(serviceType==="document"){ items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1}); serviceLabel="Belge / Dilekçe Hazırlama"; }
+  else if(serviceType==="edevlet"){ const amount=money(amountOverride===null||amountOverride===undefined?c.price_edevlet:amountOverride); if(amount<=0) throw new Error("e-Devlet hizmet bedeli 0 TL olamaz."); const s=state(),pending=Object.values(s.transactions||{}).filter(tx=>tx&&tx.status==="pending_confirmation"&&tx.meta&&tx.meta.service_type==="edevlet").sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0]; if(pending){pending.meta={...(pending.meta||{}),service_type:"edevlet",active_session:true};const feeItem=(pending.items||[]).find(x=>x.label==="e-Devlet Hizmet Bedeli");if(feeItem){feeItem.unitPrice=amount;feeItem.quantity=1;}else(pending.items||(pending.items=[])).unshift({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1});pending.items=normalizeItems(pending.items);pending.total=calcTotal(pending.items);pending.payment_method=normPayment(payment||pending.payment_method);saveState(s);return pending;} items.push({label:"e-Devlet Hizmet Bedeli",unitPrice:amount,quantity:1}); serviceLabel="e-Devlet Hizmet Bedeli"; }
+  else throw new Error("Geçersiz hizmet türü.");
+  if(documentPrep && serviceType!=="document" && serviceType!=="edevlet") items.push({label:"Belge / Dilekçe Hazırlama",unitPrice:Number(c.price_document)||0,quantity:1});
+  return createTransaction({source:"service",title:title||`Yazıcı Geliri - ${serviceLabel}${documentPrep&&serviceType!=="document"&&serviceType!=="edevlet"?" + Belge Hazırlama":""}`,items,payment,meta:{service_type:serviceType,quantity:qty,document_prep:!!documentPrep,active_session:serviceType==="edevlet"}});
+}'''
+    text = replace_once(text, old, new, 'prepareService')
+    old_poll = '''function pollQueue(){
+  const s=state(); const ev=readEvents(); const max=ev.reduce((m,e)=>Math.max(m,e.record_id),0);
+  if(!s.initialized){ s.initialized=true; s.lastSeenRecordId=max; saveState(s); return s; }
+  for(const e of ev){ if(e.record_id<=s.lastSeenRecordId) continue; const k=String(e.record_id); if(!s.jobs[k]) s.jobs[k]={...e,status:"pending",created_at:new Date().toISOString()}; }
+  s.lastSeenRecordId=Math.max(s.lastSeenRecordId,max); saveState(s); return s;
+}'''
+    new_poll = '''function pollQueue(){
+  const s=state(); const ev=readEvents(); const max=ev.reduce((m,e)=>Math.max(m,e.record_id),0); const fresh=[];
+  if(!s.initialized){ s.initialized=true; s.lastSeenRecordId=max; saveState(s); return s; }
+  for(const e of ev){ if(e.record_id<=s.lastSeenRecordId) continue; const k=String(e.record_id); if(!s.jobs[k]){s.jobs[k]={...e,status:"pending",created_at:new Date().toISOString()};fresh.push(s.jobs[k]);} }
+  s.lastSeenRecordId=Math.max(s.lastSeenRecordId,max); saveState(s);
+  if(fresh.length){
+    const active=Object.values(s.transactions||{}).filter(tx=>tx&&tx.status==="pending_confirmation"&&tx.meta&&tx.meta.service_type==="edevlet"&&tx.meta.active_session===true).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0];
+    if(active){try{appendPrintJobsToTransaction(active.id,fresh,"bw",active.payment_method||"CASH");}catch(e){log("e-Devlet canlı çıktı ekleme hatası: "+e.message);}}
+  }
+  return state();
+}'''
+    text = replace_once(text, old_poll, new_poll, 'e-Devlet automatic PrintService accumulation')
+    append_helper = '''function appendPrintJobsToTransaction(transactionId,events,type,payment){
+  const s=state(),tx=s.transactions[String(transactionId||"")];
+  if(!tx) throw new Error("e-Devlet oturum işlemi bulunamadı.");
+  if(tx.status!=="pending_confirmation") throw new Error("e-Devlet oturumu artık çıktı eklemeye uygun değil.");
+  const existing=new Set((tx.record_ids||[]).map(Number));
+  const fresh=[];
+  for(const e of events){
+    const rid=Number(e.record_id); if(!Number.isFinite(rid)||existing.has(rid)) continue;
+    const job=s.jobs[String(rid)]||e;
+    if(job.transaction_id&&String(job.transaction_id)!==String(tx.id)) throw new Error(`Yazdırma işi başka bir işleme bağlı: ${rid}`);
+    if(job.status&&!['pending','awaiting_confirmation'].includes(job.status)) throw new Error(`Yazdırma işi zaten kapatılmış: ${rid}`);
+    fresh.push(job); existing.add(rid);
+  }
+  if(!fresh.length) return tx;
+  const qty=fresh.reduce((n,e)=>n+Math.max(1,Number(e.pages)||1),0),c=config(),label=printLabel(type),unitPrice=Number(priceFor(type,c))||0;
+  const current=(tx.items||[]).find(x=>x.label===label&&Number(x.unitPrice)===unitPrice);
+  if(current) current.quantity=Math.max(1,Number(current.quantity)||1)+qty;
+  else (tx.items||(tx.items=[])).push({label,unitPrice,quantity:qty});
+  tx.items=normalizeItems(tx.items); tx.total=calcTotal(tx.items); tx.payment_method=normPayment(payment||tx.payment_method);
+  tx.record_ids=Array.from(existing); tx.meta={...(tx.meta||{}),service_type:'edevlet',print_pages:(Number(tx.meta&&tx.meta.print_pages)||0)+qty};
+  for(const job of fresh){const k=String(job.record_id);if(s.jobs[k]){s.jobs[k].status='awaiting_confirmation';s.jobs[k].transaction_id=tx.id;}}
+  saveState(s); return tx;
+}
+function removeOnePrintUnitFromTransaction(transactionId){
+  const s=state(),tx=s.transactions[String(transactionId||"")];
+  if(!tx) throw new Error("e-Devlet oturum işlemi bulunamadı.");
+  if(tx.status!=="pending_confirmation") throw new Error("e-Devlet oturumu düzeltmeye uygun değil.");
+  const printLabels=new Set(["S/B Çıktı","Renkli Çıktı","Kimlik Fotokopisi","Fotoğraf"]);
+  let item=null;
+  for(let i=(tx.items||[]).length-1;i>=0;i--){if(printLabels.has(String(tx.items[i].label))&&Number(tx.items[i].quantity)>0){item=tx.items[i];break;}}
+  if(!item) throw new Error("İptal edilecek çıktı bulunamadı; hizmet bedeli korunuyor.");
+  item.quantity=Number(item.quantity)-1;
+  if(item.quantity<=0) tx.items=tx.items.filter(x=>x!==item);
+  tx.items=normalizeItems(tx.items); tx.total=calcTotal(tx.items); tx.meta={...(tx.meta||{}),print_pages:Math.max(0,(Number(tx.meta&&tx.meta.print_pages)||0)-1)};
+  saveState(s); return tx;
+}
+'''
+    text = replace_once(text, 'function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){', append_helper + 'function prepareService(serviceType,quantity,payment,documentPrep=false,title="",amountOverride=null){', 'e-Devlet session print accumulator')
+    text = replace_once(text, 'waitEvents(after,String(d.printer||""),18)', 'waitEvents(after,String(d.printer||""),d.transaction_id?120:18)', 'e-Devlet print-dialog wait')
+    old_claim = 'const tx=preparePrintJobs(events,String(d.service_type||"bw"),String(d.payment_method||"CASH"),"claim",!!d.document_prep,""); return json(res,200,{ok:true,transaction:tx});'
+    new_claim = 'const tx=d.transaction_id?appendPrintJobsToTransaction(String(d.transaction_id),events,String(d.service_type||"bw"),String(d.payment_method||"CASH")):preparePrintJobs(events,String(d.service_type||"bw"),String(d.payment_method||"CASH"),"claim",!!d.document_prep,""); return json(res,200,{ok:true,transaction:tx});'
+    text = replace_once(text, old_claim, new_claim, 'e-Devlet claim accumulation route')
+    confirm_route = 'if(req.method==="POST"&&p==="/transaction/confirm"){ const d=await readBody(req); const tx=await confirmTransaction(String(d.id||""),String(d.payment_method||""),Object.prototype.hasOwnProperty.call(d,"total")?d.total:undefined); return json(res,200,{ok:true,transaction:tx}); }'
+    remove_route = 'if(req.method==="POST"&&p==="/edevlet/session/remove-print"){ const d=await readBody(req); const tx=removeOnePrintUnitFromTransaction(String(d.id||"")); return json(res,200,{ok:true,transaction:tx}); }'
+    text = replace_once(text, confirm_route, confirm_route + '\n    ' + remove_route, 'e-Devlet remove-one-print route')
+    transactions_route = 'if(req.method==="GET"&&p==="/transactions"){ const s=state(); const rows=Object.values(s.transactions||{}).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||""))).slice(0,100); return json(res,200,{ok:true,transactions:rows}); }'
+    transaction_routes = transactions_route + '\n    if(req.method==="GET"&&p==="/transaction"){ const tx=transaction(String(u.searchParams.get("id")||"")); return tx?json(res,200,{ok:true,transaction:tx}):json(res,404,{ok:false,error:"İşlem bulunamadı."}); }\n    if(req.method==="GET"&&p==="/edevlet/session/active"){ const s=state(),tx=Object.values(s.transactions||{}).filter(x=>x&&x.status==="pending_confirmation"&&x.meta&&x.meta.service_type==="edevlet"&&x.meta.active_session===true).sort((a,b)=>String(b.created_at||"").localeCompare(String(a.created_at||"")))[0]; return json(res,200,{ok:true,transaction:tx||null}); }'
+    text = replace_once(text, transactions_route, transaction_routes, 'e-Devlet live transaction routes')
+    old_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||"")); return json(res,200,{ok:true,transaction:tx}); }'
+    new_route = 'if(req.method==="POST"&&p==="/service/prepare"){ const d=await readBody(req); const tx=prepareService(String(d.service_type||"scan"),Number(d.quantity)||1,String(d.payment_method||"CASH"),!!d.document_prep,String(d.title||""),Object.prototype.hasOwnProperty.call(d,"amount")?d.amount:null); return json(res,200,{ok:true,transaction:tx}); }'
+    return replace_once(text, old_route, new_route, 'service route')
+
+
+def patch_service_host(text: str, target_version: str) -> str:
+    dynamic = "$VersionFile=Join-Path $InstallRoot 'yazici-pro-version.json'\n$Expected=''\ntry { $Expected=[string]((Get-Content -LiteralPath $VersionFile -Raw -Encoding UTF8 | ConvertFrom-Json).version).Trim() } catch {}\nif([string]::IsNullOrWhiteSpace($Expected)){ throw ('Yazici PRO metadata version okunamadi: '+$VersionFile) }"
+    text, count = re.subn(r"\$Expected='[^']+'", dynamic, text, count=1)
+    if count != 1:
+        raise SystemExit('Yazici service host expected-version assignment missing')
+    text = re.sub(r'v\d+-yazici-startup\.log', 'yazici-startup.log', text)
+    text = re.sub(r'v\d+-yazici-startup\.json', 'yazici-startup.json', text)
+    text = re.sub(r'v\d+-revenue\.(out|err)\.log', r'yazici-revenue.\1.log', text)
+    text = re.sub(r'v\d+-webservice\.(out|err)\.log', r'yazici-webservice.\1.log', text)
+    text = re.sub(r'\[v\d+\]', '[yazici]', text)
+    text = re.sub(r'Servisler zaten [^\r\n]+ hazır\.', 'Servisler metadata sürümünde hazır.', text)
+    return text
+
+
+def patch_payload(tmp: Path, target_version: str) -> None:
+    p = tmp / 'KafePin_YaziciPRO_WebView2.ps1'
+    p.write_text('\ufeff' + WEBVIEW_PS1.replace('\r\n','\n').replace('__KAFEPIN_YAZICI_VERSION__', target_version), encoding='utf-8')
+
+    p = tmp / 'KafePin_YaziciGelir_Service.js'
+    p.write_text(patch_revenue(p.read_text(encoding='utf-8-sig'), target_version), encoding='utf-8')
+
+    p = tmp / 'KafePin_YaziciPRO_ServiceHost.ps1'
+    host = patch_service_host(p.read_text(encoding='utf-8-sig'), target_version)
+    p.write_text('\ufeff' + host, encoding='utf-8')
+
+    p = tmp / 'web_service.py'
+    s = p.read_text(encoding='utf-8-sig')
+    dynamic = '''VERSION_FILE = Path(__file__).resolve().with_name("yazici-pro-version.json")
+try:
+    APP_VERSION = str(json.loads(VERSION_FILE.read_text(encoding="utf-8-sig")).get("version") or "unknown").strip()
+except Exception:
+    APP_VERSION = "unknown"'''
+    s, count = re.subn(r'APP_VERSION = "[^"]+"', dynamic, s, count=1)
+    if count != 1:
+        raise SystemExit('Yazici web service APP_VERSION assignment missing')
+    p.write_text(s, encoding='utf-8')
+
+    p = tmp / 'yazici-pro-version.json'
+    meta = json.loads(p.read_text(encoding='utf-8-sig'))
+    meta['version'] = target_version
+    meta['build'] = 'v403-edevlet-candidate1'
+    fixes = list(meta.get('fixes') or [])
+    for item in [
+        'edevlet-internal-webview2-tab',
+        'edevlet-no-external-window',
+        'edevlet-separate-private-profile',
+        'edevlet-session-cookie-clear',
+        'edevlet-single-service-fee-per-session',
+        'edevlet-print-fees-remain-printservice-based',
+    ]:
+        if item not in fixes:
+            fixes.append(item)
+    meta['fixes'] = fixes
+    p.write_text(json.dumps(meta, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+
+
+def repack_nested(original_bytes: bytes, modified_root: Path) -> bytes:
+    src = zipfile.ZipFile(io.BytesIO(original_bytes), 'r')
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, 'w') as z:
+        for info in src.infolist():
+            data = src.read(info.filename)
+            if not info.is_dir() and info.filename in ALLOWED_YAZICI:
+                data = (modified_root / Path(info.filename)).read_bytes()
+            z.writestr(info, data)
+    return out.getvalue()
+
+
+def main() -> None:
+    root = Path(os.environ.get('GITHUB_WORKSPACE') or Path.cwd())
+    base = root / BASE_NAME
+    if not base.exists():
+        raise SystemExit(f'base missing: {base}')
+    expected = read_expected_sha(root)
+    base_bytes = base.read_bytes()
+    base_sha = sha(base_bytes)
+    if base_sha != expected:
+        raise SystemExit(f'v4.0.2 base sha mismatch expected={expected} actual={base_sha}')
+
+    with zipfile.ZipFile(io.BytesIO(base_bytes), 'r') as outer:
+        names = outer.namelist()
+        if 'update.json' not in names or NESTED not in names:
+            raise SystemExit('base package missing update.json or yazici-pro.zip')
+        base_update = json.loads(outer.read('update.json').decode('utf-8-sig'))
+        if str(base_update.get('version')) != '4.0.2' or str(base_update.get('channel')) != 'stable':
+            raise SystemExit('base package is not v4.0.2 stable')
+        nested_bytes = outer.read(NESTED)
+
